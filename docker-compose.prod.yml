@@ -9,4 +9,4 @@ services:
     restart: unless-stopped
 
     ports:
-      - "80:80"
+      - "9001:80"
