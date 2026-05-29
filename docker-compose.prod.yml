@@ -1,0 +1,12 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+
+    container_name: fila-conf-frontend
+
+    restart: unless-stopped
+
+    ports:
+      - "4200:80"
