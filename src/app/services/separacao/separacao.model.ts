@@ -23,10 +23,12 @@ export interface ItemPedidoDTO {
 
   controle: string;
   complemento: string;
+  lisControles?: string | null;
 }
 
 export interface ItensConferidosResponse {
   idProduto: number;
+  controle?: string;
   quantidadeConvertida: number;
 }
 
@@ -44,9 +46,34 @@ export interface PostRemoverVolumeParams {
   numeroVolume: number;
 }
 
+export interface ResolverCodigoBarrasResponse {
+  idProduto: number;
+  nomeProduto: string;
+  complemento: string | null;
+  referencia: string | null;
+  unidadeBase: string;
+  codvol: string;
+  controle: string;
+  tipControle: string | null;
+  decQtd: number;
+  pesoBruto: number;
+  fatorConv: number | null;
+  divideMult: string | null;
+  lisControles?: string | null;
+}
+
 export interface PostDevolverItemConferidoParams {
   numeroConferencia: number;
   numeroUnico: number;
   idProduto: number;
   controle: string;
+}
+
+export interface MoverItemVolumeParams {
+  numeroConferencia: number;
+  idProduto: number;
+  controle: string;
+  seqVolOrigem?: number;
+  seqVolDestino: number;
+  qtd?: number;
 }

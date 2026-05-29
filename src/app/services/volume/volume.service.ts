@@ -1,6 +1,7 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
   DeletarVolumesLoteParams,
   GerarVolumesLoteParams,
@@ -33,6 +34,8 @@ export class VolumeService {
   postAtualizarDimensoesVolume(
     body: PostAtualizarDimensoesVolumeParams,
   ): Observable<null> {
-    return this.http.post<null>('/volumes/dimensoes-volume', body);
+    return this.http.post<null>('/volumes/dimensoes-volume', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
   }
 }

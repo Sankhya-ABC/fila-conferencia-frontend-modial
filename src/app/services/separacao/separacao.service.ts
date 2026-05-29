@@ -1,12 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { SKIP_ERROR_TOAST, SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
   ItemPedidoDTO,
   ItensConferidosResponse,
+  MoverItemVolumeParams,
   PostDevolverItemConferidoParams,
   PostItemConferidoVolumeParams,
   PostRemoverVolumeParams,
+  ResolverCodigoBarrasResponse,
 } from './separacao.model';
 
 @Injectable({
@@ -33,16 +36,39 @@ export class SeparacaoService {
   postItemConferidoVolume(
     body: PostItemConferidoVolumeParams,
   ): Observable<null> {
-    return this.http.post<null>('/separacoes/item-conferido-volume', body);
+    return this.http.post<null>('/separacoes/item-conferido-volume', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
   }
 
   postRemoverVolume(body: PostRemoverVolumeParams): Observable<null> {
-    return this.http.post<null>('/separacoes/remover-volume', body);
+    return this.http.post<null>('/separacoes/remover-volume', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
+  }
+
+  moverItemVolume(body: MoverItemVolumeParams): Observable<null> {
+    return this.http.post<null>('/separacoes/mover-item-volume', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
   }
 
   postDevolverItemConferido(
     body: PostDevolverItemConferidoParams,
   ): Observable<null> {
-    return this.http.post<null>('/separacoes/devolver-item-conferido', body);
+    return this.http.post<null>('/separacoes/devolver-item-conferido', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
+  }
+
+  resolverCodigoBarras(
+    numeroConferencia: number,
+    codigoBarras: string,
+  ): Observable<ResolverCodigoBarrasResponse> {
+    return this.http.post<ResolverCodigoBarrasResponse>(
+      '/separacoes/resolver-codigo-barras',
+      { numeroConferencia, codigoBarras },
+      { context: new HttpContext().set(SKIP_LOADING, true).set(SKIP_ERROR_TOAST, true) },
+    );
   }
 }

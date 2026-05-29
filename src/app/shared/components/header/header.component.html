@@ -1,11 +1,14 @@
-<mat-toolbar class="header" *ngIf="!(hideContainer$ | async)">
+<mat-toolbar class="header" *ngIf="!(hideContainer$ | async) && (title$ | async)">
   <h2>{{ title$ | async }}</h2>
 
   <span class="spacer"></span>
 
-  <button mat-icon-button [matMenuTriggerFor]="menu" class="avatar-button">
-    <span class="avatar">{{ nome$ | async }}</span>
-  </button>
+  <div class="header-user-area">
+    <span class="header-user-name">{{ nome$ | async }}</span>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="avatar-button">
+      <span class="avatar">{{ initials$ | async }}</span>
+    </button>
+  </div>
 
   <mat-menu #menu="matMenu">
     <button mat-menu-item (click)="logout()">

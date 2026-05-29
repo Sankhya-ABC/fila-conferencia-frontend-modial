@@ -35,13 +35,11 @@ export const routes: Routes = [
   {
     canActivate: [authGuard],
     path: 'fila-conferencia',
-    title: 'Fila de Conferência',
     component: FilaConferenciaComponent,
   },
   {
     canActivate: [authGuard],
     path: 'separacao/:numeroUnico',
-    title: 'Separação',
     component: SeparacaoComponent,
   },
   {

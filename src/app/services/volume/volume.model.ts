@@ -42,7 +42,9 @@ export interface PostAtualizarDimensoesVolumeNaoDetalhadoLoteParams extends Post
   pesoAntigo?: number;
 }
 
-export interface PostAtualizarDimensoesVolumeParams extends PostAtualizarDimensoesVolumeNaoDetalhadoLoteParams {}
+export interface PostAtualizarDimensoesVolumeParams extends PostAtualizarDimensoesVolumeNaoDetalhadoLoteParams {
+  qtdVol?: number;
+}
 
 export interface GerarVolumesLoteParams extends Omit<
   PostAtualizarDimensoesVolumeDetalhadoParams,

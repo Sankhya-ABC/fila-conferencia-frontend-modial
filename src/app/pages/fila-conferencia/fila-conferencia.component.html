@@ -1,289 +1,371 @@
-<!-- Filtros reorganizados em 3 linhas -->
-<div class="filtros-container" [formGroup]="filters">
-  <!-- Linha 1: Número Único, Número Nota, Data Início, Data Fim -->
-  <div class="filtros-row">
-    <mat-form-field appearance="outline">
-      <mat-label>Número Único</mat-label>
-      <input matInput formControlName="numeroUnico" />
-    </mat-form-field>
+<!-- BACKDROP filtro -->
+<div class="filtro-backdrop" *ngIf="filtroAberto" (click)="filtroAberto = false"></div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Número Nota</mat-label>
-      <input matInput formControlName="numeroNota" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Data Início</mat-label>
-      <input
-        matInput
-        [matDatepicker]="pickerInicio"
-        formControlName="dataInicio"
-      />
-      <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
-      <mat-datepicker #pickerInicio></mat-datepicker>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Data Fim</mat-label>
-      <input matInput [matDatepicker]="pickerFim" formControlName="dataFim" />
-      <mat-datepicker-toggle matSuffix [for]="pickerFim"></mat-datepicker-toggle>
-      <mat-datepicker #pickerFim></mat-datepicker>
-    </mat-form-field>
+<!-- BANNER BOAS-VINDAS -->
+<div class="painel-boas-vindas">
+  <div class="usuario-avatar">{{ initials$ | async }}</div>
+  <div class="usuario-info">
+    <p class="usuario-saudacao">{{ nome$ | async }}</p>
+    <span class="usuario-perfil">{{ perfil$ | async }}</span>
   </div>
 
-  <!-- Linha 2: Status, Tipo Operação, Tipo Movimento -->
-  <div class="filtros-row">
-    <mat-form-field appearance="outline">
-      <mat-label>Status</mat-label>
-      <mat-select formControlName="codigoStatus" multiple>
-        <mat-option *ngFor="let status of listStatus" [value]="status.codigo">
-          {{ status.descricao }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+  <div class="painel-direita">
+    <div class="painel-contagem">
+      <span class="contagem-valor">{{ carregando ? '...' : total }}</span>
+      <span class="contagem-label">pedidos</span>
+    </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Tipo Operação</mat-label>
-      <mat-select formControlName="codigoTipoOperacao" multiple>
-        <mat-option [value]="null">Todos</mat-option>
-        <mat-option
-          *ngFor="let tipoOperacao of listTipoOperacao"
-          [value]="tipoOperacao.codigo"
-        >
-          {{ tipoOperacao.descricao }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Tipo Movimento</mat-label>
-      <mat-select formControlName="codigoTipoMovimento" multiple>
-        <mat-option [value]="null">Todos</mat-option>
-        <mat-option
-          *ngFor="let tipoMovimento of listTipoMovimento"
-          [value]="tipoMovimento.codigo"
-        >
-          {{ tipoMovimento.descricao }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-  </div>
-
-  <!-- Linha 3: Empresa, Parceiro e Botões -->
-  <div class="filtros-row">
-    <mat-form-field appearance="outline">
-      <mat-label>Empresa</mat-label>
-      <input
-        matInput
-        formControlName="idEmpresa"
-        [matAutocomplete]="autoEmpresa"
-      />
-      <mat-autocomplete
-        #autoEmpresa="matAutocomplete"
-        [displayWith]="displayEmpresa"
+    <div class="filtro-btn-wrapper">
+      <button
+        mat-flat-button
+        color="primary"
+        class="filtro-btn"
+        (click)="filtroAberto = !filtroAberto"
+        [matBadge]="activeFilterCount > 0 ? activeFilterCount : null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
       >
-        <mat-option *ngFor="let empresa of listEmpresa" [value]="empresa">
-          {{ displayEmpresa(empresa) }}
-        </mat-option>
-      </mat-autocomplete>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Parceiro</mat-label>
-      <input
-        matInput
-        formControlName="idParceiro"
-        [matAutocomplete]="autoParceiro"
-      />
-      <mat-autocomplete
-        #autoParceiro="matAutocomplete"
-        [displayWith]="displayParceiro"
-      >
-        <mat-option *ngFor="let parceiro of listParceiro" [value]="parceiro">
-          {{ displayParceiro(parceiro) }}
-        </mat-option>
-      </mat-autocomplete>
-    </mat-form-field>
-
-    <div class="botoes-container">
-      <button mat-raised-button color="warn" (click)="onLimparCampos()">
-        Limpar campos
+        <mat-icon>tune</mat-icon>
+        Filtros
       </button>
-      <button mat-raised-button color="primary" (click)="applyFilter()">
-        Pesquisar
-      </button>
+
+      <!-- PAINEL DE FILTROS -->
+      <div class="filtro-panel" *ngIf="filtroAberto" [formGroup]="filters" (click)="$event.stopPropagation()">
+        <div class="filtro-panel-header">
+          <span class="filtro-panel-titulo">Filtros</span>
+          <button mat-icon-button (click)="filtroAberto = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- BLOCO 1 — Identificadores -->
+        <div class="filtro-destaque-wrapper">
+          <span class="filtro-secao-label">Identificadores</span>
+          <div class="filtro-row-duplo">
+            <mat-form-field appearance="outline" class="filtro-field">
+              <mat-label>Nº Modial</mat-label>
+              <input matInput formControlName="numeroModial" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="filtro-field">
+              <mat-label>Nº Nota</mat-label>
+              <input matInput formControlName="numeroNota" />
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Nº Único</mat-label>
+            <input matInput formControlName="numeroUnico" />
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO 2 — Entidade -->
+        <span class="filtro-secao-label">Entidade</span>
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Empresa</mat-label>
+          <input matInput formControlName="idEmpresa" [matAutocomplete]="autoEmpresa" />
+          <mat-autocomplete #autoEmpresa="matAutocomplete" [displayWith]="displayEmpresa">
+            <mat-option *ngFor="let e of listEmpresa" [value]="e">{{ displayEmpresa(e) }}</mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Parceiro</mat-label>
+          <input matInput formControlName="idParceiro" [matAutocomplete]="autoParceiro" />
+          <mat-autocomplete #autoParceiro="matAutocomplete" [displayWith]="displayParceiro">
+            <mat-option *ngFor="let p of listParceiro" [value]="p">{{ displayParceiro(p) }}</mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <div class="filtro-avancado-toggle" (click)="filtroAvancadoAberto = !filtroAvancadoAberto">
+          <span>Filtros avançados</span>
+          <mat-icon>{{ filtroAvancadoAberto ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        <div class="filtro-avancado-body" *ngIf="filtroAvancadoAberto">
+
+        <!-- BLOCO 3 — Classificação -->
+        <span class="filtro-secao-label">Classificação</span>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Tipo Operação</mat-label>
+          <mat-select formControlName="codigoTipoOperacao" multiple>
+            <mat-select-trigger>
+              <ng-container *ngIf="filters.get('codigoTipoOperacao')?.value?.length > 0; else placeholderOp">
+                <div class="select-chips-trigger">
+                  <span class="select-chip select-chip--neutro"
+                        *ngFor="let cod of filters.get('codigoTipoOperacao')?.value | slice:0:2">
+                    {{ getLabelTipoOperacao(cod) }}
+                  </span>
+                  <span class="select-chip-mais"
+                        *ngIf="filters.get('codigoTipoOperacao')?.value?.length > 2">
+                    +{{ filters.get('codigoTipoOperacao')?.value?.length - 2 }}
+                  </span>
+                </div>
+              </ng-container>
+              <ng-template #placeholderOp>Tipo Operação</ng-template>
+            </mat-select-trigger>
+            <mat-option *ngFor="let t of listTipoOperacao" [value]="t.codigo">{{ t.descricao }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="codigoStatus" multiple>
+            <mat-select-trigger>
+              <ng-container *ngIf="filters.get('codigoStatus')?.value?.length > 0; else placeholderStatus">
+                <div class="select-chips-trigger">
+                  <span class="select-chip"
+                        *ngFor="let cod of filters.get('codigoStatus')?.value | slice:0:2"
+                        [class]="'select-chip select-chip--' + (cod + '').toLowerCase()">
+                    {{ getLabelStatus(cod) }}
+                  </span>
+                  <span class="select-chip-mais"
+                        *ngIf="filters.get('codigoStatus')?.value?.length > 2">
+                    +{{ filters.get('codigoStatus')?.value?.length - 2 }}
+                  </span>
+                </div>
+              </ng-container>
+              <ng-template #placeholderStatus>Status</ng-template>
+            </mat-select-trigger>
+            <mat-option *ngFor="let s of listStatus" [value]="s.codigo">{{ s.descricao }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Tipo Transporte</mat-label>
+          <mat-select formControlName="codigoTipoEntrega">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option *ngFor="let t of listTipoEntrega" [value]="t.codigo">{{ t.descricao }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO 4 — Período -->
+        <span class="filtro-secao-label">Período</span>
+        <div class="filtro-row-duplo">
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="pickerInicio" formControlName="dataInicio" />
+            <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="pickerFim" formControlName="dataFim" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFim"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFim></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        </div><!-- /filtro-avancado-body -->
+
+        <div class="filtro-panel-actions">
+          <button mat-stroked-button (click)="onLimparCampos()">Limpar</button>
+          <button mat-flat-button color="primary" (click)="onPesquisar()">Pesquisar</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Tabela -->
-<div class="table-container">
-  <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-    <ng-container matColumnDef="acoes" sticky>
-      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
-      <mat-cell *matCellDef="let e">
-        <div class="acoes-container">
-          <span
-            matTooltip="{{ tooltipSeparar(e) }}"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button
-              mat-icon-button
-              (click)="onSeparar(e)"
-              [disabled]="e.codigoStatus === 'F' || e.codigoStatus === 'D'"
-            >
-              <mat-icon fontSet="material-symbols-outlined">
-                deployed_code
-              </mat-icon>
-            </button>
-          </span>
-
-          <span
-            matTooltip="{{ tooltipImprimir(e) }}"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button
-              mat-icon-button
-              (click)="onImprimirEtiqueta(e)"
-              [disabled]="e.codigoStatus !== 'F' && e.codigoStatus !== 'D'"
-            >
-              <mat-icon>print</mat-icon>
-            </button>
-          </span>
-        </div>
-      </mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="numeroUnico">
-      <mat-header-cell *matHeaderCellDef>Nº Único</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.numeroUnico }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="numeroNota">
-      <mat-header-cell *matHeaderCellDef>Nº Nota</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.numeroNota }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="numeroConferencia">
-      <mat-header-cell *matHeaderCellDef>Nº Conferência</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.numeroConferencia }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="valorNota">
-      <mat-header-cell *matHeaderCellDef>Valor Nota</mat-header-cell>
-      <mat-cell *matCellDef="let data"
-        >{{ data.valorNota | currency: "BRL" : "symbol" : "1.2-2" : "pt-BR" }}
-      </mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="volume">
-      <mat-header-cell *matHeaderCellDef>Volume</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.volume }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="dataMovimento">
-      <mat-header-cell *matHeaderCellDef>Data Movimento</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        displayDate(data.dataMovimento)
-      }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="codigoStatus">
-      <mat-header-cell *matHeaderCellDef>Código Status</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.codigoStatus }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="descricaoStatus">
-      <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.descricaoStatus }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="codigoTipoMovimento">
-      <mat-header-cell *matHeaderCellDef>Código Tipo Movimento</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.codigoTipoMovimento }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="descricaoTipoMovimento">
-      <mat-header-cell *matHeaderCellDef>Tipo Movimento</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.descricaoTipoMovimento
-      }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="codigoTipoOperacao">
-      <mat-header-cell *matHeaderCellDef>Código Tipo Operação</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.codigoTipoOperacao }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="descricaoTipoOperacao">
-      <mat-header-cell *matHeaderCellDef>Tipo Operação</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.descricaoTipoOperacao
-      }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="idEmpresa">
-      <mat-header-cell *matHeaderCellDef>ID Empresa</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.idEmpresa }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="nomeEmpresa">
-      <mat-header-cell *matHeaderCellDef>Empresa</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.nomeEmpresa }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="idParceiro">
-      <mat-header-cell *matHeaderCellDef>ID Parceiro</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.idParceiro }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="nomeParceiro">
-      <mat-header-cell *matHeaderCellDef>Parceiro</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.nomeParceiro }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="idVendedor">
-      <mat-header-cell *matHeaderCellDef>ID Vendedor</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.idVendedor }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="nomeVendedor">
-      <mat-header-cell *matHeaderCellDef>Vendedor</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.nomeVendedor }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="idUsuarioInclusao">
-      <mat-header-cell *matHeaderCellDef>ID Usuário Inclusão</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.idUsuarioInclusao }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="nomeUsuarioInclusao">
-      <mat-header-cell *matHeaderCellDef>Usuário Inclusão</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.nomeUsuarioInclusao }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="idUsuarioAlteracao">
-      <mat-header-cell *matHeaderCellDef>ID Usuário Alteração</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.idUsuarioAlteracao }}</mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="nomeUsuarioAlteracao">
-      <mat-header-cell *matHeaderCellDef>Usuário Alteração</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.nomeUsuarioAlteracao
-      }}</mat-cell>
-    </ng-container>
-
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-  </mat-table>
-  <mat-paginator
-    [length]="total"
-    [pageSize]="perPage"
-    [pageSizeOptions]="[5, 10, 15, 25, 50]"
-    (page)="onPageChange($event)"
-  >
-  </mat-paginator>
+<!-- BARRA DE AUTO-REFRESH -->
+<div class="refresh-bar-wrapper">
+  <div class="refresh-bar-track">
+    <div class="refresh-bar-fill"
+         [style.width.%]="autoRefreshAtivo ? autoRefreshProgresso : 0"
+         [class.refresh-bar-fill--pausado]="!autoRefreshAtivo">
+    </div>
+  </div>
+  <div class="refresh-controles">
+    <span class="refresh-ultima" *ngIf="ultimaAtualizacao">
+      Atualizado {{ ultimaAtualizacaoLabel }}
+    </span>
+    <span class="refresh-countdown" *ngIf="autoRefreshAtivo">
+      próx. em {{ autoRefreshSegRestantes }}s
+    </span>
+    <button class="refresh-btn-icone" (click)="refreshAgora()" title="Atualizar agora">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button class="refresh-btn-toggle"
+            (click)="toggleAutoRefresh()"
+            [class.refresh-btn-toggle--pausado]="!autoRefreshAtivo"
+            [title]="autoRefreshAtivo ? 'Pausar atualização automática' : 'Retomar atualização automática'">
+      <mat-icon>{{ autoRefreshAtivo ? 'pause' : 'play_arrow' }}</mat-icon>
+      {{ autoRefreshAtivo ? 'Auto' : 'Pausado' }}
+    </button>
+  </div>
 </div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="fila-container" [class.fila-desfocada]="filtroAberto">
+
+<!-- GRID DE CARDS -->
+<div class="cards-grid" *ngIf="!carregando && dataSource.data.length > 0">
+  <div class="item-card"
+       *ngFor="let item of dataSource.data; trackBy: trackByItem"
+       [attr.data-uid]="item.numeroUnico"
+       [class.item-card--expandido]="cardExpandido === item.numeroUnico"
+       [class.item-card--ac]="item.codigoStatus === 'AC'"
+       [class.item-card--andamento]="item.codigoStatus === 'A'"
+       [class.item-card--finalizado]="item.codigoStatus === 'F'"
+       tabindex="0"
+       (keydown.enter)="onSeparar(item)"
+       (click)="toggleCard(item)">
+
+    <!-- CABEÇALHO: tipo operação + status -->
+    <div class="card-head">
+      <div class="card-tipo-bloco">
+        <span class="card-tipo-tag"
+              [class.card-tipo-tag--cubagem]="item.descricaoTipoOperacao.includes('CUBAGEM')"
+              [class.card-tipo-tag--nota]="item.descricaoTipoOperacao.includes('NOTA')">
+          {{ item.descricaoTipoOperacao || '—' }}
+        </span>
+      </div>
+      <span class="card-status-pill" [ngClass]="statusClass(item.codigoStatus)">
+        {{ descricaoStatus(item.codigoStatus) }}
+      </span>
+      <span class="card-status-pill card-status-pill--nativo"
+            *ngIf="item.emAndamentoNativo"
+            matTooltip="Esta conferência foi iniciada diretamente no Sankhya">
+        <mat-icon>warning</mat-icon> Sankhya
+      </span>
+    </div>
+
+    <!-- PARCEIRO -->
+    <div class="card-parceiro">
+      <mat-icon class="card-parceiro-icon">handshake</mat-icon>
+      <span class="card-parceiro-nome">{{ item.nomeParceiro }}</span>
+    </div>
+
+    <!-- GRID DE DADOS -->
+    <div class="card-dados">
+      <div class="card-dado">
+        <span class="card-dado-label">Nº Modial</span>
+        <span class="card-dado-valor card-dado-valor--destaque">
+          {{ item.AD_NUMTALAO || item.numeroModial || item.numTalao || '—' }}
+        </span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Nº Único</span>
+        <span class="card-dado-valor">{{ item.numeroUnico || '—' }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">NF</span>
+        <span class="card-dado-valor">{{ item.numeroNota || '—' }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Data</span>
+        <span class="card-dado-valor">{{ displayDate(item.dataMovimento) }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Transporte</span>
+        <span class="card-dado-valor">{{ getTipoEntregaLabel(item.AD_TIPOENTREGA) }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Vendedor</span>
+        <span class="card-dado-valor">{{ item.apelidoVendedor || item.nomeVendedor || '—' }}</span>
+      </div>
+    </div>
+
+    <!-- DETALHES EXPANSÍVEIS -->
+    <div class="card-detalhes" *ngIf="cardExpandido === item.numeroUnico"
+         (click)="$event.stopPropagation()">
+      <div class="card-detalhe-row">
+        <div class="card-dado">
+          <span class="card-dado-label">Nº Conferência</span>
+          <span class="card-dado-valor">{{ item.numeroConferencia || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Valor Nota</span>
+          <span class="card-dado-valor">{{ item.valorNota || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Empresa</span>
+          <span class="card-dado-valor">{{ item.nomeEmpresa || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Incluído por</span>
+          <span class="card-dado-valor">{{ item.nomeUsuarioInclusao || '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="card-footer" (click)="$event.stopPropagation()">
+      <button class="card-btn-expand"
+              (click)="toggleCard(item)"
+              [attr.aria-label]="cardExpandido === item.numeroUnico ? 'Menos detalhes' : 'Mais detalhes'">
+        <mat-icon>{{ cardExpandido === item.numeroUnico ? 'expand_less' : 'expand_more' }}</mat-icon>
+        {{ cardExpandido === item.numeroUnico ? 'Menos' : 'Detalhes' }}
+      </button>
+
+      <span [matTooltip]="tooltipImprimir(item)"
+            *ngIf="item.codigoStatus === 'F' || item.codigoStatus === 'D'">
+        <button class="card-btn-icon" (click)="onImprimirEtiqueta(item)">
+          <mat-icon>print</mat-icon>
+        </button>
+      </span>
+
+      <span [matTooltip]="tooltipSeparar(item)" style="flex:1; display:flex;">
+        <button class="card-btn-conferir"
+                [class.card-btn-conferir--ativo]="(item.codigoStatus === 'AC' || item.codigoStatus === 'A') && !item.emAndamentoNativo"
+                [disabled]="(item.codigoStatus !== 'AC' && item.codigoStatus !== 'A') || item.emAndamentoNativo"
+                (click)="onSeparar(item)">
+          <mat-icon>inventory_2</mat-icon>
+          Conferir
+        </button>
+      </span>
+    </div>
+
+  </div>
+</div>
+
+<!-- SKELETON grid -->
+<div class="cards-grid" *ngIf="carregando">
+  <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6,7,8]">
+    <div class="sk-head">
+      <div class="sk sk--status"></div>
+      <div class="sk sk--tipo"></div>
+    </div>
+    <div class="sk sk--parceiro"></div>
+    <div class="sk-dados">
+      <div class="sk sk--dado" *ngFor="let j of [1,2,3,4]"></div>
+    </div>
+    <div class="sk-footer">
+      <div class="sk sk--btn-sec"></div>
+      <div class="sk sk--btn-pri"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ESTADO VAZIO -->
+<div class="fila-vazia" *ngIf="dataSource.data.length === 0 && !carregando">
+  <mat-icon>package_2</mat-icon>
+  <span>Nenhum pedido encontrado</span>
+  <p>Tente ajustar os filtros ou aguarde novos pedidos.</p>
+</div>
+
+<!-- PAGINAÇÃO COMPACTA -->
+<div class="paginacao">
+  <span class="paginacao-info">
+    {{ dataSource.data.length === 0 ? 'Sem resultados' : pageStart + '–' + pageEnd + (hasNextPage ? '+' : '') }}
+  </span>
+  <div class="paginacao-controles">
+    <span class="paginacao-por-label">Por página:</span>
+    <select class="paginacao-select" [ngModel]="perPage" (ngModelChange)="onPerPageChange($event)">
+      <option [value]="5">5</option>
+      <option [value]="10">10</option>
+      <option [value]="25">25</option>
+      <option [value]="50">50</option>
+    </select>
+    <span class="paginacao-pagina">{{ page + 1 }} / {{ totalPages }}</span>
+    <button mat-icon-button [disabled]="!hasPrevPage" (click)="prevPage()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!hasNextPage" (click)="nextPage()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>
+
+</div><!-- /fila-container -->

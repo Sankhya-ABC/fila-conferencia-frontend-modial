@@ -43,7 +43,19 @@ export class HeaderComponent {
 
   user$ = this.authService.user$;
 
-  nome$ = this.user$.pipe(map((user) => user?.nome || ''));
+  nome$ = this.user$.pipe(
+    map((user) => {
+      const parts = (user?.nome || '').split(' ');
+      return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0] || '';
+    }),
+  );
+
+  initials$ = this.user$.pipe(
+    map((user) => {
+      const name = user?.nome || '';
+      return name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
+    }),
+  );
 
   isAdmin$ = this.user$.pipe(
     map((user) => user?.perfil === Perfil.ADMINISTRADOR),

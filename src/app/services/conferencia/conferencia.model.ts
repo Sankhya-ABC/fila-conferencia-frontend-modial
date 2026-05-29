@@ -1,7 +1,13 @@
 export interface FilaConferenciaDTO {
   numeroUnico: number;
   numeroNota: number;
-  numeroModial: number;
+  numeroModial?: number | string;
+  numTalao?: number | string;
+  nroModial?: number | string;
+  AD_NUMTALAO?: number | string;
+  modial?: number | string;
+  AD_TIPOENTREGA?: string;
+  apelidoVendedor?: string;
   numeroConferencia: number;
 
   valorNota: string;
@@ -9,6 +15,8 @@ export interface FilaConferenciaDTO {
   dataMovimento: string;
 
   codigoStatus: string;
+  statusSankhya: string | null;
+  emAndamentoNativo: boolean;
   descricaoStatus: string;
 
   codigoTipoMovimento: string;
@@ -63,6 +71,7 @@ export interface DadosBasicosPedidoDTO {
   codigoStatus: string;
   codigoTipoMovimento: string;
   descricaoTipoOperacao: string;
+  formacaoVolumes?: 'N' | 'D' | 'T' | 'S';
 
   idParceiro: number;
   nomeParceiro: string;

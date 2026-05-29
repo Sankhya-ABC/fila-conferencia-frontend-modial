@@ -9,6 +9,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ToastService } from '../../services/toast/toast.service';
+import { SKIP_ERROR_TOAST } from './skip-loading.token';
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
@@ -20,7 +21,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status >= 400 && error.status < 600) {
+        if (error.status >= 400 && error.status < 600 && !req.context.get(SKIP_ERROR_TOAST)) {
           const response = error.error;
 
           let title = response?.error || 'Erro';

@@ -1,621 +1,668 @@
-<!-- Dados Gerais -->
-<section class="dados-gerais" *ngIf="dadosGerais">
-  <div class="info-item">
-    <mat-icon fontSet="material-symbols-outlined">receipt</mat-icon>
-    <p><span>Nº Nota</span>: {{ dadosGerais.numeroNota }}</p>
+<div class="conferencia-container">
+<!-- BANNER DE DADOS GERAIS -->
+<div class="dados-banner" *ngIf="dadosGerais">
+  <div class="operador-info" *ngIf="operadorNome">
+    <div class="operador-avatar">{{ operadorIniciais }}</div>
+    <div class="operador-texto">
+      <span class="operador-nome">{{ operadorNome }}</span>
+      <span class="operador-label">Operador</span>
+    </div>
   </div>
-  <div class="info-item">
-    <mat-icon fontSet="material-symbols-outlined">person</mat-icon>
-    <p>
-      <span>Vendedor</span>: {{ dadosGerais.idVendedor }} -
-      {{ dadosGerais.nomeVendedor }}
-    </p>
+  <div class="dados-sep"></div>
+  <div class="dados-item">
+    <mat-icon>receipt</mat-icon>
+    <div>
+      <span class="dados-label">Nota</span>
+      <span class="dados-valor">{{ dadosGerais.numeroNota }}</span>
+    </div>
   </div>
-  <div class="info-item">
-    <mat-icon fontSet="material-symbols-outlined">handshake</mat-icon>
-    <p>
-      <span>Parceiro</span>: {{ dadosGerais.idParceiro }} -
-      {{ dadosGerais.nomeParceiro }}
-    </p>
+  <div class="dados-sep"></div>
+  <div class="dados-item">
+    <mat-icon>handshake</mat-icon>
+    <div>
+      <span class="dados-label">Parceiro</span>
+      <span class="dados-valor">{{ dadosGerais.nomeParceiro }}</span>
+    </div>
   </div>
-</section>
+  <div class="dados-sep"></div>
+  <div class="dados-item">
+    <mat-icon>badge</mat-icon>
+    <div>
+      <span class="dados-label">Vendedor</span>
+      <span class="dados-valor">{{ dadosGerais.nomeVendedor }}</span>
+    </div>
+  </div>
+  <span class="dados-spacer"></span>
+  <span class="dados-conferencia" *ngIf="dadosGerais.numeroConferencia">
+    Conferência #{{ dadosGerais.numeroConferencia }}
+  </span>
+  <button mat-icon-button
+          class="btn-atalhos"
+          (click)="mostrarAtalhos = !mostrarAtalhos"
+          matTooltip="Atalhos de teclado"
+          aria-label="Ver atalhos de teclado">
+    <mat-icon>keyboard</mat-icon>
+  </button>
+</div>
 
-<!-- FORM -->
-<form
+<!-- PAINEL DE ATALHOS -->
+<div class="painel-atalhos" *ngIf="mostrarAtalhos">
+  <div class="atalhos-header">
+    <mat-icon>keyboard</mat-icon>
+    <span>Atalhos de teclado</span>
+    <button mat-icon-button (click)="mostrarAtalhos = false" aria-label="Fechar painel de atalhos">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="atalhos-grid">
+    <div class="atalho-item">
+      <kbd>F2</kbd>
+      <span>Focar campo de leitura (scanner)</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>F3</kbd>
+      <span>Focar campo de quantidade</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>F4</kbd>
+      <span>Abrir / ocultar painel de volumes</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>F9</kbd>
+      <span>Confirmar item (equivale ao botão Conferir)</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>Esc</kbd>
+      <span>Limpar leitura e voltar ao scanner</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>↑</kbd><kbd>↓</kbd>
+      <span>Navegar entre itens pendentes</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>Enter</kbd><span>Confirmar leitura / avançar / conferir</span>
+    </div>
+    <div class="atalho-item">
+      <kbd>Tab</kbd><span>Mesmo que Enter em todos os campos</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST INLINE -->
+<div class="toast-conferencia"
+     *ngIf="toast"
+     [class.toast--erro]="toast.tipo === 'erro'"
+     [class.toast--aviso]="toast.tipo === 'aviso'"
+     [class.toast--ok]="toast.tipo === 'ok'"
+     role="alert"
+     aria-live="assertive">
+  <mat-icon>
+    {{ toast.tipo === 'erro' ? 'error' : toast.tipo === 'aviso' ? 'warning' : 'check_circle' }}
+  </mat-icon>
+  <span>{{ toast.mensagem }}</span>
+</div>
+
+<!-- SKELETON: form scanner -->
+<div class="form-scanner form-scanner-skeleton" *ngIf="carregando">
+  <div class="sk sk--field-barras"></div>
+  <div class="sk sk--field-controle"></div>
+  <div class="sk sk--field-qtd"></div>
+  <div class="sk sk--btn-conferir"></div>
+</div>
+
+<!-- FORM SCANNER -->
+<form *ngIf="!carregando"
   [formGroup]="formConferencia"
   (ngSubmit)="onSubmitConferencia()"
-  class="form-conferencia grid"
+  class="form-scanner"
 >
-  <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-    <mat-label>Código de Barras/ID do produto</mat-label>
+  <mat-form-field appearance="outline" class="field-identificador">
+    <mat-label>Código de Barras / ID do Produto</mat-label>
+    <mat-icon matPrefix>qr_code_scanner</mat-icon>
     <input
       matInput
       #inputIdentificador
       formControlName="identificador"
       (keyup.enter)="onIdentificadorInserido()"
-      (blur)="onIdentificadorInserido()"
+      (keydown.tab)="$event.preventDefault(); onIdentificadorInserido()"
     />
   </mat-form-field>
 
-  <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-    <mat-label>Quantidade</mat-label>
-    <input
-      matInput
-      type="number"
-      formControlName="quantidadeConvertida"
-      (blur)="onBlurQuantidadeConvertida()"
-    />
-
-    <mat-error *ngIf="quantidadeConvertidaCtrl?.hasError('menorQueZero')">
-      Quantidade deve ser maior que zero
-    </mat-error>
-
-    <mat-error *ngIf="quantidadeConvertidaCtrl?.hasError('maiorQueDisponivel')">
-      A quantidade máxima restante para este item no pedido é
-      {{ quantidadeConvertidaCtrl?.getError("maiorQueDisponivel")?.max }}
-    </mat-error>
-  </mat-form-field>
-
-  <mat-form-field
-    appearance="outline"
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
-    [class.identificado]="produtoIdentificado"
-  >
+  <mat-form-field appearance="outline" class="field-controle"
+                  [class.identificado]="produtoIdentificado"
+                  [class.field-controle--locked]="isControleLocked()"
+                  [class.field-controle--atencao]="controleRequerAtencao">
     <mat-label>Controle</mat-label>
-
     <mat-select
+      #selectControle
       formControlName="controle"
       (selectionChange)="onControleChange($event.value)"
-      [disabled]="controlesDisponiveis.length === 0"
+      [disabled]="isControleLocked()"
+      [tabIndex]="isControleLocked() ? -1 : 0"
+      (keydown.enter)="$event.preventDefault(); focarCampoQuantidade()"
+      (keydown.tab)="$event.preventDefault(); focarCampoQuantidade()"
     >
       <mat-option
         *ngFor="let controle of controlesDisponiveis"
         [value]="controle === 'SEM_CONTROLE' ? '' : controle"
+        [disabled]="controle === 'SEM_CONTROLE'"
       >
         {{ controle === "SEM_CONTROLE" ? "Sem controle" : controle }}
       </mat-option>
     </mat-select>
   </mat-form-field>
 
+  <mat-form-field appearance="outline" class="field-quantidade">
+    <mat-label>Qtd.</mat-label>
+    <input
+      matInput
+      #inputQuantidade
+      type="number"
+      formControlName="quantidadeConvertida"
+      (blur)="onBlurQuantidadeConvertida()"
+      (keydown.enter)="$event.preventDefault(); onTabQuantidade()"
+      (keydown.tab)="$event.preventDefault(); onTabQuantidade()"
+    />
+    <mat-error *ngIf="quantidadeConvertidaCtrl?.hasError('menorQueZero')">Maior que zero</mat-error>
+  </mat-form-field>
+
   <button
-    mat-raised-button
+    mat-flat-button
     color="primary"
-    type="submit"
-    [disabled]="
-      !itemSelecionado ||
-      !quantidadeConvertidaCtrl?.value ||
-      quantidadeConvertidaCtrl?.invalid
-    "
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
+    type="button"
+    class="btn-conferir"
+    [class.btn-conferir--loading]="conferindoEmAndamento"
+    [disabled]="!itemSelecionado || !quantidadeConvertidaCtrl?.value || conferindoEmAndamento"
+    (click)="onSubmitConferencia()"
+    (keydown.tab)="$event.preventDefault(); onSubmitConferencia()"
+    (keydown.enter)="$event.preventDefault(); onSubmitConferencia()"
   >
-    Conferir
+    <mat-icon>{{ conferindoEmAndamento ? 'hourglass_top' : 'check' }}</mat-icon>
+    {{ conferindoEmAndamento ? 'Registrando...' : 'Conferir' }}
   </button>
 </form>
 
-<!-- TABELA PEDIDOS -->
-<h3>Itens do Pedido</h3>
-<div class="table-container itens-pedidos">
-  <mat-table [dataSource]="dataSourcePedidos" class="mat-elevation-z8">
-    <ng-container matColumnDef="acoes" sticky>
-      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
-      <mat-cell *matCellDef="let e">
-        <div class="acoes-container">
-          <span
-            matTooltip="Conferir"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button mat-icon-button (click)="onIniciarConferencia(e)">
-              <mat-icon fontSet="material-symbols-outlined">search</mat-icon>
-            </button>
-          </span>
+<!-- SKELETON: workspace -->
+<div class="workspace workspace-skeleton" *ngIf="carregando"
+     [class.com-volumes]="isPainelVolumesVisivel()">
+
+  <div class="painel sk-painel">
+    <div class="sk-painel-header">
+      <div class="sk sk--icon"></div>
+      <div class="sk sk--titulo"></div>
+      <div class="sk sk--badge"></div>
+    </div>
+    <div class="sk-painel-lista">
+      <div class="sk-item-row" *ngFor="let i of [1,2,3,4,5,6,7]">
+        <div class="sk sk--seq"></div>
+        <div class="sk-item-dados">
+          <div class="sk sk--linha"></div>
+          <div class="sk sk--linha sk--linha-curta"></div>
         </div>
-      </mat-cell>
-    </ng-container>
+        <div class="sk sk--badge-qtd"></div>
+      </div>
+    </div>
+  </div>
 
-    <ng-container matColumnDef="imagem"
-      ><mat-header-cell *matHeaderCellDef style="text-align: center"
-        >Imagem</mat-header-cell
-      ><mat-cell *matCellDef="let e"
-        ><div class="image-container">
-          <img
-            *ngIf="e.imagem"
-            [src]="'data:image/png;base64,' + e.imagem"
-            alt="Imagem do produto"
-          />
-          <mat-icon *ngIf="!e.imagem" fontSet="material-symbols-outlined"
-            >hide_image</mat-icon
-          >
-        </div>
-      </mat-cell></ng-container
-    >
-
-    <ng-container matColumnDef="idProduto"
-      ><mat-header-cell *matHeaderCellDef>ID Produto</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.idProduto }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="codigoBarras"
-      ><mat-header-cell *matHeaderCellDef>Código de Barras</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.codigoBarras?.join(", ")
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeProduto"
-      ><mat-header-cell *matHeaderCellDef>Produto</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.nomeProduto
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="quantidadeBase"
-      ><mat-header-cell *matHeaderCellDef>Quantidade Base</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.quantidadeBase + " " + e.unidade
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="quantidadeConvertida"
-      ><mat-header-cell *matHeaderCellDef>Quantidade Convertida</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.quantidadeConvertida + " UN"
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="idMarca"
-      ><mat-header-cell *matHeaderCellDef>ID Marca</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.idMarca }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeMarca"
-      ><mat-header-cell *matHeaderCellDef>Marca</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.nomeMarca }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="idFornecedor"
-      ><mat-header-cell *matHeaderCellDef>ID Fornecedor</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.idFornecedor
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeFornecedor"
-      ><mat-header-cell *matHeaderCellDef>Fornecedor</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.nomeFornecedor
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="controle"
-      ><mat-header-cell *matHeaderCellDef>Controle</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.controle }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="complemento"
-      ><mat-header-cell *matHeaderCellDef>Complemento</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.complemento
-      }}</mat-cell></ng-container
-    >
-
-    <mat-header-row *matHeaderRowDef="displayedColumnsPedidos"></mat-header-row>
-    <mat-row
-      *matRowDef="let row; columns: displayedColumnsPedidos"
-      [class.linha-selecionada]="row === itemSelecionado"
-    ></mat-row>
-  </mat-table>
-</div>
-
-<!-- TABELA CONFERIDOS -->
-<h3>Itens Conferidos</h3>
-<div class="table-container itens-conferidos">
-  <mat-table [dataSource]="dataSourceConferidos" class="mat-elevation-z8">
-    <ng-container matColumnDef="acoes" sticky>
-      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
-      <mat-cell *matCellDef="let e">
-        <div class="acoes-container">
-          <span
-            matTooltip="Desfazer"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button mat-icon-button (click)="onDevolverItemConferido(e)">
-              <mat-icon fontSet="material-symbols-outlined">replay</mat-icon>
-            </button>
-          </span>
-        </div>
-      </mat-cell>
-    </ng-container>
-
-    <ng-container matColumnDef="imagem"
-      ><mat-header-cell *matHeaderCellDef style="text-align: center"
-        >Imagem</mat-header-cell
-      ><mat-cell *matCellDef="let e"
-        ><div class="image-container">
-          <img
-            *ngIf="e.imagem"
-            [src]="'data:image/png;base64,' + e.imagem"
-            alt="Imagem do produto"
-          />
-          <mat-icon *ngIf="!e.imagem" fontSet="material-symbols-outlined"
-            >hide_image</mat-icon
-          >
-        </div>
-      </mat-cell></ng-container
-    >
-
-    <ng-container matColumnDef="idProduto"
-      ><mat-header-cell *matHeaderCellDef>ID Produto</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.idProduto }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="codigoBarras"
-      ><mat-header-cell *matHeaderCellDef>Código de Barras</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.codigoBarras?.join(", ")
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeProduto"
-      ><mat-header-cell *matHeaderCellDef>Produto</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.nomeProduto
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="quantidadeBase"
-      ><mat-header-cell *matHeaderCellDef>Quantidade Base</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.quantidadeBase + " " + e.unidade
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="quantidadeConvertida"
-      ><mat-header-cell *matHeaderCellDef>Quantidade Convertida</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.quantidadeConvertida + " UN"
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="idMarca"
-      ><mat-header-cell *matHeaderCellDef>ID Marca</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.idMarca }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeMarca"
-      ><mat-header-cell *matHeaderCellDef>Marca</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.nomeMarca }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="idFornecedor"
-      ><mat-header-cell *matHeaderCellDef>ID Fornecedor</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.idFornecedor
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="nomeFornecedor"
-      ><mat-header-cell *matHeaderCellDef>Fornecedor</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.nomeFornecedor
-      }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="controle"
-      ><mat-header-cell *matHeaderCellDef>Controle</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{ e.controle }}</mat-cell></ng-container
-    >
-    <ng-container matColumnDef="complemento"
-      ><mat-header-cell *matHeaderCellDef>Complemento</mat-header-cell
-      ><mat-cell *matCellDef="let e">{{
-        e.complemento
-      }}</mat-cell></ng-container
-    >
-
-    <mat-header-row
-      *matHeaderRowDef="displayedColumnsConferidos"
-    ></mat-header-row>
-    <mat-row
-      *matRowDef="let row; columns: displayedColumnsConferidos"
-    ></mat-row>
-  </mat-table>
-</div>
-
-<!-- VOLUMES (DETALHADOS) -->
-<section class="volumes-detalhados" *ngIf="isVolumesDetalhados()">
-  <h3>Volumes</h3>
-  <div class="grid">
-    <div
-      class="volume-card xs-12 sm-6 md-4 lg-3 xl-2"
-      *ngFor="let volume of volumes"
-      [class.ativo]="volume.ativo && !conferenciaFinalizada"
-      (click)="selecionarVolume(volume)"
-    >
-      <div class="volume-header" [class.inativo]="!volume.ativo">
-        <div class="buttons-container">
-          <button
-            mat-icon-button
-            *ngIf="volume.itens.length > 0"
-            (click)="removerVolume(volume); $event.stopPropagation()"
-            matTooltip="Remover volume"
-          >
-            <mat-icon fontSet="material-symbols-outlined">remove</mat-icon>
-          </button>
-
-          <span>Volume {{ volume.numeroVolume }}</span>
-
-          <button
-            mat-icon-button
-            *ngIf="volume.ativo && aindaHaItensParaConferir"
-            (click)="encerrarVolume(volume); $event.stopPropagation()"
-            [disabled]="existeVolumeVazio()"
-            matTooltip="Encerrar volume"
-          >
-            <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
-          </button>
-        </div>
-
-        <div class="dimensoes-container" (click)="$event.stopPropagation()">
-          <mat-form-field appearance="fill">
-            <mat-label>Largura</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="L"
-              [(ngModel)]="volume.largura"
-              (blur)="salvarDimensoes(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Comprimento</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="C"
-              [(ngModel)]="volume.comprimento"
-              (blur)="salvarDimensoes(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Altura</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="A"
-              [(ngModel)]="volume.altura"
-              (blur)="salvarDimensoes(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Peso</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="Kg"
-              [(ngModel)]="volume.peso"
-              (blur)="salvarDimensoes(volume)"
-            />
-          </mat-form-field>
+  <div class="coluna-direita">
+    <div class="painel sk-painel">
+      <div class="sk-painel-header">
+        <div class="sk sk--icon"></div>
+        <div class="sk sk--titulo"></div>
+        <div class="sk sk--badge"></div>
+      </div>
+      <div class="sk-painel-lista">
+        <div class="sk-item-row" *ngFor="let i of [1,2,3]">
+          <div class="sk sk--check"></div>
+          <div class="sk-item-dados">
+            <div class="sk sk--linha"></div>
+          </div>
+          <div class="sk sk--badge-qtd"></div>
         </div>
       </div>
+    </div>
+    <div class="painel sk-painel">
+      <div class="sk-painel-header">
+        <div class="sk sk--icon"></div>
+        <div class="sk sk--titulo"></div>
+      </div>
+      <div class="sk-imagem-stage">
+        <div class="sk sk--imagem"></div>
+      </div>
+    </div>
+  </div>
 
-      <div class="volume-item" *ngFor="let item of volume.itens">
-        <div class="image-container">
-          <img
-            *ngIf="item.imagem"
-            [src]="'data:image/png;base64,' + item.imagem"
-            alt="Imagem do produto"
-          />
-          <mat-icon *ngIf="!item.imagem" fontSet="material-symbols-outlined"
-            >hide_image</mat-icon
-          >
-        </div>
+  <div class="painel sk-painel" *ngIf="isPainelVolumesVisivel()">
+    <div class="sk-painel-header">
+      <div class="sk sk--icon"></div>
+      <div class="sk sk--titulo"></div>
+      <div class="sk sk--badge"></div>
+    </div>
+    <div class="sk-painel-lista">
+      <div class="sk-vol-row" *ngFor="let i of [1,2,3]">
+        <div class="sk sk--vol-icon"></div>
+        <div class="sk sk--vol-label"></div>
+        <div class="sk sk--vol-count"></div>
+      </div>
+    </div>
+  </div>
 
-        <div class="volume-info">
-          <strong>{{ item.descricaoProduto }}</strong>
-          <div class="quantidade">
-            = {{ item.quantidadeConvertida }} UN ({{ item.quantidadeBase }}
-            {{ item.unidade }})
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace" *ngIf="!carregando"
+     [class.com-volumes]="isPainelVolumesVisivel()"
+     [class.volumes-colapsados]="volumesPainelColapsado">
+
+  <!-- COLUNA ESQUERDA: PENDENTES (altura cheia) -->
+  <div class="painel painel-pendentes">
+    <div class="painel-header">
+      <mat-icon>pending_actions</mat-icon>
+      <span class="painel-titulo">Pendentes</span>
+      <span class="painel-badge">{{ dataSourcePedidos.data.length }}</span>
+    </div>
+    <div class="painel-lista painel-lista-full" role="list">
+      <div class="item-row" role="listitem" *ngFor="let item of dataSourcePedidos.data; let i = index; trackBy: trackByItem"
+           [class.selecionado]="item === itemSelecionado"
+           [class.item-row--parcial]="isItemParcial(item)">
+        <span class="item-seq">{{ i + 1 }}</span>
+        <div class="item-dados">
+          <div class="item-linha">
+            <span class="item-descricao">{{ item.idProduto }} - {{ item.nomeProduto }}</span>
+            <span class="item-qtd-principal">Quantidade: {{ item.quantidadeConvertida }}UN</span>
+          </div>
+          <div class="item-linha" *ngIf="item.controle || item.unidade !== 'UN'">
+            <span class="item-info-sec">{{ item.controle ? 'Controle: ' + item.controle : '' }}</span>
+            <span class="item-qtd-alt" *ngIf="item.unidade !== 'UN'">Qtd. Alt.: {{ item.quantidadeBase }} {{ item.unidade }}</span>
           </div>
         </div>
       </div>
+      <div class="painel-vazio" *ngIf="dataSourcePedidos.data.length === 0">
+        <mat-icon>check_circle</mat-icon>
+        <span>Todos conferidos!</span>
+      </div>
+    </div>
+    <div class="painel-legenda" *ngIf="itensParciaisChaves.size > 0">
+      <span class="legenda-item legenda-item--parcial">
+        <span class="legenda-dot"></span>
+        Conferido parcial
+      </span>
     </div>
   </div>
-</section>
 
-<!-- VOLUMES (NÃO DETALHADOS) -->
-<section class="volumes-nao-detalhados" *ngIf="isVolumesNaoDetalhados()">
-  <h3>Volumes</h3>
-  <form [formGroup]="formCubagem" class="form-cubagem grid">
-    <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-      <mat-label>Quantidade</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="quantidade"
-        (blur)="onBlurFieldsFormCubagem('quantidade')"
-      />
+  <!-- COLUNA DIREITA: CONFERIDOS (topo) + IMAGEM (abaixo) -->
+  <div class="coluna-direita">
 
-      <mat-error *ngIf="quantidadeCubagemCtrl?.hasError('menorOuIgualAZero')">
-        Quantidade deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-      <mat-label>Largura</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="largura"
-        (blur)="onBlurFieldsFormCubagem('largura')"
-      />
-
-      <mat-error *ngIf="larguraCubagemCtrl?.hasError('menorOuIgualAZero')">
-        Largura deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-      <mat-label>Comprimento</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="comprimento"
-        (blur)="onBlurFieldsFormCubagem('comprimento')"
-      />
-
-      <mat-error *ngIf="comprimentoCubagemCtrl?.hasError('menorOuIgualAZero')">
-        Comprimento deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-      <mat-label>Altura</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="altura"
-        (blur)="onBlurFieldsFormCubagem('altura')"
-      />
-
-      <mat-error *ngIf="alturaCubagemCtrl?.hasError('menorOuIgualAZero')">
-        Altura deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-      <mat-label>Peso</mat-label>
-      <input
-        matInput
-        type="number"
-        formControlName="peso"
-        (blur)="onBlurFieldsFormCubagem('peso')"
-      />
-
-      <mat-error *ngIf="pesoCubagemCtrl?.hasError('menorOuIgualAZero')">
-        Peso deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="gerarVolumesLote()"
-      class="xs-12 sm-6 md-3 lg-3 xl-2"
-      [disabled]="isGerarVolumeLoteDisabled()"
-    >
-      Gerar Volumes em Lote
-    </button>
-  </form>
-
-  <div class="grid">
-    <div
-      class="volume-card xs-12 sm-6 md-4 lg-3 xl-2"
-      *ngFor="let volume of volumes"
-    >
-      <div class="volume-header">
-        <div class="buttons-container">
-          <button
-            mat-icon-button
-            (click)="deletarVolumeLote(volume); $event.stopPropagation()"
-            matTooltip="Remover volume"
-          >
-            <mat-icon fontSet="material-symbols-outlined">remove</mat-icon>
-          </button>
-
-          <span>{{ volume["quantidadeLote"] }} UN</span>
+    <div class="painel painel-conferidos">
+      <div class="painel-header">
+        <mat-icon>done_all</mat-icon>
+        <span class="painel-titulo">Conferidos</span>
+        <span class="painel-badge painel-badge-ok">{{ dataSourceConferidos.data.length }}</span>
+      </div>
+      <div class="painel-lista" role="list">
+        <div class="item-row item-row-ghost" *ngIf="itemConferindoGhost" aria-hidden="true">
+          <mat-icon class="item-check-icon" style="opacity:0.4">check</mat-icon>
+          <div class="item-dados">
+            <div class="item-linha">
+              <span class="item-descricao" style="opacity:0.5">
+                {{ itemConferindoGhost.idProduto }} - {{ itemConferindoGhost.nomeProduto }}
+              </span>
+            </div>
+          </div>
         </div>
-
-        <div class="dimensoes-container" (click)="$event.stopPropagation()">
-          <mat-form-field appearance="fill">
-            <mat-label>Largura</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="L"
-              [(ngModel)]="volume.largura"
-              (blur)="salvarDimensoesVolumeLote(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Comprimento</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="C"
-              [(ngModel)]="volume.comprimento"
-              (blur)="salvarDimensoesVolumeLote(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Altura</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="A"
-              [(ngModel)]="volume.altura"
-              (blur)="salvarDimensoesVolumeLote(volume)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="fill">
-            <mat-label>Peso</mat-label>
-            <input
-              matInput
-              type="number"
-              placeholder="Kg"
-              [(ngModel)]="volume.peso"
-              (blur)="salvarDimensoesVolumeLote(volume)"
-            />
-          </mat-form-field>
+        <div class="item-row item-row-ok" role="listitem" *ngFor="let item of dataSourceConferidos.data; trackBy: trackByItem">
+          <mat-icon class="item-check-icon">check</mat-icon>
+          <span class="item-volume-badge"
+                *ngIf="isVolumesDetalhados() && getVolumeDoItem(item)">
+            <mat-icon>inventory_2</mat-icon>
+            {{ getVolumeDoItem(item) }}
+          </span>
+          <span class="item-volume-badge item-volume-badge--aviso"
+                *ngIf="isVolumesDetalhados() && !getVolumeDoItem(item)">
+            <mat-icon>warning</mat-icon>
+            Sem vol.
+          </span>
+          <button mat-icon-button class="btn-mover-orfao"
+                  *ngIf="isVolumesDetalhados() && !getVolumeDoItem(item)"
+                  (click)="iniciarMoverItemOrfao(item)"
+                  matTooltip="Atribuir a um volume"
+                  aria-label="Atribuir item a um volume">
+            <mat-icon>swap_horiz</mat-icon>
+          </button>
+          <div class="item-dados">
+            <div class="item-linha">
+              <span class="item-descricao">{{ item.idProduto }} - {{ item.nomeProduto }}</span>
+              <span class="item-qtd-principal">Quantidade: {{ item.quantidadeConvertida }}UN</span>
+            </div>
+            <div class="item-linha" *ngIf="item.controle || item.unidade !== 'UN'">
+              <span class="item-info-sec">{{ item.controle ? 'Controle: ' + item.controle : '' }}</span>
+              <span class="item-qtd-alt" *ngIf="item.unidade !== 'UN'">Qtd. Alt.: {{ item.quantidadeBase }} {{ item.unidade }}</span>
+            </div>
+          </div>
+          <button mat-icon-button class="btn-desfazer"
+                  (click)="onDevolverItemConferido(item)"
+                  matTooltip="Desfazer conferência"
+                  aria-label="Desfazer conferência do item">
+            <mat-icon>replay</mat-icon>
+          </button>
+        </div>
+        <div class="painel-vazio" *ngIf="dataSourceConferidos.data.length === 0">
+          <mat-icon>hourglass_empty</mat-icon>
+          <span>Nenhum ainda</span>
         </div>
       </div>
     </div>
-  </div>
-</section>
 
-<section class="confirmar-conferencia grid">
-  <button
-    mat-raised-button
-    color="warn"
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
-    (click)="voltarParaFila()"
-  >
+    <div class="painel painel-produto-atual">
+      <div class="painel-header">
+        <mat-icon>qr_code_scanner</mat-icon>
+        <span class="painel-titulo">
+          {{ itemSelecionado ? 'Produto identificado' :
+             (ultimoProduto ? 'Último conferido' : 'Aguardando leitura') }}
+        </span>
+        <span class="painel-badge painel-badge-qtd" *ngIf="produtoAtualExibido">
+          {{ produtoAtualExibido.quantidadeConvertida }} UN
+        </span>
+      </div>
+      <div class="produto-imagem-stage">
+        <ng-container *ngIf="produtoAtualExibido">
+          <img *ngIf="imagemAtual" [src]="imagemAtual" alt="Produto" />
+          <mat-icon *ngIf="!imagemAtual" class="produto-sem-imagem">inventory_2</mat-icon>
+        </ng-container>
+        <div class="produto-aguardando" *ngIf="!produtoAtualExibido">
+          <mat-icon>barcode_reader</mat-icon>
+          <span>Bipe o produto</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLUNA VOLUMES -->
+  <ng-container *ngIf="isPainelVolumesVisivel()">
+
+    <!-- Strip colapsado -->
+    <div class="painel painel-volumes painel-volumes--strip" *ngIf="volumesPainelColapsado">
+      <button mat-icon-button (click)="volumesPainelColapsado = false"
+              matTooltip="Mostrar volumes" aria-label="Mostrar painel de volumes">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="vols-strip-count">{{ volumes.length }}</span>
+    </div>
+
+    <!-- Painel completo -->
+    <div class="painel painel-volumes" *ngIf="!volumesPainelColapsado">
+      <div class="painel-header">
+        <mat-icon>inventory_2</mat-icon>
+        <span class="painel-titulo">Volumes</span>
+        <span class="painel-badge">{{ volumes.length }}</span>
+        <button mat-icon-button
+                *ngIf="isVolumesDetalhados()"
+                matTooltip="Novo volume"
+                aria-label="Criar novo volume"
+                (click)="criarNovoVolume()">
+          <mat-icon>add_circle_outline</mat-icon>
+        </button>
+        <button mat-icon-button
+                *ngIf="isVolumesSimplificadoTela() || isVolumesSimplificadoFinal()"
+                matTooltip="Informar medidas"
+                aria-label="Informar medidas dos volumes"
+                (click)="abrirModalVolumesSimplificado()">
+          <mat-icon>tune</mat-icon>
+        </button>
+        <button mat-icon-button (click)="volumesPainelColapsado = true"
+                matTooltip="Ocultar" aria-label="Ocultar painel de volumes">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Form inline: criar em lote (não detalhados) -->
+      <div class="vol-form-lote" *ngIf="(isVolumesSimplificadoTela() || isVolumesSimplificadoFinal()) && mostrarFormCriacaoLote"
+           [formGroup]="formCubagem">
+        <mat-form-field appearance="outline" class="dim-field" style="width:100%">
+          <mat-label>Qtd. volumes</mat-label>
+          <input matInput type="number" formControlName="quantidade"
+                 (blur)="onBlurFieldsFormCubagem('quantidade')" />
+        </mat-form-field>
+        <div class="vol-dims-grid">
+          <mat-form-field appearance="outline" class="dim-field">
+            <mat-label>Larg. (cm)</mat-label>
+            <input matInput type="number" formControlName="largura"
+                   (blur)="onBlurFieldsFormCubagem('largura')" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="dim-field">
+            <mat-label>Comp. (cm)</mat-label>
+            <input matInput type="number" formControlName="comprimento"
+                   (blur)="onBlurFieldsFormCubagem('comprimento')" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="dim-field">
+            <mat-label>Alt. (cm)</mat-label>
+            <input matInput type="number" formControlName="altura"
+                   (blur)="onBlurFieldsFormCubagem('altura')" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="dim-field">
+            <mat-label>Peso (kg)</mat-label>
+            <input matInput type="number" formControlName="peso"
+                   (blur)="onBlurFieldsFormCubagem('peso')" />
+          </mat-form-field>
+        </div>
+        <div class="vol-form-actions">
+          <button mat-stroked-button (click)="fecharModalCriarVolumes()">Cancelar</button>
+          <button mat-flat-button color="primary"
+                  [disabled]="isGerarVolumeLoteDisabled()"
+                  (click)="gerarVolumesLote()">
+            <mat-icon>inventory_2</mat-icon>
+            Gerar
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de volumes (accordion) -->
+      <div class="painel-lista" role="list">
+        <div class="vol-accordion-item"
+             *ngFor="let v of volumes; trackBy: trackByVolume"
+             [class.vol-accordion--ativo]="isVolumesDetalhados() && v.ativo"
+             [class.vol-accordion--fechado]="isVolumesDetalhados() && !v.ativo"
+             [class.vol-accordion--expandido]="volumeExpandido === v"
+             role="listitem">
+
+          <div class="vol-accordion-header"
+               [class.vol-destino-disponivel]="itemMovendo && v.numeroVolume !== itemMovendo.seqVolOrigem"
+               [class.vol-origem-atual]="itemMovendo && v.numeroVolume === itemMovendo.seqVolOrigem"
+               (click)="itemMovendo && v.numeroVolume !== itemMovendo.seqVolOrigem ? (isMoverQtdValida() && moverItemParaVolume(v)) : (!(isVolumesDetalhados() && v.ativo) && expandirVolume(v))">
+            <mat-icon class="vol-status-icon" *ngIf="isVolumesDetalhados()">
+              {{ v.ativo ? 'play_circle' : 'check_circle' }}
+            </mat-icon>
+            <mat-icon class="vol-status-icon" *ngIf="!isVolumesDetalhados()">inventory_2</mat-icon>
+            <span class="vol-numero">Vol. {{ getDisplayNumeroVolume(v) }}</span>
+            <span class="vol-items-count" *ngIf="isVolumesDetalhados()">{{ v.itens.length }} it.</span>
+            <mat-icon class="vol-expand-icon" *ngIf="!(isVolumesDetalhados() && v.ativo) && !itemMovendo">{{ volumeExpandido === v ? 'expand_less' : 'expand_more' }}</mat-icon>
+            <mat-icon class="vol-destino-icon" *ngIf="itemMovendo && v.numeroVolume !== itemMovendo.seqVolOrigem" color="primary">move_down</mat-icon>
+            <button mat-icon-button class="btn-excluir-volume"
+                    *ngIf="!itemMovendo && !(isVolumesDetalhados() && v.ativo)"
+                    (click)="removerVolume(v); $event.stopPropagation()"
+                    matTooltip="Excluir volume"
+                    aria-label="Excluir volume">
+              <mat-icon color="warn">delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="vol-accordion-body" *ngIf="(isVolumesDetalhados() && v.ativo) || volumeExpandido === v" [formGroup]="formModalVolume">
+            <div class="vol-itens-mini" *ngIf="isVolumesDetalhados() && v.itens.length > 0">
+              <div class="vol-item-mini" *ngFor="let i of v.itens"
+                   [class.vol-item-mini--movendo]="itemMovendo?.idProduto === i.idProduto && itemMovendo?.controle === (i.controle ?? '') && itemMovendo?.seqVolOrigem === v.numeroVolume">
+                <mat-icon>chevron_right</mat-icon>
+                <span class="vol-item-mini-nome">{{ i.idProduto }} — {{ i.descricaoProduto }}</span>
+                <span class="vol-item-mini-qtd">{{ i.quantidadeConvertida }}</span>
+                <button mat-icon-button class="btn-mover-item"
+                        (click)="iniciarMoverItem(i, v); $event.stopPropagation()"
+                        matTooltip="Mover para outro volume"
+                        aria-label="Mover item para outro volume">
+                  <mat-icon>swap_horiz</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="vol-dims-grid">
+              <mat-form-field appearance="outline" class="dim-field">
+                <mat-label>Larg. (cm)</mat-label>
+                <input matInput type="number" formControlName="largura" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dim-field">
+                <mat-label>Comp. (cm)</mat-label>
+                <input matInput type="number" formControlName="comprimento" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dim-field">
+                <mat-label>Alt. (cm)</mat-label>
+                <input matInput type="number" formControlName="altura" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="dim-field">
+                <mat-label>Peso (kg)</mat-label>
+                <input matInput type="number" formControlName="peso" />
+              </mat-form-field>
+            </div>
+            <div class="vol-accordion-actions">
+              <button mat-stroked-button *ngIf="!(isVolumesDetalhados() && v.ativo)" (click)="fecharModalVolume()">Cancelar</button>
+              <button mat-flat-button color="primary"
+                      *ngIf="!(isVolumesDetalhados() && v.ativo)"
+                      [disabled]="!formModalVolume.get('largura')?.value || !formModalVolume.get('comprimento')?.value || !formModalVolume.get('altura')?.value || !formModalVolume.get('peso')?.value"
+                      (click)="salvarMedidasVolume()">
+                <mat-icon>save</mat-icon>
+                Salvar
+              </button>
+              <button mat-flat-button color="warn"
+                      *ngIf="isVolumesDetalhados() && v.ativo"
+                      [disabled]="!formModalVolume.get('largura')?.value || !formModalVolume.get('comprimento')?.value || !formModalVolume.get('altura')?.value || !formModalVolume.get('peso')?.value"
+                      (click)="fecharVolumeModal()">
+                <mat-icon>move_to_inbox</mat-icon>
+                Fechar Volume
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="painel-vazio" *ngIf="volumes.length === 0">
+          <mat-icon>inventory_2</mat-icon>
+          <span>Sem volumes</span>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- BARRA MOVER ITEM -->
+<div class="mover-item-bar" *ngIf="itemMovendo">
+  <div class="mover-icon-wrap"><mat-icon>swap_horiz</mat-icon></div>
+  <span class="mover-item-desc">Movendo <strong>{{ itemMovendo.descricaoProduto }}</strong> — clique no volume de destino</span>
+  <div class="qtd-mover-wrap" (click)="$event.stopPropagation()">
+    <label class="qtd-mover-label">Qtd.</label>
+    <input class="qtd-mover-input"
+           [class.qtd-mover--invalida]="!isMoverQtdValida()"
+           type="number"
+           [value]="itemMovendo.qtdMover"
+           min="1"
+           [max]="itemMovendo.qtdDisponivel"
+           (input)="itemMovendo && (itemMovendo.qtdMover = +$any($event.target).value)"
+    />
+    <span class="qtd-mover-max">/ {{ itemMovendo.qtdDisponivel }}</span>
+    <span class="qtd-mover-max erro" *ngIf="!isMoverQtdValida()">Máx {{ itemMovendo.qtdDisponivel }}</span>
+  </div>
+  <button mat-stroked-button (click)="cancelarMoverItem()">
+    <mat-icon>close</mat-icon>
+    Cancelar
+  </button>
+</div>
+
+<!-- MODAL VOLUMES SIMPLIFICADO (T e S) -->
+<div class="modal-volumes-simplificado"
+     *ngIf="mostrarFormVolumesSimplificado &&
+            (isVolumesSimplificadoTela() || isVolumesSimplificadoFinal())"
+     [formGroup]="formCubagem">
+
+  <div class="modal-vs-header">
+    <mat-icon>inventory_2</mat-icon>
+    <span>Medidas dos volumes</span>
+  </div>
+
+  <div class="modal-vs-body">
+
+    <div class="modal-vs-row-qtd">
+      <mat-form-field appearance="outline" class="dim-field-qtd-vol">
+        <mat-label>Qtd. de volumes</mat-label>
+        <input matInput type="number" formControlName="quantidade"
+               (blur)="onBlurFieldsFormCubagem('quantidade')" />
+      </mat-form-field>
+    </div>
+
+    <div class="modal-vs-dims">
+      <mat-form-field appearance="outline" class="dim-field">
+        <mat-label>Larg. (cm)</mat-label>
+        <input matInput type="number" formControlName="largura"
+               (blur)="onBlurFieldsFormCubagem('largura')" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dim-field">
+        <mat-label>Comp. (cm)</mat-label>
+        <input matInput type="number" formControlName="comprimento"
+               (blur)="onBlurFieldsFormCubagem('comprimento')" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dim-field">
+        <mat-label>Alt. (cm)</mat-label>
+        <input matInput type="number" formControlName="altura"
+               (blur)="onBlurFieldsFormCubagem('altura')" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="dim-field">
+        <mat-label>Peso (kg)</mat-label>
+        <input matInput type="number" formControlName="peso"
+               (blur)="onBlurFieldsFormCubagem('peso')" />
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <div class="modal-vs-footer">
+    <button mat-stroked-button
+            *ngIf="isVolumesSimplificadoTela()"
+            (click)="fecharModalVolumesSimplificado()">
+      Cancelar
+    </button>
+    <button mat-flat-button color="primary"
+            [disabled]="isGerarVolumeLoteDisabled()"
+            (click)="salvarVolumesSimplificado()">
+      <mat-icon>save</mat-icon>
+      {{ isVolumesSimplificadoFinal()
+         ? 'Salvar e Finalizar'
+         : 'Salvar volumes' }}
+    </button>
+  </div>
+
+</div>
+
+<!-- AÇÕES -->
+<section class="confirmar-conferencia" aria-label="Ações da conferência">
+  <button mat-stroked-button color="warn" (click)="voltarParaFila()">
+    <mat-icon>arrow_back</mat-icon>
     Voltar
   </button>
-  <button
-    mat-raised-button
-    color="primary"
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
-    [disabled]="!podeConfirmarConferencia"
-    (click)="finalizarConferencia()"
-  >
+  <button mat-flat-button color="primary"
+          [disabled]="!podeConfirmarConferencia"
+          (click)="finalizarConferencia()"
+          *ngIf="!mostrarFormVolumesSimplificado">
+    <mat-icon>check_circle</mat-icon>
     Confirmar Conferência
   </button>
 </section>
+</div>
 
-<!-- TEMPLATE DO MODAL: ITEM NÃO ENCONTRADO -->
-<ng-template #modalItemNaoEncontrado let-fechar="fechar">
-  <div class="modal-item-nao-encontrado">
-    <mat-icon fontSet="material-symbols-outlined">error</mat-icon>
-    <h4>Item não encontrado</h4>
-    <p>
-      O código de barras informado
-      <strong>{{ formConferencia.get("codigoBarras")?.value }}</strong>
-      não pertence a este pedido.
-    </p>
-  </div>
-</ng-template>
 
-<!-- TEMPLATE DO MODAL: CONFERENCIA FINALIZADA -->
+<!-- MODAL: CONFERÊNCIA FINALIZADA -->
 <ng-template #modalConferenciaFinalizada let-fechar="fechar">
   <div class="modal-conferencia-finalizada">
     <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
     <h4>Conferência Finalizada</h4>
     <div class="grid buttons-container">
-      <button
-        mat-raised-button
-        color="warn"
-        class="xs-12 sm-6"
-        (click)="voltarParaFila()"
-      >
-        Sair
-      </button>
-      <button
-        mat-raised-button
-        color="primary"
-        class="xs-12 sm-6"
-        (click)="imprimirEtiquetas()"
-      >
-        Imprimir Etiquetas
-      </button>
+      <button mat-raised-button color="warn" class="xs-12 sm-6" (click)="voltarParaFila()">Sair</button>
+      <button mat-raised-button color="primary" class="xs-12 sm-6" (click)="imprimirEtiquetas()">Imprimir Etiquetas</button>
     </div>
   </div>
 </ng-template>

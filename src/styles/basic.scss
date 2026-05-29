@@ -58,7 +58,7 @@ h6 {
   color: var(--color-primary);
 }
 
-button {
+button:not(.mat-mdc-fab):not(.mat-mdc-mini-fab) {
   height: 40px !important;
 }
 

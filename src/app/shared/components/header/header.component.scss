@@ -4,8 +4,9 @@
 
 .header {
   background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 3px solid var(--color-primary);
   padding: 0 $space-24;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 h2 {
@@ -17,6 +18,18 @@ h2 {
   flex: 1;
 }
 
+.header-user-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-user-name {
+  font-size: $font-sm;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 .avatar-button {
   padding: 0;
   display: flex;
@@ -25,8 +38,8 @@ h2 {
 }
 
 .avatar {
-  width: 46px;
-  height: 46px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--color-primary);
   color: #fff;
@@ -34,4 +47,5 @@ h2 {
   align-items: center;
   justify-content: center;
   font-size: $font-sm;
+  font-weight: 700;
 }

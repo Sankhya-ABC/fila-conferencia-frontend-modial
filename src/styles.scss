@@ -8,7 +8,7 @@
 @use "./styles/table";
 
 @include mat.core();
-$fila-conferencia-primary: mat.define-palette(mat.$green-palette, 700);
+$fila-conferencia-primary: mat.define-palette(mat.$green-palette, 800);
 $fila-conferencia-accent: mat.define-palette(mat.$light-green-palette, A400);
 $fila-conferencia-warn: mat.define-palette(mat.$red-palette, 600);
 
