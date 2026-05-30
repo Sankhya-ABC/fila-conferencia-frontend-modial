@@ -1,4 +1,44 @@
 <div class="overlay" *ngIf="loading$ | async">
-  <div class="spinner"></div>
-  <p>Carregando...</p>
+
+  <div class="prep-stage">
+    <div class="prep-esteira">
+      <div class="prep-esteira-faixa"></div>
+    </div>
+
+    <div class="prep-robo">
+      <div class="prep-robo-cabeca">
+        <div class="prep-robo-olho prep-robo-olho--esq"></div>
+        <div class="prep-robo-olho prep-robo-olho--dir"></div>
+        <div class="prep-robo-boca"></div>
+      </div>
+      <div class="prep-robo-corpo">
+        <div class="prep-robo-tela">
+          <div class="prep-robo-tela-linha"></div>
+          <div class="prep-robo-tela-linha prep-robo-tela-linha--curta"></div>
+          <div class="prep-robo-tela-linha"></div>
+        </div>
+      </div>
+      <div class="prep-robo-bracos">
+        <div class="prep-robo-braco prep-robo-braco--esq"></div>
+        <div class="prep-robo-braco prep-robo-braco--dir"></div>
+      </div>
+      <div class="prep-robo-pernas">
+        <div class="prep-robo-perna prep-robo-perna--esq"></div>
+        <div class="prep-robo-perna prep-robo-perna--dir"></div>
+      </div>
+    </div>
+
+    <div class="prep-caixa prep-caixa--1"><span class="prep-caixa-icon">📦</span></div>
+    <div class="prep-caixa prep-caixa--2"><span class="prep-caixa-icon">📦</span></div>
+    <div class="prep-caixa prep-caixa--3"><span class="prep-caixa-icon">📦</span></div>
+  </div>
+
+  <p class="overlay-texto">Carregando...</p>
+
+  <div class="prep-dots">
+    <div class="prep-dot"></div>
+    <div class="prep-dot"></div>
+    <div class="prep-dot"></div>
+  </div>
+
 </div>

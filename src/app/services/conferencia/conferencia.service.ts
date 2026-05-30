@@ -1,6 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
   DadosBasicosPedidoDTO,
   FilaConferenciaDTO,
@@ -41,9 +42,11 @@ export class ConferenciaService {
     });
   }
 
+  // SKIP_LOADING: polling silencioso — o robô local (preparandoSessao) cuida do feedback
   getSessaoPronta(numeroUnico: number): Observable<{ pronta: boolean }> {
     return this.http.get<{ pronta: boolean }>('/conferencias/sessao-pronta', {
       params: { numeroUnico },
+      context: new HttpContext().set(SKIP_LOADING, true),
     });
   }
 

@@ -24,10 +24,14 @@ export class SeparacaoService {
     });
   }
 
+  // SKIP_LOADING: carregamento silencioso em background após a lista renderizar
   getImagensItens(numeroUnico: number): Observable<{ idProduto: number; imagem: string }[]> {
     return this.http.get<{ idProduto: number; imagem: string }[]>(
       '/separacoes/imagens-itens',
-      { params: { numeroUnico } },
+      {
+        params: { numeroUnico },
+        context: new HttpContext().set(SKIP_LOADING, true),
+      },
     );
   }
 
