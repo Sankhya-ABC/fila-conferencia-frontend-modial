@@ -1410,172 +1410,69 @@ kbd {
   100% { transform: translateX(260px); opacity: 0; }
 }
 
-/* ─── Robô ─── */
+/* ─── Robô SVG ─── */
 .prep-robo {
   position: absolute;
   bottom: 36px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: robo-balanco 1.2s ease-in-out infinite;
+  right: 16px;
+  animation: robo-balanco 1.4s ease-in-out infinite;
+}
+
+.prep-robo-svg {
+  width: 64px;
+  height: 80px;
+  color: var(--color-primary);
+  display: block;
+}
+
+.prep-robo-cabeca-svg {
+  transform-origin: 40px 36px;
+  animation: cabeca-gira 2s ease-in-out infinite;
+}
+
+@keyframes cabeca-gira {
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(-12deg); }
+  50%  { transform: rotate(10deg); }
+  80%  { transform: rotate(-8deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.prep-braco-esq {
+  transform-origin: 8px 64px;
+  animation: braco-esq 1.4s ease-in-out infinite;
+}
+
+.prep-braco-dir {
+  transform-origin: 72px 64px;
+  animation: braco-dir 1.4s ease-in-out infinite;
+}
+
+@keyframes braco-esq {
+  0%, 100% { transform: rotate(-10deg); }
+  50%       { transform: rotate(20deg); }
+}
+
+@keyframes braco-dir {
+  0%, 100% { transform: rotate(10deg); }
+  50%       { transform: rotate(-20deg); }
+}
+
+.prep-tela-linha {
+  animation: tela-scan 1.2s ease-in-out infinite;
+
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.4s; }
+}
+
+@keyframes tela-scan {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1; }
 }
 
 @keyframes robo-balanco {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-4px); }
-}
-
-.prep-robo-cabeca {
-  width: 44px;
-  height: 38px;
-  background: var(--color-primary);
-  border-radius: 8px 8px 4px 4px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-direction: column;
-}
-
-.prep-robo-olho {
-  position: absolute;
-  top: 10px;
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border-radius: 50%;
-  animation: piscar 3s ease-in-out infinite;
-
-  &--esq { left: 9px; }
-  &--dir { right: 9px; }
-}
-
-@keyframes piscar {
-  0%, 90%, 100% { transform: scaleY(1); }
-  95%            { transform: scaleY(0.1); }
-}
-
-.prep-robo-boca {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 4px;
-  background: rgba(255,255,255,0.7);
-  border-radius: 2px;
-  animation: sorrir 2.4s ease-in-out infinite;
-}
-
-@keyframes sorrir {
-  0%, 100% { width: 16px; }
-  50%       { width: 22px; }
-}
-
-.prep-robo-corpo {
-  width: 52px;
-  height: 44px;
-  background: var(--color-primary);
-  border-radius: 4px;
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.9;
-}
-
-.prep-robo-tela {
-  width: 34px;
-  height: 28px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 3px;
-  padding: 5px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  justify-content: center;
-}
-
-.prep-robo-tela-linha {
-  height: 3px;
-  background: rgba(255,255,255,0.7);
-  border-radius: 2px;
-  animation: tela-scan 1.2s ease-in-out infinite;
-
-  &--curta {
-    width: 60%;
-    animation-delay: 0.2s;
-  }
-}
-
-@keyframes tela-scan {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 1; }
-}
-
-.prep-robo-bracos {
-  display: flex;
-  gap: 62px;
-  margin-top: -38px;
-  position: relative;
-  z-index: -1;
-}
-
-.prep-robo-braco {
-  width: 10px;
-  height: 30px;
-  background: var(--color-primary);
-  border-radius: 5px;
-  transform-origin: top center;
-  opacity: 0.9;
-
-  &--esq {
-    animation: braco-esq 1.2s ease-in-out infinite;
-    border-radius: 5px 0 5px 5px;
-  }
-  &--dir {
-    animation: braco-dir 1.2s ease-in-out infinite;
-    border-radius: 0 5px 5px 5px;
-  }
-}
-
-@keyframes braco-esq {
-  0%, 100% { transform: rotate(-15deg); }
-  50%       { transform: rotate(15deg); }
-}
-
-@keyframes braco-dir {
-  0%, 100% { transform: rotate(15deg); }
-  50%       { transform: rotate(-15deg); }
-}
-
-.prep-robo-pernas {
-  display: flex;
-  gap: 8px;
-  margin-top: 3px;
-}
-
-.prep-robo-perna {
-  width: 14px;
-  height: 16px;
-  background: var(--color-primary);
-  border-radius: 0 0 5px 5px;
-  opacity: 0.85;
-
-  &--esq { animation: perna-esq 0.6s ease-in-out infinite; }
-  &--dir { animation: perna-dir 0.6s ease-in-out infinite; }
-}
-
-@keyframes perna-esq {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(3px); }
-}
-
-@keyframes perna-dir {
-  0%, 100% { transform: translateY(3px); }
-  50%       { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
 }
 
 /* ─── Texto ─── */
