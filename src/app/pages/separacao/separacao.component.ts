@@ -449,6 +449,22 @@ export class SeparacaoComponent implements OnInit {
         this.dataSourcePedidos.data = pedidosAtualizados;
         this.dataSourceConferidos.data = conferidos;
 
+        // Imagens carregadas em background após a lista renderizar
+        this.separacaoService.getImagensItens(numeroUnico).subscribe({
+          next: (imagens) => {
+            const mapa = new Map(imagens.map((i) => [i.idProduto, i.imagem]));
+            const aplicar = (item: ItemPedidoDTO): ItemPedidoDTO =>
+              mapa.has(item.idProduto) ? { ...item, imagem: mapa.get(item.idProduto) } : item;
+            this.dataSourcePedidos.data = this.dataSourcePedidos.data.map(aplicar);
+            this.dataSourceConferidos.data = this.dataSourceConferidos.data.map(aplicar);
+            // Atualiza imagem do produto atual se já estava selecionado
+            if (this.ultimoProduto && mapa.has(this.ultimoProduto.idProduto)) {
+              this.ultimoProduto = { ...this.ultimoProduto, imagem: mapa.get(this.ultimoProduto.idProduto) };
+              this.imagemAtual = this.ultimoProduto.imagem || null;
+            }
+          },
+        });
+
         const volumesApi = volumes.map((v) => ({
           ...v,
           _alturaAntiga: v.altura,

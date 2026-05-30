@@ -24,6 +24,13 @@ export class SeparacaoService {
     });
   }
 
+  getImagensItens(numeroUnico: number): Observable<{ idProduto: number; imagem: string }[]> {
+    return this.http.get<{ idProduto: number; imagem: string }[]>(
+      '/separacoes/imagens-itens',
+      { params: { numeroUnico } },
+    );
+  }
+
   getItensConferidos(
     numeroConferencia: number,
   ): Observable<ItensConferidosResponse[]> {
