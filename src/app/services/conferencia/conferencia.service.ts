@@ -41,6 +41,12 @@ export class ConferenciaService {
     });
   }
 
+  getSessaoPronta(numeroUnico: number): Observable<{ pronta: boolean }> {
+    return this.http.get<{ pronta: boolean }>('/conferencias/sessao-pronta', {
+      params: { numeroUnico },
+    });
+  }
+
   postIniciarConferencia(
     body: PostIniciarConferenciaParams,
   ): Observable<PostIniciarConferenciaResponse> {

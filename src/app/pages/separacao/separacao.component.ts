@@ -17,7 +17,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { forkJoin } from 'rxjs';
+import { forkJoin, interval, Subscription } from 'rxjs';
+import { filter, first, switchMap, timeout } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArquivoService } from '../../services/arquivo/arquivo.service';
 import { AuthService } from '../../services/auth/auth.service';
@@ -140,6 +141,8 @@ export class SeparacaoComponent implements OnInit {
   controleRequerAtencao = false;
   conferindoEmAndamento = false;
   carregando = true;
+  preparandoSessao = false;
+  private sessaoProntaSub?: Subscription;
   private devolvendoEmAndamento = false;
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
@@ -203,6 +206,7 @@ export class SeparacaoComponent implements OnInit {
 
   ngOnDestroy() {
     window.removeEventListener('keydown', this.listenScanner);
+    this.sessaoProntaSub?.unsubscribe();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -367,16 +371,29 @@ export class SeparacaoComponent implements OnInit {
 
   private iniciarConferencia(numeroUnico: number) {
     this.conferenciaService
-      .postIniciarConferencia({
-        idUsuario: this.idUsuario,
-        numeroUnico,
-      })
+      .postIniciarConferencia({ idUsuario: this.idUsuario, numeroUnico })
       .subscribe({
-          next: (res) => {
-            this.dadosGerais.numeroConferencia = res.numeroConferencia;
+        next: (res) => {
+          this.dadosGerais.numeroConferencia = res.numeroConferencia;
+          this.preparandoSessao = true;
 
-            this.carregarEstadoConferencia();
-          },
+          // Polling leve (só banco local, sem Sankhya) até a sessão estar pronta
+          this.sessaoProntaSub = interval(1000).pipe(
+            switchMap(() => this.conferenciaService.getSessaoPronta(this.numeroUnico!)),
+            filter((r) => r.pronta),
+            first(),
+            timeout(60000),
+          ).subscribe({
+            next: () => {
+              this.preparandoSessao = false;
+              this.carregarEstadoConferencia();
+            },
+            error: () => {
+              this.preparandoSessao = false;
+              this.carregarEstadoConferencia();
+            },
+          });
+        },
         error: (err) => console.error(err),
       });
   }
