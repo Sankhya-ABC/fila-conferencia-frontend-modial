@@ -1,4 +1,71 @@
 <div class="conferencia-container">
+
+<!-- TELA DE PREPARAÇÃO -->
+<div class="preparando-sessao" *ngIf="preparandoSessao">
+
+  <div class="prep-stage">
+
+    <!-- Esteira animada -->
+    <div class="prep-esteira">
+      <div class="prep-esteira-faixa"></div>
+    </div>
+
+    <!-- Robô -->
+    <div class="prep-robo">
+      <div class="prep-robo-cabeca">
+        <div class="prep-robo-olho prep-robo-olho--esq"></div>
+        <div class="prep-robo-olho prep-robo-olho--dir"></div>
+        <div class="prep-robo-boca"></div>
+      </div>
+      <div class="prep-robo-corpo">
+        <div class="prep-robo-tela">
+          <div class="prep-robo-tela-linha"></div>
+          <div class="prep-robo-tela-linha prep-robo-tela-linha--curta"></div>
+          <div class="prep-robo-tela-linha"></div>
+        </div>
+      </div>
+      <div class="prep-robo-bracos">
+        <div class="prep-robo-braco prep-robo-braco--esq"></div>
+        <div class="prep-robo-braco prep-robo-braco--dir"></div>
+      </div>
+      <div class="prep-robo-pernas">
+        <div class="prep-robo-perna prep-robo-perna--esq"></div>
+        <div class="prep-robo-perna prep-robo-perna--dir"></div>
+      </div>
+    </div>
+
+    <!-- Caixas na esteira -->
+    <div class="prep-caixa prep-caixa--1">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <div class="prep-caixa prep-caixa--2">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <div class="prep-caixa prep-caixa--3">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+
+  </div>
+
+  <div class="prep-texto">
+    <span class="prep-titulo">Preparando conferência</span>
+    <span class="prep-subtitulo">
+      {{ dadosGerais?.nomeParceiro || 'Carregando pedido...' }}
+    </span>
+  </div>
+
+  <!-- Dots de loading -->
+  <div class="prep-dots">
+    <div class="prep-dot"></div>
+    <div class="prep-dot"></div>
+    <div class="prep-dot"></div>
+  </div>
+
+</div>
+
+<!-- CONTEÚDO NORMAL -->
+<ng-container *ngIf="!preparandoSessao">
+
 <!-- BANNER DE DADOS GERAIS -->
 <div class="dados-banner" *ngIf="dadosGerais">
   <div class="operador-info" *ngIf="operadorNome">
@@ -652,6 +719,8 @@
     Confirmar Conferência
   </button>
 </section>
+
+</ng-container>
 </div>
 
 
