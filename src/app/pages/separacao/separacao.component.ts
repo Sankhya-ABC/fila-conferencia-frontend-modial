@@ -19,6 +19,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin, interval, Subscription } from 'rxjs';
 import { filter, first, switchMap, timeout } from 'rxjs/operators';
+import { RoboLoaderComponent } from '../../shared/components/robo-loader/robo-loader.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArquivoService } from '../../services/arquivo/arquivo.service';
 import { AuthService } from '../../services/auth/auth.service';
@@ -46,6 +47,7 @@ import { VolumeService } from '../../services/volume/volume.service';
     MatOption,
     MatSelect,
     MatTooltipModule,
+    RoboLoaderComponent,
   ],
   templateUrl: './separacao.component.html',
   styleUrl: './separacao.component.scss',
