@@ -600,90 +600,113 @@
             (isVolumesSimplificadoTela() || isVolumesSimplificadoFinal())"
      [formGroup]="formCubagem">
 
+  <!-- CABEÇALHO -->
   <div class="modal-vs-header">
     <mat-icon>inventory_2</mat-icon>
-    <span>Medidas dos volumes</span>
+    <span>Formação de volumes</span>
+    <span class="modal-vs-total-badge" *ngIf="totalVolumesSimplificado > 0">
+      {{ totalVolumesSimplificado }} vol.
+    </span>
   </div>
 
   <div class="modal-vs-body">
 
-    <!-- Lista de grupos já adicionados -->
-    <div class="vs-grupos-lista" *ngIf="volumes.length > 0">
-      <div class="vs-grupo-row" *ngFor="let grupo of volumes">
-        <span class="vs-grupo-qtd">{{ grupo.quantidadeLote }}×</span>
-        <span class="vs-grupo-dims">
+    <!-- ÁREA GRUPOS ADICIONADOS -->
+    <div class="vs-grupos-area" *ngIf="volumes.length > 0">
+      <div class="vs-grupo-chip" *ngFor="let grupo of volumes">
+        <span class="vs-grupo-chip-qtd">{{ grupo.quantidadeLote }}×</span>
+        <span class="vs-grupo-chip-dims">
           {{ grupo.largura }}×{{ grupo.comprimento }}×{{ grupo.altura }} cm
-          <span *ngIf="grupo.peso"> · {{ grupo.peso }} kg</span>
+          · {{ grupo.peso }} kg
         </span>
-        <button mat-icon-button class="vs-grupo-remove"
+        <button class="vs-grupo-chip-remove"
                 (click)="removerGrupoSimplificado(grupo)"
-                matTooltip="Remover grupo">
+                type="button">
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <div class="vs-grupo-total">
-        <span>Total: <strong>{{ totalVolumesSimplificado }}</strong> volumes</span>
-      </div>
     </div>
 
-    <div class="vs-separator" *ngIf="volumes.length > 0">
-      <span>Adicionar grupo</span>
+    <!-- PLACEHOLDER quando vazio -->
+    <div class="vs-grupos-vazio" *ngIf="volumes.length === 0">
+      <mat-icon>inventory_2</mat-icon>
+      <span>Nenhum grupo adicionado ainda</span>
     </div>
 
-    <!-- Formulário para adicionar novo grupo -->
-    <div class="modal-vs-row-qtd">
-      <mat-form-field appearance="outline" class="dim-field-qtd-vol">
-        <mat-label>Qtd. de volumes</mat-label>
+    <!-- SEPARADOR -->
+    <div class="vs-add-section">
+      <span class="vs-add-label">Adicionar grupo de volumes</span>
+    </div>
+
+    <!-- FORMULÁRIO NOVO GRUPO — linha única -->
+    <div class="vs-add-form">
+
+      <mat-form-field appearance="outline" class="vs-field vs-field--qtd">
+        <mat-label>Qtd.</mat-label>
         <input matInput type="number" formControlName="quantidade"
                (blur)="onBlurFieldsFormCubagem('quantidade')" />
       </mat-form-field>
-    </div>
 
-    <div class="modal-vs-dims">
-      <mat-form-field appearance="outline" class="dim-field">
-        <mat-label>Larg. (cm)</mat-label>
+      <span class="vs-add-sep">×</span>
+
+      <mat-form-field appearance="outline" class="vs-field">
+        <mat-label>Larg.</mat-label>
         <input matInput type="number" formControlName="largura"
                (blur)="onBlurFieldsFormCubagem('largura')" />
+        <span matSuffix class="vs-suffix">cm</span>
       </mat-form-field>
-      <mat-form-field appearance="outline" class="dim-field">
-        <mat-label>Comp. (cm)</mat-label>
+
+      <mat-form-field appearance="outline" class="vs-field">
+        <mat-label>Comp.</mat-label>
         <input matInput type="number" formControlName="comprimento"
                (blur)="onBlurFieldsFormCubagem('comprimento')" />
+        <span matSuffix class="vs-suffix">cm</span>
       </mat-form-field>
-      <mat-form-field appearance="outline" class="dim-field">
-        <mat-label>Alt. (cm)</mat-label>
+
+      <mat-form-field appearance="outline" class="vs-field">
+        <mat-label>Alt.</mat-label>
         <input matInput type="number" formControlName="altura"
                (blur)="onBlurFieldsFormCubagem('altura')" />
+        <span matSuffix class="vs-suffix">cm</span>
       </mat-form-field>
-      <mat-form-field appearance="outline" class="dim-field">
-        <mat-label>Peso (kg)</mat-label>
+
+      <mat-form-field appearance="outline" class="vs-field">
+        <mat-label>Peso</mat-label>
         <input matInput type="number" formControlName="peso"
                (blur)="onBlurFieldsFormCubagem('peso')" />
+        <span matSuffix class="vs-suffix">kg</span>
       </mat-form-field>
-    </div>
 
-    <button mat-stroked-button color="primary" class="vs-btn-add"
-            [disabled]="isGerarVolumeLoteDisabled()"
-            (click)="adicionarGrupoSimplificado()">
-      <mat-icon>add</mat-icon>
-      Adicionar grupo
-    </button>
+      <button mat-flat-button color="primary"
+              class="vs-btn-add"
+              [disabled]="isGerarVolumeLoteDisabled()"
+              (click)="adicionarGrupoSimplificado()"
+              type="button">
+        <mat-icon>add</mat-icon>
+        Adicionar
+      </button>
+
+    </div>
 
   </div>
 
+  <!-- RODAPÉ -->
   <div class="modal-vs-footer">
+    <span class="vs-total-label" *ngIf="totalVolumesSimplificado > 0">
+      Total: <strong>{{ totalVolumesSimplificado }}</strong> volumes
+    </span>
     <button mat-stroked-button
             *ngIf="isVolumesSimplificadoTela()"
-            (click)="fecharModalVolumesSimplificado()">
+            (click)="fecharModalVolumesSimplificado()"
+            type="button">
       Cancelar
     </button>
     <button mat-flat-button color="primary"
             [disabled]="totalVolumesSimplificado <= 0"
-            (click)="salvarVolumesSimplificado()">
+            (click)="salvarVolumesSimplificado()"
+            type="button">
       <mat-icon>save</mat-icon>
-      {{ isVolumesSimplificadoFinal()
-         ? 'Salvar e Finalizar'
-         : 'Salvar volumes' }}
+      {{ isVolumesSimplificadoFinal() ? 'Salvar e Finalizar' : 'Salvar volumes' }}
     </button>
   </div>
 

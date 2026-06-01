@@ -1224,7 +1224,7 @@ kbd {
   .painel-volumes--strip { display: none; }
 }
 
-/* ─── Modal volumes simplificado (T e S) ─── */
+/* ─── Modal volumes simplificado ─── */
 .modal-volumes-simplificado {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1248,9 +1248,10 @@ kbd {
     height: 18px;
     width: 18px;
     color: var(--color-primary);
+    flex-shrink: 0;
   }
 
-  span {
+  span:first-of-type {
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text-primary);
@@ -1258,57 +1259,168 @@ kbd {
   }
 }
 
-.modal-vs-body {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  flex-wrap: wrap;
+.modal-vs-total-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: 2px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
 }
 
-.modal-vs-row-qtd {
+.modal-vs-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Chips de grupos adicionados ─── */
+.vs-grupos-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vs-grupo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(22,101,52,0.07);
+  border: 1px solid rgba(22,101,52,0.20);
+  border-radius: 20px;
+  padding: 4px 6px 4px 10px;
+  font-size: 12px;
+}
+
+.vs-grupo-chip-qtd {
+  font-weight: 800;
+  color: var(--color-primary);
+  font-size: 13px;
+}
+
+.vs-grupo-chip-dims {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.vs-grupo-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: rgba(0,0,0,0.08);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-secondary);
+  transition: background 0.12s;
+
+  mat-icon {
+    font-size: 12px;
+    height: 12px;
+    width: 12px;
+  }
+
+  &:hover {
+    background: rgba(220,38,38,0.15);
+    color: #dc2626;
+  }
+}
+
+/* ─── Placeholder vazio ─── */
+.vs-grupos-vazio {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    opacity: 0.4;
+  }
+}
+
+/* ─── Separador da seção de adicionar ─── */
+.vs-add-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vs-add-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 
   &::after {
     content: '';
-    display: block;
-    width: 1px;
-    height: 40px;
+    display: inline-block;
+    margin-left: 8px;
+    width: 60px;
+    height: 1px;
     background: var(--color-border);
-    margin-left: 4px;
+    vertical-align: middle;
   }
 }
 
-.dim-field-qtd-vol {
-  width: 120px;
+/* ─── Formulário de novo grupo ─── */
+.vs-add-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vs-field {
+  flex: 1;
+  min-width: 70px;
 
   .mat-mdc-form-field-subscript-wrapper { display: none; }
-}
 
-.modal-vs-qtd-hint {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.modal-vs-dims {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  flex-wrap: wrap;
-
-  .dim-field {
-    flex: 1;
-    min-width: 90px;
-
-    .mat-mdc-form-field-subscript-wrapper { display: none; }
+  &--qtd {
+    flex: 0 0 80px;
+    min-width: 80px;
   }
 }
 
+.vs-suffix {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.vs-add-sep {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  margin: 0 2px;
+  padding-bottom: 20px;
+}
+
+.vs-btn-add {
+  flex-shrink: 0;
+  align-self: center;
+  height: 40px;
+  border-radius: 4px !important;
+
+  mat-icon { font-size: 18px; height: 18px; width: 18px; }
+}
+
+/* ─── Rodapé ─── */
 .modal-vs-footer {
   display: flex;
   justify-content: flex-end;
@@ -1319,75 +1431,15 @@ kbd {
   background: var(--color-bg);
 }
 
-/* ─── Grupos simplificados ─── */
-.vs-grupos-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.vs-grupo-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-}
-
-.vs-grupo-qtd {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--color-primary);
-  min-width: 28px;
-}
-
-.vs-grupo-dims {
-  flex: 1;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.vs-grupo-remove {
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
-  color: var(--color-danger, #dc2626);
-
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-}
-
-.vs-grupo-total {
-  text-align: right;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  padding: 2px 4px;
-}
-
-.vs-separator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-  color: var(--color-text-secondary);
+.vs-total-label {
   font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  flex: 1;
 
-  &::before, &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--color-border);
+  strong {
+    color: var(--color-primary);
+    font-weight: 700;
   }
-}
-
-.vs-btn-add {
-  width: 100%;
-  margin-top: 4px;
 }
 
 /* ─── Tela de preparação ─── */
