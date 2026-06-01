@@ -249,6 +249,14 @@
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
 }
 
 .operador-texto {
