@@ -74,8 +74,11 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   dataSource = new MatTableDataSource<FilaConferenciaDTO>([]);
   page = 0;
-  perPage = 10;
+  perPage = 50;
   total = 0;
+  get totalLabel(): string {
+    return this._hasNextPage ? `${this.total}+` : `${this.total}`;
+  }
   filtroAberto = false;
   filtroAvancadoAberto = false;
   carregando = false;
