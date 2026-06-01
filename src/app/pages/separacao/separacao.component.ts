@@ -17,6 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { forkJoin, interval, Subscription } from 'rxjs';
 import { filter, first, switchMap, timeout } from 'rxjs/operators';
 import { RoboLoaderComponent } from '../../shared/components/robo-loader/robo-loader.component';
@@ -56,6 +57,7 @@ import { VolumeService } from '../../services/volume/volume.service';
     MatOption,
     MatSelect,
     MatTooltipModule,
+    MatMenuModule,
     RoboLoaderComponent,
   ],
   templateUrl: './separacao.component.html',
@@ -1441,6 +1443,10 @@ export class SeparacaoComponent implements OnInit {
   voltarParaFila() {
     this.dialogRefConferenciaFinalizada?.close();
     this.router.navigate(['/fila-conferencia']);
+  }
+
+  logout() {
+    this.authService.logout();
   }
 
   imprimirEtiquetas() {

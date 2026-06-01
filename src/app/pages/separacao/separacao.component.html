@@ -22,7 +22,19 @@
 <!-- BANNER DE DADOS GERAIS -->
 <div class="dados-banner" *ngIf="dadosGerais">
   <div class="operador-info" *ngIf="operadorNome">
-    <div class="operador-avatar">{{ operadorIniciais }}</div>
+    <button class="operador-avatar" [matMenuTriggerFor]="menuOperador" type="button">
+      {{ operadorIniciais }}
+    </button>
+    <mat-menu #menuOperador="matMenu">
+      <button mat-menu-item (click)="voltarParaFila()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Voltar à fila</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Sair</span>
+      </button>
+    </mat-menu>
     <div class="operador-texto">
       <span class="operador-nome">{{ operadorNome }}</span>
       <span class="operador-label">Operador</span>
