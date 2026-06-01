@@ -1670,6 +1670,10 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     });
   }
 
+  get totalVolumesSimplificado(): number {
+    return this.volumes.reduce((s, v) => s + (v.quantidadeLote ?? 0), 0);
+  }
+
   abrirModalVolumesSimplificado() {
     this.formCubagem.reset();
     this.mostrarFormVolumesSimplificado = true;
@@ -1679,17 +1683,49 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     this.mostrarFormVolumesSimplificado = false;
   }
 
-  salvarVolumesSimplificado() {
+  // Adiciona um grupo de volumes com dimensões específicas
+  adicionarGrupoSimplificado() {
     if (this.isGerarVolumeLoteDisabled()) return;
 
-    this.volumeService.postAtualizarDimensoesVolume({
+    this.volumeService.gerarVolumesLote({
       numeroConferencia: this.dadosGerais.numeroConferencia!,
-      numeroVolume: null,
+      quantidadeLote: this.formCubagem.value.quantidade,
       largura: this.formCubagem.value.largura,
       comprimento: this.formCubagem.value.comprimento,
       altura: this.formCubagem.value.altura,
       peso: this.formCubagem.value.peso,
-      qtdVol: this.formCubagem.value.quantidade,
+    }).subscribe({
+      next: () => {
+        this.formCubagem.reset();
+        this.carregarVolumes(this.dadosGerais.numeroConferencia!);
+      },
+      error: (err) => console.error(err),
+    });
+  }
+
+  // Remove um grupo de volumes (por dimensões)
+  removerGrupoSimplificado(grupo: VolumeFrontDTO) {
+    this.volumeService.deletarVolumesLote({
+      numeroConferencia: this.dadosGerais.numeroConferencia!,
+      altura: grupo.altura,
+      largura: grupo.largura,
+      comprimento: grupo.comprimento,
+      peso: grupo.peso,
+    }).subscribe({
+      next: () => this.carregarVolumes(this.dadosGerais.numeroConferencia!),
+      error: (err) => console.error(err),
+    });
+  }
+
+  // Salva o total (soma dos grupos) na sessão e, se modo final, finaliza
+  salvarVolumesSimplificado() {
+    const total = this.totalVolumesSimplificado;
+    if (total <= 0) return;
+
+    this.volumeService.postAtualizarDimensoesVolume({
+      numeroConferencia: this.dadosGerais.numeroConferencia!,
+      numeroVolume: null,
+      qtdVol: total,
     }).subscribe({
       next: () => {
         this.fecharModalVolumesSimplificado();

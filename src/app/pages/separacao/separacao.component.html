@@ -607,6 +607,30 @@
 
   <div class="modal-vs-body">
 
+    <!-- Lista de grupos já adicionados -->
+    <div class="vs-grupos-lista" *ngIf="volumes.length > 0">
+      <div class="vs-grupo-row" *ngFor="let grupo of volumes">
+        <span class="vs-grupo-qtd">{{ grupo.quantidadeLote }}×</span>
+        <span class="vs-grupo-dims">
+          {{ grupo.largura }}×{{ grupo.comprimento }}×{{ grupo.altura }} cm
+          <span *ngIf="grupo.peso"> · {{ grupo.peso }} kg</span>
+        </span>
+        <button mat-icon-button class="vs-grupo-remove"
+                (click)="removerGrupoSimplificado(grupo)"
+                matTooltip="Remover grupo">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="vs-grupo-total">
+        <span>Total: <strong>{{ totalVolumesSimplificado }}</strong> volumes</span>
+      </div>
+    </div>
+
+    <div class="vs-separator" *ngIf="volumes.length > 0">
+      <span>Adicionar grupo</span>
+    </div>
+
+    <!-- Formulário para adicionar novo grupo -->
     <div class="modal-vs-row-qtd">
       <mat-form-field appearance="outline" class="dim-field-qtd-vol">
         <mat-label>Qtd. de volumes</mat-label>
@@ -638,6 +662,13 @@
       </mat-form-field>
     </div>
 
+    <button mat-stroked-button color="primary" class="vs-btn-add"
+            [disabled]="isGerarVolumeLoteDisabled()"
+            (click)="adicionarGrupoSimplificado()">
+      <mat-icon>add</mat-icon>
+      Adicionar grupo
+    </button>
+
   </div>
 
   <div class="modal-vs-footer">
@@ -647,7 +678,7 @@
       Cancelar
     </button>
     <button mat-flat-button color="primary"
-            [disabled]="isGerarVolumeLoteDisabled()"
+            [disabled]="totalVolumesSimplificado <= 0"
             (click)="salvarVolumesSimplificado()">
       <mat-icon>save</mat-icon>
       {{ isVolumesSimplificadoFinal()
