@@ -1726,6 +1726,10 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
       numeroConferencia: this.dadosGerais.numeroConferencia!,
       numeroVolume: null,
       qtdVol: total,
+      largura: null,
+      comprimento: null,
+      altura: null,
+      peso: null,
     }).subscribe({
       next: () => {
         this.fecharModalVolumesSimplificado();
