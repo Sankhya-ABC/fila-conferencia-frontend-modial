@@ -108,7 +108,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     RA: 'Recontagem em andamento',
     RD: 'Recontagem finalizada divergente',
     RF: 'Recontagem finalizada OK',
-    Z:  'Aguardando finalização',
+    Z:  'Finalizado',
   };
 
   descricaoStatus(codigo: string): string {
@@ -177,7 +177,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   private criarForm(): void {
     this.filters = this.fb.group({
-      codigoStatus: [['A', 'AC', 'R', 'RA', 'RD', 'Z']],
+      codigoStatus: [['A', 'AC', 'R', 'RA', 'RD']],
       numeroNota: [],
       numeroUnico: [],
       numeroModial: [],
@@ -194,7 +194,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get activeFilterCount(): number {
     const v = this.filters.value;
     let count = 0;
-    const defaultStatus = ['A', 'AC', 'R', 'RA', 'RD', 'Z'];
+    const defaultStatus = ['A', 'AC', 'R', 'RA', 'RD'];
     const statusVal = v.codigoStatus;
     if (statusVal && JSON.stringify([...statusVal].sort()) !== JSON.stringify([...defaultStatus].sort())) count++;
     if (v.numeroNota) count++;
@@ -471,8 +471,8 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   }
 
   tooltipImprimir(data: FilaConferenciaDTO): string {
-    return data.codigoStatus === 'F'
-      ? 'Impressão de etiqueta'
-      : 'Disponível quando status é FINALIZADO_OK';
+    return data.codigoStatus === 'Z'
+      ? 'Imprimir etiqueta'
+      : 'Disponível quando a conferência está finalizada';
   }
 }
