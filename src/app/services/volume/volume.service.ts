@@ -8,6 +8,7 @@ import {
   PostAtualizarDimensoesVolumeDetalhadoParams,
   PostAtualizarDimensoesVolumeNaoDetalhadoLoteParams,
   PostAtualizarDimensoesVolumeParams,
+  PostSalvarGrupoSimplificadoParams,
   VolumeDTO,
 } from './volume.model';
 
@@ -37,5 +38,9 @@ export class VolumeService {
     return this.http.post<null>('/volumes/dimensoes-volume', body, {
       context: new HttpContext().set(SKIP_LOADING, true),
     });
+  }
+
+  postSalvarGrupoSimplificado(body: PostSalvarGrupoSimplificadoParams): Observable<null> {
+    return this.http.post<null>('/volumes/grupo-simplificado', body);
   }
 }

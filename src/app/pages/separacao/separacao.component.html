@@ -612,9 +612,9 @@
   <div class="modal-vs-body">
 
     <!-- ÁREA GRUPOS ADICIONADOS -->
-    <div class="vs-grupos-area" *ngIf="volumes.length > 0">
-      <div class="vs-grupo-chip" *ngFor="let grupo of volumes">
-        <span class="vs-grupo-chip-qtd">{{ grupo.quantidadeLote }}×</span>
+    <div class="vs-grupos-area" *ngIf="gruposSimplificados.length > 0">
+      <div class="vs-grupo-chip" *ngFor="let grupo of gruposSimplificados">
+        <span class="vs-grupo-chip-qtd">{{ grupo.qtdVol }}×</span>
         <span class="vs-grupo-chip-dims">
           {{ grupo.largura }}×{{ grupo.comprimento }}×{{ grupo.altura }} cm
           · {{ grupo.peso }} kg
@@ -628,7 +628,7 @@
     </div>
 
     <!-- PLACEHOLDER quando vazio -->
-    <div class="vs-grupos-vazio" *ngIf="volumes.length === 0">
+    <div class="vs-grupos-vazio" *ngIf="gruposSimplificados.length === 0">
       <mat-icon>inventory_2</mat-icon>
       <span>Nenhum grupo adicionado ainda</span>
     </div>

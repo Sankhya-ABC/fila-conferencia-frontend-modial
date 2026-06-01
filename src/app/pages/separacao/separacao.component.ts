@@ -29,6 +29,15 @@ import { ItemPedidoDTO } from '../../services/separacao/separacao.model';
 import { SeparacaoService } from '../../services/separacao/separacao.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { VolumeFrontDTO, VolumeItemDTO } from '../../services/volume/volume.model';
+
+interface GrupoVolume {
+  id: string;
+  qtdVol: number;
+  largura: number;
+  comprimento: number;
+  altura: number;
+  peso: number;
+}
 import { VolumeService } from '../../services/volume/volume.service';
 
 @Component({
@@ -114,6 +123,7 @@ export class SeparacaoComponent implements OnInit {
 
   // volume
   volumes: VolumeFrontDTO[] = [];
+  gruposSimplificados: GrupoVolume[] = [];
   volumeSelecionadoModal: VolumeFrontDTO | null = null;
   volumeExpandido: VolumeFrontDTO | null = null;
   volumesPainelColapsado = false;
@@ -1671,11 +1681,12 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
   }
 
   get totalVolumesSimplificado(): number {
-    return this.volumes.reduce((s, v) => s + (v.quantidadeLote ?? 0), 0);
+    return this.gruposSimplificados.reduce((s, g) => s + g.qtdVol, 0);
   }
 
   abrirModalVolumesSimplificado() {
     this.formCubagem.reset();
+    this.gruposSimplificados = [];
     this.mostrarFormVolumesSimplificado = true;
   }
 
@@ -1683,54 +1694,41 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     this.mostrarFormVolumesSimplificado = false;
   }
 
-  // Adiciona um grupo de volumes com dimensões específicas
   adicionarGrupoSimplificado() {
     if (this.isGerarVolumeLoteDisabled()) return;
 
-    this.volumeService.gerarVolumesLote({
-      numeroConferencia: this.dadosGerais.numeroConferencia!,
-      quantidadeLote: this.formCubagem.value.quantidade,
-      largura: this.formCubagem.value.largura,
-      comprimento: this.formCubagem.value.comprimento,
-      altura: this.formCubagem.value.altura,
-      peso: this.formCubagem.value.peso,
-    }).subscribe({
-      next: () => {
-        this.formCubagem.reset();
-        this.carregarVolumes(this.dadosGerais.numeroConferencia!);
-      },
-      error: (err) => console.error(err),
-    });
+    const grupo: GrupoVolume = {
+      id: Date.now().toString(),
+      qtdVol: Number(this.formCubagem.value.quantidade),
+      largura: Number(this.formCubagem.value.largura),
+      comprimento: Number(this.formCubagem.value.comprimento),
+      altura: Number(this.formCubagem.value.altura),
+      peso: Number(this.formCubagem.value.peso),
+    };
+
+    this.gruposSimplificados = [...this.gruposSimplificados, grupo];
+    this.formCubagem.reset();
   }
 
-  // Remove um grupo de volumes (por dimensões)
-  removerGrupoSimplificado(grupo: VolumeFrontDTO) {
-    this.volumeService.deletarVolumesLote({
-      numeroConferencia: this.dadosGerais.numeroConferencia!,
-      altura: grupo.altura,
-      largura: grupo.largura,
-      comprimento: grupo.comprimento,
-      peso: grupo.peso,
-    }).subscribe({
-      next: () => this.carregarVolumes(this.dadosGerais.numeroConferencia!),
-      error: (err) => console.error(err),
-    });
+  removerGrupoSimplificado(grupo: GrupoVolume) {
+    this.gruposSimplificados = this.gruposSimplificados.filter(g => g.id !== grupo.id);
   }
 
-  // Salva o total (soma dos grupos) na sessão e, se modo final, finaliza
   salvarVolumesSimplificado() {
-    const total = this.totalVolumesSimplificado;
-    if (total <= 0) return;
+    if (this.gruposSimplificados.length === 0) return;
 
-    this.volumeService.postAtualizarDimensoesVolume({
-      numeroConferencia: this.dadosGerais.numeroConferencia!,
-      numeroVolume: null,
-      qtdVol: total,
-      largura: null,
-      comprimento: null,
-      altura: null,
-      peso: null,
-    }).subscribe({
+    const requests = this.gruposSimplificados.map(grupo =>
+      this.volumeService.postSalvarGrupoSimplificado({
+        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        qtdVol: grupo.qtdVol,
+        largura: grupo.largura,
+        comprimento: grupo.comprimento,
+        altura: grupo.altura,
+        peso: grupo.peso,
+      })
+    );
+
+    forkJoin(requests).subscribe({
       next: () => {
         this.fecharModalVolumesSimplificado();
         if (this.isVolumesSimplificadoFinal()) {

@@ -57,3 +57,12 @@ export interface DeletarVolumesLoteParams extends Omit<
   PostAtualizarDimensoesVolumeDetalhadoParams,
   'numeroVolume'
 > {}
+
+export interface PostSalvarGrupoSimplificadoParams {
+  numeroConferencia: number;
+  qtdVol: number;
+  largura: number;
+  comprimento: number;
+  altura: number;
+  peso: number;
+}
