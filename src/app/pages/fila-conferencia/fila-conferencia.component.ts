@@ -109,6 +109,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     RD: 'Recontagem finalizada divergente',
     RF: 'Recontagem finalizada OK',
     Z:  'Aguardando finalização',
+
   };
 
   descricaoStatus(codigo: string): string {
@@ -153,10 +154,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.criarForm();
 
-    const statusVisiveis = new Set(['AC', 'A', 'R', 'RA', 'F']);
-    this.dominioService.getStatus().subscribe((data) =>
-      (this.listStatus = data.filter(s => statusVisiveis.has(String(s.codigo).toUpperCase())))
-    );
+    this.dominioService.getStatus().subscribe((data) => (this.listStatus = data));
     this.dominioService.getTipoMovimento().subscribe((data) => (this.listTipoMovimento = data));
     this.dominioService.getTipoOperacao().subscribe((data) => (this.listTipoOperacao = data));
     this.dominioService.getTipoEntrega().subscribe((data) => (this.listTipoEntrega = data));
@@ -180,7 +178,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   private criarForm(): void {
     this.filters = this.fb.group({
-      codigoStatus: [['AC', 'A', 'R', 'RA', 'F']],
+      codigoStatus: [['A', 'AC', 'R', 'RA', 'RD', 'Z']],
       numeroNota: [],
       numeroUnico: [],
       numeroModial: [],
@@ -197,7 +195,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get activeFilterCount(): number {
     const v = this.filters.value;
     let count = 0;
-    const defaultStatus = ['AC', 'A', 'R', 'RA', 'F'];
+    const defaultStatus = ['A', 'AC', 'R', 'RA', 'RD', 'Z'];
     const statusVal = v.codigoStatus;
     if (statusVal && JSON.stringify([...statusVal].sort()) !== JSON.stringify([...defaultStatus].sort())) count++;
     if (v.numeroNota) count++;
@@ -475,7 +473,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   tooltipImprimir(data: FilaConferenciaDTO): string {
     return data.codigoStatus === 'F'
-      ? 'Imprimir etiqueta'
-      : 'Disponível quando a conferência está finalizada';
+      ? 'Impressão de etiqueta'
+      : 'Disponível quando status é FINALIZADO_OK';
   }
 }

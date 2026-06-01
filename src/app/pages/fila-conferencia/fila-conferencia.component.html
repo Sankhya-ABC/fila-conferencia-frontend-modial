@@ -299,10 +299,9 @@
         {{ cardExpandido === item.numeroUnico ? 'Menos' : 'Detalhes' }}
       </button>
 
-      <span [matTooltip]="tooltipImprimir(item)">
-        <button class="card-btn-icon"
-                [disabled]="item.codigoStatus !== 'F'"
-                (click)="onImprimirEtiqueta(item)">
+      <span [matTooltip]="tooltipImprimir(item)"
+            *ngIf="item.codigoStatus === 'F' || item.codigoStatus === 'D'">
+        <button class="card-btn-icon" (click)="onImprimirEtiqueta(item)">
           <mat-icon>print</mat-icon>
         </button>
       </span>
