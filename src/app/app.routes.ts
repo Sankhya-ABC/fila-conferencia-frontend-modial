@@ -13,33 +13,36 @@ export const routes: Routes = [
   {
     canActivate: [loginGuard],
     path: 'login',
-    title: 'Login',
+    title: 'Fila de Conferência',
     component: LoginComponent,
   },
   {
     path: 'redefinir-senha',
+    title: 'Fila de Conferência',
     component: RedefinirSenhaComponent,
   },
   {
     canActivate: [adminGuard],
     path: 'usuario',
-    title: 'Usuários',
+    title: 'Fila de Conferência',
     component: UsuarioComponent,
   },
   {
     canActivate: [adminGuard],
     path: 'redefinir-usuario',
-    title: 'Redefinir Usuário',
+    title: 'Fila de Conferência',
     component: RedefinirUsuarioComponent,
   },
   {
     canActivate: [authGuard],
     path: 'fila-conferencia',
+    title: 'Fila de Conferência',
     component: FilaConferenciaComponent,
   },
   {
     canActivate: [authGuard],
     path: 'separacao/:numeroUnico',
+    title: 'Fila de Conferência',
     component: SeparacaoComponent,
   },
   {
