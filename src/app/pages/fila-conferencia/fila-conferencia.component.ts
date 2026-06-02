@@ -184,7 +184,8 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   private criarForm(): void {
     this.filters = this.fb.group({
-      codigoStatus: [['AC', 'A', 'R', 'RA', 'F']],
+      codigoStatus: [['AC', 'A', 'R', 'RA']],
+      tipoNegocio: [['VENDAS', 'COMPRAS']],
       numeroNota: [],
       numeroUnico: [],
       numeroModial: [],
@@ -192,16 +193,31 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
       dataFim: [],
       idParceiro: [],
       idEmpresa: [],
-      codigoTipoMovimento: [],
       codigoTipoOperacao: [],
       codigoTipoEntrega: [],
     });
   }
 
+  toggleTipoNegocio(tipo: string): void {
+    const ctrl = this.filters.get('tipoNegocio');
+    if (!ctrl) return;
+    const atual: string[] = ctrl.value ?? [];
+    ctrl.setValue(
+      atual.includes(tipo) ? atual.filter(t => t !== tipo) : [...atual, tipo]
+    );
+  }
+
+  isTipoNegocioSelecionado(tipo: string): boolean {
+    return (this.filters.get('tipoNegocio')?.value ?? []).includes(tipo);
+  }
+
   get activeFilterCount(): number {
     const v = this.filters.value;
     let count = 0;
-    const defaultStatus = ['AC', 'A', 'R', 'RA', 'F'];
+    const defaultStatus = ['AC', 'A', 'R', 'RA'];
+    const defaultNegocio = ['VENDAS', 'COMPRAS'];
+    const negocioVal = v.tipoNegocio;
+    if (negocioVal && JSON.stringify([...negocioVal].sort()) !== JSON.stringify([...defaultNegocio].sort())) count++;
     const statusVal = v.codigoStatus;
     if (statusVal && JSON.stringify([...statusVal].sort()) !== JSON.stringify([...defaultStatus].sort())) count++;
     if (v.numeroNota) count++;
@@ -336,13 +352,23 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     }
 
     const rawParams = this.filters.value;
+
+    // Traduz tipoNegocio → codigoTipoMovimento
+    const tipoNegocio: string[] = rawParams.tipoNegocio ?? [];
+    const movs: string[] = [];
+    if (tipoNegocio.includes('VENDAS')) movs.push('V', 'P');
+    if (tipoNegocio.includes('COMPRAS')) movs.push('O', 'C');
+    const codigoTipoMovimento = movs.length > 0 && movs.length < 4 ? movs.join(',') : undefined;
+
     const params: any = {
       ...rawParams,
       idParceiro: rawParams.idParceiro?.id,
       idEmpresa: rawParams.idEmpresa?.id,
+      codigoTipoMovimento,
       page: this.page,
       perPage: this.perPage,
     };
+    delete params.tipoNegocio;
 
     params.dataInicio = params.dataInicio
       ? formatDate(params.dataInicio, 'yyyy-MM-dd', 'en-US')

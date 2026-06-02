@@ -232,6 +232,42 @@
   }
 }
 
+.filtro-negocio-chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.negocio-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+
+  mat-icon { font-size: 16px; height: 16px; width: 16px; }
+
+  &--ativo {
+    background: rgba(22, 101, 52, 0.08);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:hover:not(.negocio-chip--ativo) {
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+  }
+}
+
 .filtro-avancado-toggle {
   display: flex;
   align-items: center;

@@ -76,6 +76,27 @@
           </mat-autocomplete>
         </mat-form-field>
 
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO — Tipo de Negócio -->
+        <span class="filtro-secao-label">Tipo de Negócio</span>
+        <div class="filtro-negocio-chips">
+          <button type="button"
+                  class="negocio-chip"
+                  [class.negocio-chip--ativo]="isTipoNegocioSelecionado('VENDAS')"
+                  (click)="toggleTipoNegocio('VENDAS')">
+            <mat-icon>trending_up</mat-icon>
+            Vendas
+          </button>
+          <button type="button"
+                  class="negocio-chip"
+                  [class.negocio-chip--ativo]="isTipoNegocioSelecionado('COMPRAS')"
+                  (click)="toggleTipoNegocio('COMPRAS')">
+            <mat-icon>shopping_cart</mat-icon>
+            Compras
+          </button>
+        </div>
+
         <div class="filtro-avancado-toggle" (click)="filtroAvancadoAberto = !filtroAvancadoAberto">
           <span>Filtros avançados</span>
           <mat-icon>{{ filtroAvancadoAberto ? 'expand_less' : 'expand_more' }}</mat-icon>
