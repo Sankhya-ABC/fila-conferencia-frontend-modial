@@ -406,17 +406,8 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   }
 
   onImprimirEtiqueta(fila: FilaConferenciaDTO): void {
-    const numeroConferencia = fila?.numeroConferencia!;
-    this.arquivoService.downloadEtiqueta(numeroConferencia).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `etiquetas_conferencia_${numeroConferencia}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => console.error('Erro ao baixar etiquetas', err),
+    this.arquivoService.imprimirEtiqueta(fila?.numeroConferencia!).subscribe({
+      error: (err) => console.error('Erro ao imprimir etiquetas', err),
     });
   }
 

@@ -1452,23 +1452,12 @@ export class SeparacaoComponent implements OnInit {
   imprimirEtiquetas() {
     const numeroConferencia = this.dadosGerais.numeroConferencia!;
 
-    this.arquivoService.downloadEtiqueta(numeroConferencia).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `etiquetas_conferencia_${numeroConferencia}.pdf`;
-        a.click();
-
-        window.URL.revokeObjectURL(url);
-
+    this.arquivoService.imprimirEtiqueta(numeroConferencia).subscribe({
+      next: () => {
         this.dialogRefConferenciaFinalizada?.close();
         this.router.navigate(['/fila-conferencia']);
       },
-      error: (err) => {
-        console.error('Erro ao baixar etiquetas', err);
-      },
+      error: (err) => console.error('Erro ao imprimir etiquetas', err),
     });
   }
 
