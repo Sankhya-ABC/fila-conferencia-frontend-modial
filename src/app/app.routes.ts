@@ -18,31 +18,26 @@ export const routes: Routes = [
   },
   {
     path: 'redefinir-senha',
-    title: 'Fila de Conferência',
     component: RedefinirSenhaComponent,
   },
   {
     canActivate: [adminGuard],
     path: 'usuario',
-    title: 'Fila de Conferência',
     component: UsuarioComponent,
   },
   {
     canActivate: [adminGuard],
     path: 'redefinir-usuario',
-    title: 'Fila de Conferência',
     component: RedefinirUsuarioComponent,
   },
   {
     canActivate: [authGuard],
     path: 'fila-conferencia',
-    title: 'Fila de Conferência',
     component: FilaConferenciaComponent,
   },
   {
     canActivate: [authGuard],
     path: 'separacao/:numeroUnico',
-    title: 'Fila de Conferência',
     component: SeparacaoComponent,
   },
   {
