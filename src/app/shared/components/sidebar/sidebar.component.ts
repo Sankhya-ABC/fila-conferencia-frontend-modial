@@ -14,7 +14,7 @@ import { Perfil } from '../../../services/auth/auth.model';
   styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent {
-  collapsed = true;
+  expanded = false;
 
   constructor(
     public router: Router,
@@ -22,7 +22,7 @@ export class SidebarComponent {
   ) {}
 
   toggle() {
-    this.collapsed = !this.collapsed;
+    this.expanded = !this.expanded;
   }
 
   get isAdmin(): boolean {

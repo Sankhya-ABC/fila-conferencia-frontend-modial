@@ -233,23 +233,24 @@
        (keydown.enter)="onSeparar(item)"
        (click)="toggleCard(item)">
 
-    <!-- CABEÇALHO: tipo operação + status -->
+    <!-- CABEÇALHO: status badge + tipo operação -->
     <div class="card-head">
-      <div class="card-tipo-bloco">
+      <span class="card-status-badge" [ngClass]="statusBadgeClass(item.codigoStatus)">
+        <mat-icon>{{ statusIcon(item.codigoStatus) }}</mat-icon>
+        {{ descricaoStatus(item.codigoStatus) }}
+      </span>
+      <div class="card-head-right">
         <span class="card-tipo-tag"
               [class.card-tipo-tag--cubagem]="item.descricaoTipoOperacao.includes('CUBAGEM')"
               [class.card-tipo-tag--nota]="item.descricaoTipoOperacao.includes('NOTA')">
           {{ item.descricaoTipoOperacao || '—' }}
         </span>
+        <span class="card-status-pill card-status-pill--nativo"
+              *ngIf="item.emAndamentoNativo"
+              matTooltip="Esta conferência foi iniciada diretamente no Sankhya">
+          <mat-icon>warning</mat-icon> Sankhya
+        </span>
       </div>
-      <span class="card-status-pill" [ngClass]="statusClass(item.codigoStatus)">
-        {{ descricaoStatus(item.codigoStatus) }}
-      </span>
-      <span class="card-status-pill card-status-pill--nativo"
-            *ngIf="item.emAndamentoNativo"
-            matTooltip="Esta conferência foi iniciada diretamente no Sankhya">
-        <mat-icon>warning</mat-icon> Sankhya
-      </span>
     </div>
 
     <!-- PARCEIRO -->
@@ -320,15 +321,7 @@
         {{ cardExpandido === item.numeroUnico ? 'Menos' : 'Detalhes' }}
       </button>
 
-      <span [matTooltip]="tooltipImprimir(item)">
-        <button class="card-btn-icon"
-                [disabled]="item.codigoStatus !== 'F'"
-                (click)="onImprimirEtiqueta(item)">
-          <mat-icon>print</mat-icon>
-        </button>
-      </span>
-
-      <span [matTooltip]="tooltipSeparar(item)" style="flex:1; display:flex;">
+<span [matTooltip]="tooltipSeparar(item)" style="flex:1; display:flex;">
         <button class="card-btn-conferir"
                 [class.card-btn-conferir--ativo]="(item.codigoStatus === 'AC' || item.codigoStatus === 'A') && !item.emAndamentoNativo"
                 [disabled]="(item.codigoStatus !== 'AC' && item.codigoStatus !== 'A') || item.emAndamentoNativo"

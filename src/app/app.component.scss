@@ -3,24 +3,30 @@
 @use "../styles/breakpoints" as *;
 
 :host {
-  display: block;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app-layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background: var(--color-bg);
 }
 
-.app-main {
+.app-layout {
   flex: 1;
-  min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 100vh;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.container {
+  flex: 1;
+  min-height: 0;
+  padding: $space-24;
+  margin: 8px;
+  border: 2px solid var(--color-primary);
+  border-radius: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 16px);
 }

@@ -5,7 +5,8 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   min-width: 0;
 }
@@ -23,6 +24,7 @@
   overflow-y: auto;
   min-height: 0;
   padding: 0 4px;
+  align-self: stretch;
 }
 
 /* ─── Painel de boas-vindas ─── */
@@ -37,6 +39,7 @@
   border-radius: 8px;
   margin-bottom: 16px;
   flex-shrink: 0;
+  // SEM position sticky — flex column no :host mantém no topo
 }
 
 .usuario-avatar {
@@ -347,71 +350,87 @@
   }
 }
 
-/* ─── Cabeçalho: tipo operação + status ─── */
+/* ─── Cabeçalho: status badge + tipo ─── */
 .card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px 0;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.card-tipo-bloco {
-  flex: 1;
+.card-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 3px 8px 3px 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 13px; height: 13px; width: 13px; }
+
+  &.badge--ac { background: #fef3c7; color: #92400e; }
+  &.badge--a  { background: #d1fae5; color: #065f46; }
+  &.badge--r  { background: #ffedd5; color: #9a3412; }
+  &.badge--d  { background: #fee2e2; color: #991b1b; }
+  &.badge--f  { background: #dcfce7; color: #166534; }
+  &.badge--z  { background: #f1f5f9; color: #475569; }
+}
+
+.card-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+  flex-shrink: 1;
 }
 
 .card-tipo-tag {
   display: inline-block;
   font-size: 10px;
-  font-weight: 800;
-  padding: 3px 8px;
+  font-weight: 600;
+  padding: 2px 7px;
   border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  background: rgba(0,0,0,0.05);
+  max-width: 130px;
+  background: rgba(0,0,0,0.04);
   color: var(--color-text-secondary);
 
   &--cubagem {
-    background: rgba(124,58,237,0.10);
+    background: rgba(124,58,237,0.08);
     color: #6d28d9;
-    border: 1px solid rgba(124,58,237,0.15);
   }
   &--nota {
-    background: rgba(22,101,52,0.08);
+    background: rgba(22,101,52,0.06);
     color: var(--color-primary);
-    border: 1px solid rgba(22,101,52,0.15);
   }
 }
 
 .card-status-pill {
-  font-size: 9px;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 20px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  flex-shrink: 0;
-
   &--nativo {
     display: inline-flex;
     align-items: center;
     gap: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
     background: #fff3cd;
     color: #856404;
     border: 1px solid #ffc107;
     cursor: help;
+    white-space: nowrap;
+    flex-shrink: 0;
 
-    mat-icon {
-      font-size: 11px;
-      height: 11px;
-      width: 11px;
-    }
+    mat-icon { font-size: 11px; height: 11px; width: 11px; }
   }
 }
 

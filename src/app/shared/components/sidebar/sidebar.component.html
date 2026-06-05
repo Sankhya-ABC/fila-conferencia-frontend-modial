@@ -1,62 +1,78 @@
-<nav class="sidebar" [class.sidebar--collapsed]="collapsed">
+<!-- Botão flutuante — sempre visível, colado na borda esquerda -->
+<button class="sidebar-fab"
+        (click)="toggle()"
+        [matTooltip]="expanded ? '' : 'Menu'"
+        matTooltipPosition="right">
+  <mat-icon>{{ expanded ? 'close' : 'chevron_right' }}</mat-icon>
+</button>
 
-  <!-- Toggle -->
-  <button class="sidebar-toggle" (click)="toggle()"
-          [attr.aria-label]="collapsed ? 'Expandir menu' : 'Recolher menu'">
-    <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
-  </button>
+<!-- Overlay escuro ao abrir -->
+<div class="sidebar-backdrop"
+     *ngIf="expanded"
+     (click)="toggle()">
+</div>
 
-  <!-- Nav -->
+<!-- Painel lateral — aparece por cima -->
+<nav class="sidebar-panel" [class.sidebar-panel--visible]="expanded">
+
+  <div class="sidebar-panel-header">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <span>Conferência</span>
+    </div>
+  </div>
+
   <div class="sidebar-nav">
 
     <a class="sidebar-item"
        routerLink="/fila-conferencia"
        routerLinkActive="sidebar-item--active"
-       [matTooltip]="collapsed ? 'Fila de Conferência' : ''"
-       matTooltipPosition="right">
+       (click)="toggle()">
       <mat-icon>list_alt</mat-icon>
-      <span class="sidebar-item-label">Fila</span>
+      <span>Fila de Conferência</span>
+    </a>
+
+    <a class="sidebar-item"
+       routerLink="/impressao-etiquetas"
+       routerLinkActive="sidebar-item--active"
+       (click)="toggle()">
+      <mat-icon>print</mat-icon>
+      <span>Impressão de Etiquetas</span>
     </a>
 
     <a class="sidebar-item"
        *ngIf="isAdmin"
        routerLink="/dashboard-produtividade"
        routerLinkActive="sidebar-item--active"
-       [matTooltip]="collapsed ? 'Dashboard' : ''"
-       matTooltipPosition="right">
+       (click)="toggle()">
       <mat-icon>bar_chart</mat-icon>
-      <span class="sidebar-item-label">Dashboard</span>
+      <span>Dashboard</span>
     </a>
 
     <a class="sidebar-item"
        *ngIf="isAdmin"
        routerLink="/usuario"
        routerLinkActive="sidebar-item--active"
-       [matTooltip]="collapsed ? 'Usuários' : ''"
-       matTooltipPosition="right">
+       (click)="toggle()">
       <mat-icon>group</mat-icon>
-      <span class="sidebar-item-label">Usuários</span>
+      <span>Usuários</span>
     </a>
 
   </div>
 
   <div class="sidebar-spacer"></div>
 
-  <!-- Footer -->
   <div class="sidebar-footer">
-    <div class="sidebar-avatar"
-         [matTooltip]="collapsed ? nomeUsuario : ''"
-         matTooltipPosition="right">
-      {{ iniciaisUsuario }}
-    </div>
+    <div class="sidebar-avatar">{{ iniciaisUsuario }}</div>
     <div class="sidebar-user-info">
       <span class="sidebar-user-nome">{{ nomeUsuario }}</span>
-      <span class="sidebar-user-perfil">{{ isAdmin ? 'Administrador' : 'Separador' }}</span>
+      <span class="sidebar-user-perfil">
+        {{ isAdmin ? 'Administrador' : 'Separador' }}
+      </span>
     </div>
-    <button class="sidebar-logout"
-            (click)="logout()"
-            [matTooltip]="collapsed ? 'Sair' : ''"
-            matTooltipPosition="right">
+    <button class="sidebar-logout" (click)="logout()">
       <mat-icon>logout</mat-icon>
     </button>
   </div>

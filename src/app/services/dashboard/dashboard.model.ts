@@ -1,4 +1,5 @@
 export interface AtividadeAgoraDTO {
+  idUsuario: number;
   nomeUsuario: string;
   numeroConferencia: number;
   nomeParceiro: string;
@@ -32,6 +33,12 @@ export interface LinhaDoTempoDTO {
   abandonada: boolean;
 }
 
+export interface HeatmapCell {
+  dia: number;  // 0=Seg … 4=Sex
+  hora: number; // 0-23
+  total: number;
+}
+
 export interface DashboardProdutividadeDTO {
   usuariosAtivos: number;
   totalConferencias: number;
@@ -42,10 +49,13 @@ export interface DashboardProdutividadeDTO {
   ranking: RankingItemDTO[];
   picos: PicoDTO[];
   linhaDoTempo: LinhaDoTempoDTO[];
+  heatmap?: HeatmapCell[];
 }
 
 export interface GetProdutividadeParams {
-  periodo: 'hoje' | 'semana' | 'mes';
+  periodo?: string;
   idUsuario?: string | null;
-  idUsuarioTimeline?: number | null;
+  idUsuarioTimeline?: number | string | null;
+  dataInicio?: string;
+  dataFim?: string;
 }

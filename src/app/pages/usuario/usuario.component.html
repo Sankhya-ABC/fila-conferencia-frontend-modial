@@ -1,151 +1,184 @@
-<!-- Filtros -->
-<div class="filtros-container grid" [formGroup]="filters">
-  <mat-form-field appearance="outline" class="xs-12 sm-12 md-6 lg-6 xl-4">
-    <mat-label>Nome/E-mail</mat-label>
-    <input matInput formControlName="nomeEmail" />
-  </mat-form-field>
+<!-- BACKDROP -->
+<div class="filtro-backdrop" *ngIf="filtroAberto" (click)="filtroAberto = false"></div>
 
-  <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-    <mat-label>Perfil</mat-label>
-    <mat-select formControlName="perfil">
-      <mat-option *ngFor="let perfil of listPerfil" [value]="perfil.codigo">
-        {{ perfil.descricao }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+<!-- BANNER -->
+<div class="painel-header">
+  <div class="painel-icon">
+    <mat-icon>group</mat-icon>
+  </div>
+  <div class="painel-info">
+    <p class="painel-titulo">Usuários</p>
+    <span class="painel-sub">Gerenciamento de acesso</span>
+  </div>
 
-  <mat-form-field appearance="outline" class="xs-12 sm-6 md-3 lg-3 xl-2">
-    <mat-label>Status</mat-label>
-    <mat-select formControlName="status">
-      <mat-option *ngFor="let status of listStatus" [value]="status.codigo">
-        {{ status.descricao }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <div class="painel-direita">
+    <div class="painel-contagem">
+      <span class="contagem-valor">{{ total }}</span>
+      <span class="contagem-label">usuários</span>
+    </div>
 
-  <button
-    mat-raised-button
-    color="warn"
-    (click)="onLimparCampos()"
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
-  >
-    Limpar campos
-  </button>
-  <button
-    mat-raised-button
-    color="primary"
-    (click)="applyFilter()"
-    class="xs-12 sm-6 md-3 lg-3 xl-2"
-  >
-    Pesquisar
-  </button>
+    <div class="filtro-btn-wrapper">
+      <button mat-flat-button
+              color="primary"
+              class="filtro-btn"
+              (click)="filtroAberto = !filtroAberto"
+              [matBadge]="activeFilterCount > 0 ? activeFilterCount : null"
+              matBadgeColor="warn"
+              matBadgeSize="small">
+        <mat-icon>tune</mat-icon>
+        Filtros
+      </button>
+
+      <div class="filtro-panel" *ngIf="filtroAberto" [formGroup]="filters"
+           (click)="$event.stopPropagation()">
+        <div class="filtro-panel-header">
+          <span class="filtro-panel-titulo">Filtros</span>
+          <button mat-icon-button (click)="filtroAberto = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Nome / E-mail</mat-label>
+          <input matInput formControlName="nomeEmail" />
+        </mat-form-field>
+
+        <div class="filtro-row-duplo">
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Perfil</mat-label>
+            <mat-select formControlName="perfil">
+              <mat-option *ngFor="let p of listPerfil" [value]="p.codigo">
+                {{ p.descricao }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option *ngFor="let s of listStatus" [value]="s.codigo">
+                {{ s.descricao }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-panel-actions">
+          <button mat-stroked-button (click)="onLimparCampos()">Limpar</button>
+          <button mat-flat-button color="primary" (click)="onPesquisar()">Pesquisar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Tabela -->
-<div class="table-container">
-  <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-    <ng-container matColumnDef="acoes" sticky>
-      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
-      <mat-cell *matCellDef="let e">
-        <div class="acoes-container">
-          <span
-            matTooltip="{{ e.ativo ? 'Inativar' : 'Ativar' }}"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button mat-icon-button (click)="atualizarStatus(e)">
-              <mat-icon *ngIf="!e.ativo" fontSet="material-symbols-outlined">
-                toggle_on
-              </mat-icon>
-              <mat-icon *ngIf="e.ativo" fontSet="material-symbols-outlined">
-                toggle_off
-              </mat-icon>
-            </button>
-          </span>
+<!-- LISTA -->
+<div class="user-list-container">
 
-          <span
-            matTooltip="Redefinir Senha"
-            matTooltipClass="tooltip"
-            matTooltipPosition="above"
-          >
-            <button mat-icon-button (click)="redefinirAtivarLote([e.email])">
-              <mat-icon fontSet="material-symbols-outlined"> replay </mat-icon>
-            </button>
-          </span>
-        </div>
-      </mat-cell>
-    </ng-container>
+  <!-- Header da tabela -->
+  <div class="user-list-header">
+    <span class="col-usuario">Usuário</span>
+    <span class="col-email">Login</span>
+    <span class="col-perfil">Perfil</span>
+    <span class="col-status">Status</span>
+    <span class="col-acoes">Ações</span>
+  </div>
 
-    <ng-container matColumnDef="codigo">
-      <mat-header-cell *matHeaderCellDef>Código Usuário</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.codigo }}</mat-cell>
-    </ng-container>
+  <!-- Skeleton -->
+  <ng-container *ngIf="carregando">
+    <div class="user-row user-row--skeleton" *ngFor="let i of [1,2,3,4,5]">
+      <div class="sk sk--av"></div>
+      <div class="sk-info">
+        <div class="sk sk--nome"></div>
+        <div class="sk sk--email"></div>
+      </div>
+      <div class="sk sk--badge"></div>
+      <div class="sk sk--badge"></div>
+      <div class="sk sk--acoes"></div>
+    </div>
+  </ng-container>
 
-    <ng-container matColumnDef="foto">
-      <mat-header-cell *matHeaderCellDef>Foto</mat-header-cell>
-      <mat-cell *matCellDef="let data">
-        <div class="image-container">
-          <img
-            *ngIf="data.foto"
-            [src]="'data:image/png;base64,' + data.foto"
-            alt="Foto do usuário"
-          />
-          <mat-icon *ngIf="!data.foto" fontSet="material-symbols-outlined"
-            >hide_image</mat-icon
-          >
-        </div>
-      </mat-cell>
-    </ng-container>
+  <!-- Rows -->
+  <div class="user-row"
+       *ngFor="let u of dataSource.data"
+       [class.user-row--inativo]="!u.ativo">
 
-    <ng-container matColumnDef="nome">
-      <mat-header-cell *matHeaderCellDef>Nome</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.nome }}</mat-cell>
-    </ng-container>
+    <!-- Avatar + nome -->
+    <div class="col-usuario">
+      <div class="user-av" [class.user-av--inativo]="!u.ativo">
+        {{ iniciais(u.nome) }}
+      </div>
+      <div class="user-nome-wrap">
+        <span class="user-nome">{{ u.nome }}</span>
+        <span class="user-codigo">cod. {{ u.codigo }}</span>
+      </div>
+    </div>
 
-    <ng-container matColumnDef="email">
-      <mat-header-cell *matHeaderCellDef>Email</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.email }}</mat-cell>
-    </ng-container>
+    <!-- Login/email -->
+    <div class="col-email">
+      <span class="user-email">{{ u.email }}</span>
+    </div>
 
-    <ng-container matColumnDef="perfil">
-      <mat-header-cell *matHeaderCellDef>Perfil</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.perfil }}</mat-cell>
-    </ng-container>
+    <!-- Perfil -->
+    <div class="col-perfil">
+      <span class="perfil-badge"
+            [class.perfil-badge--admin]="u.perfil === 'ADMINISTRADOR'">
+        {{ u.perfil === 'ADMINISTRADOR' ? 'Admin' : 'Separador' }}
+      </span>
+    </div>
 
-    <ng-container matColumnDef="ativo">
-      <mat-header-cell *matHeaderCellDef>Ativo</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.ativo ? "Ativo" : "Inativo"
-      }}</mat-cell>
-    </ng-container>
+    <!-- Status -->
+    <div class="col-status">
+      <span class="status-badge"
+            [class.status-badge--ativo]="u.ativo">
+        <span class="status-dot"></span>
+        {{ u.ativo ? 'Ativo' : 'Inativo' }}
+      </span>
+    </div>
 
-    <ng-container matColumnDef="descricaoStatus">
-      <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{ data.descricaoStatus }}</mat-cell>
-    </ng-container>
+    <!-- Ações -->
+    <div class="col-acoes">
+      <button class="btn-acao"
+              [matTooltip]="u.ativo ? 'Inativar' : 'Ativar'"
+              matTooltipPosition="above"
+              (click)="atualizarStatus(u)">
+        <mat-icon>{{ u.ativo ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+      </button>
+      <button class="btn-acao"
+              matTooltip="Redefinir senha"
+              matTooltipPosition="above"
+              (click)="redefinirAtivarLote([u.email])">
+        <mat-icon>lock_reset</mat-icon>
+      </button>
+    </div>
 
-    <ng-container matColumnDef="criadoEm">
-      <mat-header-cell *matHeaderCellDef>Criado Em</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.criadoEm | date: "dd/MM/yyyy"
-      }}</mat-cell>
-    </ng-container>
+  </div>
 
-    <ng-container matColumnDef="atualizadoEm">
-      <mat-header-cell *matHeaderCellDef>Atualizado Em</mat-header-cell>
-      <mat-cell *matCellDef="let data">{{
-        data.atualizadoEm | date: "dd/MM/yyyy"
-      }}</mat-cell>
-    </ng-container>
+  <!-- Vazio -->
+  <div class="user-vazio" *ngIf="!carregando && dataSource.data.length === 0">
+    <mat-icon>person_off</mat-icon>
+    <span>Nenhum usuário encontrado</span>
+  </div>
+</div>
 
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-  </mat-table>
-  <mat-paginator
-    [length]="total"
-    [pageSize]="perPage"
-    [pageSizeOptions]="[5, 10, 15, 25, 50]"
-    (page)="onPageChange($event)"
-  >
-  </mat-paginator>
+<!-- Paginação -->
+<div class="paginacao" *ngIf="total > 0">
+  <span class="paginacao-info">
+    {{ dataSource.data.length === 0 ? 'Sem resultados' : (page * perPage + 1) + '–' + (page * perPage + dataSource.data.length) + ' de ' + total }}
+  </span>
+  <div class="paginacao-controles">
+    <span class="paginacao-por-label">Por página:</span>
+    <select class="paginacao-select" [ngModel]="perPage" (ngModelChange)="onPerPageChange($event)">
+      <option [value]="10">10</option>
+      <option [value]="25">25</option>
+      <option [value]="50">50</option>
+    </select>
+    <button mat-icon-button [disabled]="page === 0" (click)="prevPage()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="paginacao-pagina">{{ page + 1 }} / {{ totalPages }}</span>
+    <button mat-icon-button [disabled]="(page + 1) * perPage >= total" (click)="nextPage()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
 </div>

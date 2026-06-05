@@ -1,24 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-} from '@angular/forms';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
-import { MatNativeDateModule, MatOptionModule } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatOptionModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableDataSource } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Perfil } from '../../services/auth/auth.model';
-import { FilaConferenciaDTO } from '../../services/conferencia/conferencia.model';
 import { CodigoDescricao } from '../../services/dominio/dominio.model';
 import { UsuarioService } from '../../services/usuario/usuario.service';
 
@@ -29,18 +21,14 @@ import { UsuarioService } from '../../services/usuario/usuario.service';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    MatTableModule,
-    MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatOptionModule,
-    MatAutocompleteModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatIconModule,
     MatTooltipModule,
     MatButtonModule,
+    MatBadgeModule,
   ],
   templateUrl: './usuario.component.html',
   styleUrls: ['./usuario.component.scss'],
@@ -51,45 +39,38 @@ export class UsuarioComponent implements OnInit {
     private usuarioService: UsuarioService,
   ) {}
 
-  // tabela
-  displayedColumns: string[] = [
-    'codigo',
-    'foto',
-    'nome',
-    'email',
-    'perfil',
-    'ativo',
-    'criadoEm',
-    'atualizadoEm',
-    'acoes',
-  ];
-  dataSource = new MatTableDataSource<FilaConferenciaDTO>([]);
+  dataSource = new MatTableDataSource<any>([]);
   page = 0;
-  perPage = 5;
+  perPage = 25;
   total = 0;
+  carregando = false;
+  filtroAberto = false;
 
-  // selects
   listPerfil: CodigoDescricao[] = [
     { codigo: null, descricao: 'Todos' },
-    ...Object.values(Perfil).map((perfil) => {
-      return { codigo: perfil, descricao: perfil };
-    }),
+    ...Object.values(Perfil).map(p => ({ codigo: p, descricao: p })),
   ];
+
   listStatus: CodigoDescricao[] = [
     { codigo: null, descricao: 'Todos' },
-    { codigo: true, descricao: 'Ativo' },
+    { codigo: true,  descricao: 'Ativo' },
     { codigo: false, descricao: 'Inativo' },
   ];
 
-  // filters
   filters!: FormGroup;
 
+  get totalPages(): number {
+    return Math.max(Math.ceil(this.total / this.perPage), 1);
+  }
+
+  get activeFilterCount(): number {
+    const v = this.filters?.value ?? {};
+    return [v.nomeEmail, v.perfil, v.status != null ? v.status : null]
+      .filter(x => x !== null && x !== undefined && x !== '').length;
+  }
+
   private criarForm(): void {
-    this.filters = this.fb.group({
-      nomeEmail: [],
-      perfil: [],
-      status: [],
-    });
+    this.filters = this.fb.group({ nomeEmail: [], perfil: [], status: [] });
   }
 
   ngOnInit(): void {
@@ -101,41 +82,46 @@ export class UsuarioComponent implements OnInit {
     this.criarForm();
   }
 
-  applyFilter(): void {
-    this.dataSource.data = [];
+  onPesquisar(): void {
+    this.page = 0;
+    this.filtroAberto = false;
+    this.applyFilter();
+  }
 
+  applyFilter(): void {
+    this.carregando = true;
+    this.dataSource.data = [];
     const { nomeEmail, perfil, status } = this.filters.value;
 
-    const params: any = {
-      page: this.page,
-      perPage: this.perPage,
-    };
-
-    if (nomeEmail) {
-      params.nomeEmail = nomeEmail;
-    }
-    if (perfil) {
-      params.perfil = perfil;
-    }
-    if (status) {
-      params.status = status;
-    }
+    const params: any = { page: this.page, perPage: this.perPage };
+    if (nomeEmail) params.nomeEmail = nomeEmail;
+    if (perfil)    params.perfil    = perfil;
+    if (status != null) params.status = status;
 
     this.usuarioService.getUsuarios(params).subscribe({
       next: (resp: any) => {
         this.dataSource.data = resp.data;
         this.total = resp.total;
+        this.carregando = false;
       },
+      error: () => { this.carregando = false; },
     });
   }
 
-  onPageChange(event: any) {
-    this.page = event.pageIndex;
-    this.perPage = event.pageSize;
+  prevPage(): void {
+    if (this.page > 0) { this.page--; this.applyFilter(); }
+  }
+
+  nextPage(): void {
+    if ((this.page + 1) * this.perPage < this.total) { this.page++; this.applyFilter(); }
+  }
+
+  onPerPageChange(value: number): void {
+    this.perPage = Number(value);
+    this.page = 0;
     this.applyFilter();
   }
 
-  // requests
   atualizarStatus(usuario: any): void {
     this.usuarioService.toggleStatus(usuario.codigo).subscribe(() => {
       usuario.ativo = !usuario.ativo;
@@ -144,5 +130,9 @@ export class UsuarioComponent implements OnInit {
 
   redefinirAtivarLote(emails: string[]): void {
     this.usuarioService.redefinirAtivarLote(emails).subscribe();
+  }
+
+  iniciais(nome: string): string {
+    return (nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
   }
 }

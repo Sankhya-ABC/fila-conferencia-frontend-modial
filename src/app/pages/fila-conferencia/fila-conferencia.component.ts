@@ -32,7 +32,6 @@ import { ConferenciaService } from '../../services/conferencia/conferencia.servi
 import { ParceiroDTO } from '../../services/parceiro/parceiro.model';
 import { ParceiroService } from '../../services/parceiro/parceiro.service';
 import { DominioService } from '../../services/dominio/dominio.service';
-import { ArquivoService } from '../../services/arquivo/arquivo.service';
 import { AuthService } from '../../services/auth/auth.service';
 import { Perfil } from '../../services/auth/auth.model';
 
@@ -68,7 +67,6 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     private parceiroService: ParceiroService,
     private empresaService: EmpresaService,
     private router: Router,
-    private arquivoService: ArquivoService,
     private authService: AuthService,
   ) {}
 
@@ -159,7 +157,6 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
       { codigo: 'A',  descricao: 'Conferência Em Andamento' },
       { codigo: 'R',  descricao: 'Aguardando Recontagem' },
       { codigo: 'RA', descricao: 'Recontagem Em Andamento' },
-      { codigo: 'F',  descricao: 'Finalizado OK' },
     ];
     this.dominioService.getTipoMovimento().subscribe((data) => (this.listTipoMovimento = data));
     this.dominioService.getTipoOperacao().subscribe((data) => (this.listTipoOperacao = data));
@@ -184,8 +181,8 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
 
   private criarForm(): void {
     this.filters = this.fb.group({
-      codigoStatus: [['AC', 'A', 'R', 'RA']],
-      tipoNegocio: [['VENDAS', 'COMPRAS']],
+      codigoStatus: [[]],
+      tipoNegocio: [['VENDAS']],
       numeroNota: [],
       numeroUnico: [],
       numeroModial: [],
@@ -214,12 +211,11 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get activeFilterCount(): number {
     const v = this.filters.value;
     let count = 0;
-    const defaultStatus = ['AC', 'A', 'R', 'RA'];
-    const defaultNegocio = ['VENDAS', 'COMPRAS'];
+    const defaultNegocio = ['VENDAS'];
     const negocioVal = v.tipoNegocio;
     if (negocioVal && JSON.stringify([...negocioVal].sort()) !== JSON.stringify([...defaultNegocio].sort())) count++;
     const statusVal = v.codigoStatus;
-    if (statusVal && JSON.stringify([...statusVal].sort()) !== JSON.stringify([...defaultStatus].sort())) count++;
+    if (statusVal?.length > 0) count++;
     if (v.numeroNota) count++;
     if (v.numeroUnico) count++;
     if (v.numeroModial) count++;
@@ -405,13 +401,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     this.router.navigate([`/separacao/${fila?.numeroUnico}`]);
   }
 
-  onImprimirEtiqueta(fila: FilaConferenciaDTO): void {
-    this.arquivoService.imprimirEtiqueta(fila?.numeroConferencia!).subscribe({
-      error: (err) => console.error('Erro ao imprimir etiquetas', err),
-    });
-  }
-
-  displayDate(date: string | null | undefined): string {
+displayDate(date: string | null | undefined): string {
     if (!date) return '—';
     if (/^\d{8}$/.test(date)) {
       return `${date.slice(0, 2)}/${date.slice(2, 4)}/${date.slice(4, 8)}`;
@@ -430,6 +420,24 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
       rd: 'status-rd', z: 'status-z',
     };
     return map[(codigo || '').toLowerCase()] || 'status-z';
+  }
+
+  statusBadgeClass(codigo: string): string {
+    const map: Record<string, string> = {
+      AC: 'badge--ac', A: 'badge--a', R: 'badge--r',
+      RA: 'badge--r', RD: 'badge--d', D: 'badge--d',
+      F: 'badge--f', Z: 'badge--z',
+    };
+    return map[(codigo || '').toUpperCase()] || 'badge--z';
+  }
+
+  statusIcon(codigo: string): string {
+    const map: Record<string, string> = {
+      AC: 'schedule', A: 'play_circle', R: 'refresh',
+      RA: 'replay', RD: 'error_outline', D: 'error_outline',
+      F: 'check_circle', Z: 'hourglass_empty',
+    };
+    return map[(codigo || '').toUpperCase()] || 'help_outline';
   }
 
   @HostListener('document:click')
@@ -494,9 +502,4 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
       : 'Disponível quando status é Aguardando conferência ou Em Andamento';
   }
 
-  tooltipImprimir(data: FilaConferenciaDTO): string {
-    return data.codigoStatus === 'F'
-      ? 'Imprimir etiqueta'
-      : 'Disponível somente para conferências Finalizadas OK';
-  }
 }

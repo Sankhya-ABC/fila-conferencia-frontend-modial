@@ -1,0 +1,136 @@
+<!-- BANNER BOAS-VINDAS -->
+<div class="painel-boas-vindas">
+  <div class="usuario-avatar">{{ iniciaisUsuario }}</div>
+  <div class="usuario-info">
+    <p class="usuario-saudacao">{{ nomeUsuario }}</p>
+    <span class="usuario-perfil">Impressão de Etiquetas</span>
+  </div>
+
+  <div class="painel-direita">
+    <div class="painel-contagem">
+      <span class="contagem-valor">{{ carregando ? '...' : items.length }}</span>
+      <span class="contagem-label">finalizadas</span>
+    </div>
+
+    <div class="filtro-btn-wrapper">
+      <button mat-flat-button
+              color="primary"
+              class="filtro-btn"
+              (click)="filtroAberto = !filtroAberto"
+              [matBadge]="temFiltroAtivo ? '!' : null"
+              matBadgeColor="warn"
+              matBadgeSize="small">
+        <mat-icon>tune</mat-icon>
+        Filtros
+      </button>
+
+      <div class="filtro-panel"
+           *ngIf="filtroAberto"
+           [formGroup]="filters"
+           (click)="$event.stopPropagation()">
+
+        <div class="filtro-panel-header">
+          <span class="filtro-panel-titulo">Filtros</span>
+          <button mat-icon-button (click)="filtroAberto = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="filtro-destaque-wrapper">
+          <span class="filtro-secao-label">Identificadores</span>
+
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Nº Único</mat-label>
+            <input matInput formControlName="numeroUnico" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Nº Modial</mat-label>
+            <input matInput formControlName="numeroModial" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Nº Nota</mat-label>
+            <input matInput formControlName="numeroNota" />
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-panel-actions">
+          <button mat-stroked-button (click)="limpar()">Limpar</button>
+          <button mat-flat-button color="primary" (click)="filtroAberto = false">Fechar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BACKDROP -->
+<div class="filtro-backdrop"
+     *ngIf="filtroAberto"
+     (click)="filtroAberto = false">
+</div>
+
+<!-- GRID DE CARDS -->
+<div class="ie-grid" *ngIf="!carregando && items.length > 0">
+  <div class="ie-card" *ngFor="let item of items">
+
+    <div class="ie-card-head">
+      <span class="ie-tipo">{{ item.descricaoTipoOperacao || '—' }}</span>
+    </div>
+
+    <div class="ie-card-parceiro">
+      <mat-icon>handshake</mat-icon>
+      <span>{{ item.nomeParceiro || '—' }}</span>
+    </div>
+
+    <div class="ie-card-body">
+      <div class="ie-dado">
+        <span class="ie-dado-label">Nº Modial</span>
+        <span class="ie-dado-valor ie-dado-valor--destaque">
+          {{ item.AD_NUMTALAO || item.numeroModial || item.numTalao || '—' }}
+        </span>
+      </div>
+      <div class="ie-dado">
+        <span class="ie-dado-label">Nº Único</span>
+        <span class="ie-dado-valor">{{ item.numeroUnico || '—' }}</span>
+      </div>
+      <div class="ie-dado">
+        <span class="ie-dado-label">NF</span>
+        <span class="ie-dado-valor">{{ item.numeroNota || '—' }}</span>
+      </div>
+      <div class="ie-dado">
+        <span class="ie-dado-label">Data</span>
+        <span class="ie-dado-valor">{{ displayDate(item.dataMovimento) }}</span>
+      </div>
+    </div>
+
+    <div class="ie-card-footer">
+      <button class="ie-btn-imprimir"
+              [class.ie-btn-imprimir--loading]="imprimindo === item.numeroConferencia"
+              [disabled]="imprimindo !== null"
+              (click)="imprimir(item)">
+        <mat-icon>{{ imprimindo === item.numeroConferencia ? 'hourglass_empty' : 'print' }}</mat-icon>
+        {{ imprimindo === item.numeroConferencia ? 'Imprimindo...' : 'Imprimir Etiqueta' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- SKELETON -->
+<div class="ie-grid" *ngIf="carregando">
+  <div class="ie-card ie-card--skeleton" *ngFor="let i of [1,2,3,4,5,6]">
+    <div class="sk sk--head"></div>
+    <div class="sk sk--line"></div>
+    <div class="sk sk--line sk--line-short"></div>
+    <div class="sk sk--btn"></div>
+  </div>
+</div>
+
+<!-- VAZIO -->
+<div class="ie-vazio" *ngIf="!carregando && items.length === 0">
+  <mat-icon>print_disabled</mat-icon>
+  <span>Nenhuma conferência finalizada</span>
+  <p>Ajuste os filtros ou aguarde novas conferências finalizadas.</p>
+</div>

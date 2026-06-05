@@ -9,6 +9,7 @@ import { adminGuard } from './core/guards/admin.guard';
 import { UsuarioComponent } from './pages/usuario/usuario.component';
 import { RedefinirUsuarioComponent } from './pages/redefinir-usuario/redefinir-usuario.component';
 import { DashboardProdutividadeComponent } from './pages/dashboard-produtividade/dashboard-produtividade.component';
+import { ImpressaoEtiquetasComponent } from './pages/impressao-etiquetas/impressao-etiquetas.component';
 
 export const routes: Routes = [
   {
@@ -45,6 +46,11 @@ export const routes: Routes = [
     canActivate: [adminGuard],
     path: 'dashboard-produtividade',
     component: DashboardProdutividadeComponent,
+  },
+  {
+    canActivate: [authGuard],
+    path: 'impressao-etiquetas',
+    component: ImpressaoEtiquetasComponent,
   },
   {
     path: '',
