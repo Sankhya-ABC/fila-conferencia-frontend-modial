@@ -1,26 +1,32 @@
 <div class="dash-container">
 
-  <!-- FILTROS -->
-  <div class="dash-filtros">
-    <div class="dash-periodo-btns">
-      <button [class.ativo]="periodo === 'hoje'"   (click)="setPeriodo('hoje')">Hoje</button>
-      <button [class.ativo]="periodo === 'semana'" (click)="setPeriodo('semana')">Semana</button>
-      <button [class.ativo]="periodo === 'mes'"    (click)="setPeriodo('mes')">Mês</button>
+  <!-- CABEÇALHO -->
+  <div class="dash-header">
+    <h2 class="dash-titulo">
+      Produtividade
+      <span>atualizado a cada 30s</span>
+    </h2>
+    <div class="dash-filtros">
+      <div class="dash-periodo-btns">
+        <button [class.ativo]="periodo === 'hoje'"   (click)="setPeriodo('hoje')">Hoje</button>
+        <button [class.ativo]="periodo === 'semana'" (click)="setPeriodo('semana')">Semana</button>
+        <button [class.ativo]="periodo === 'mes'"    (click)="setPeriodo('mes')">Mês</button>
+      </div>
+      <mat-form-field appearance="outline" class="dash-filtro-separador">
+        <mat-label>Separador</mat-label>
+        <mat-select [(value)]="idUsuarioFiltro" (selectionChange)="carregarDados()">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option *ngFor="let s of separadores" [value]="s.id">
+            {{ s.nome }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
-    <mat-form-field appearance="outline" class="dash-filtro-separador">
-      <mat-label>Separador</mat-label>
-      <mat-select [(value)]="idUsuarioFiltro" (selectionChange)="carregarDados()">
-        <mat-option [value]="null">Todos</mat-option>
-        <mat-option *ngFor="let s of separadores" [value]="s.id">
-          {{ s.nome }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
   </div>
 
   <!-- LOADING -->
   <div class="dash-loading" *ngIf="carregando && !dados">
-    <span class="dash-loading-text">Carregando...</span>
+    Carregando...
   </div>
 
   <ng-container *ngIf="dados">
@@ -29,33 +35,41 @@
     <div class="dash-kpis">
       <div class="dash-kpi dash-kpi--online">
         <div class="kpi-dot-online"></div>
+        <mat-icon class="kpi-icone">sensors</mat-icon>
         <span class="kpi-valor">{{ dados.usuariosAtivos }}</span>
         <span class="kpi-label">Online agora</span>
       </div>
-      <div class="dash-kpi">
+      <div class="dash-kpi dash-kpi--conf">
+        <mat-icon class="kpi-icone">fact_check</mat-icon>
         <span class="kpi-valor">{{ dados.totalConferencias }}</span>
         <span class="kpi-label">Conferências</span>
       </div>
-      <div class="dash-kpi">
+      <div class="dash-kpi dash-kpi--tempo">
+        <mat-icon class="kpi-icone">schedule</mat-icon>
         <span class="kpi-valor">{{ dados.tempoMedioSegundos | duracao }}</span>
         <span class="kpi-label">Tempo médio</span>
       </div>
-      <div class="dash-kpi">
+      <div class="dash-kpi dash-kpi--itens">
+        <mat-icon class="kpi-icone">qr_code_scanner</mat-icon>
         <span class="kpi-valor">{{ dados.totalItensPorHora }}</span>
         <span class="kpi-label">Itens/hora</span>
       </div>
-      <div class="dash-kpi">
-        <span class="kpi-valor">{{ dados.pesoTotalKg | number:'1.0-1' }}t</span>
+      <div class="dash-kpi dash-kpi--peso">
+        <mat-icon class="kpi-icone">scale</mat-icon>
+        <span class="kpi-valor">
+          {{ (dados.pesoTotalKg / 1000) | number:'1.1-1' }}t
+        </span>
         <span class="kpi-label">Peso movim.</span>
       </div>
     </div>
 
-    <!-- ATIVIDADE AGORA -->
-    <div class="dash-secao" *ngIf="dados.atividadeAgora?.length">
-      <h3 class="dash-secao-titulo">
+    <!-- ATIVIDADE EM TEMPO REAL -->
+    <div class="dash-realtime" *ngIf="dados.atividadeAgora?.length">
+      <div class="dash-realtime-header">
         <span class="dot-ping"></span>
-        Atividade em tempo real
-      </h3>
+        <h3>Atividade em tempo real</h3>
+        <span class="realtime-count">{{ dados.atividadeAgora.length }}</span>
+      </div>
       <div class="dash-atividade-lista">
         <div class="atividade-item" *ngFor="let a of dados.atividadeAgora">
           <div class="atividade-avatar">{{ a.nomeUsuario | iniciais }}</div>
@@ -73,9 +87,10 @@
     <!-- RANKING + PICOS -->
     <div class="dash-grid-dois">
 
-      <!-- RANKING -->
       <div class="dash-card">
-        <h3 class="dash-card-titulo">Ranking separadores</h3>
+        <div class="dash-card-header">
+          <h3>Ranking separadores</h3>
+        </div>
         <div class="ranking-lista">
           <div class="ranking-item"
                *ngFor="let r of dados.ranking; let i = index"
@@ -96,18 +111,21 @@
         </div>
       </div>
 
-      <!-- PICOS POR HORA -->
       <div class="dash-card">
-        <h3 class="dash-card-titulo">Conferências por hora</h3>
-        <div class="pico-chart">
-          <div class="pico-barra-wrap"
-               *ngFor="let p of dados.picos"
-               [matTooltip]="p.hora + 'h: ' + p.total + ' conf.'">
-            <div class="pico-barra"
-                 [style.height.%]="(p.total / maxPico) * 100"
-                 [class.pico-barra--destaque]="p.total === maxPico">
+        <div class="dash-card-header">
+          <h3>Conferências por hora</h3>
+        </div>
+        <div class="pico-chart-wrap">
+          <div class="pico-chart">
+            <div class="pico-barra-wrap"
+                 *ngFor="let p of dados.picos"
+                 [matTooltip]="p.hora + 'h: ' + p.total + ' conf.'">
+              <div class="pico-barra"
+                   [style.height.%]="(p.total / maxPico) * 100"
+                   [class.pico-barra--destaque]="p.total === maxPico">
+              </div>
+              <span class="pico-hora" *ngIf="p.hora % 3 === 0">{{ p.hora }}h</span>
             </div>
-            <span class="pico-hora" *ngIf="p.hora % 3 === 0">{{ p.hora }}h</span>
           </div>
         </div>
       </div>
@@ -115,8 +133,10 @@
     </div>
 
     <!-- TABELA DETALHAMENTO -->
-    <div class="dash-card dash-card--tabela">
-      <h3 class="dash-card-titulo">Detalhamento</h3>
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <h3>Detalhamento por separador</h3>
+      </div>
       <div class="dash-tabela-wrap">
         <table class="dash-tabela">
           <thead>
@@ -136,7 +156,7 @@
                 (click)="selecionarSeparador(r)"
                 [class.tr--selecionado]="usuarioSelecionado?.idUsuario === r.idUsuario">
               <td class="td-pos">{{ i + 1 }}</td>
-              <td class="td-nome">
+              <td>
                 <div class="td-nome-inner">
                   <div class="td-avatar">{{ r.nomeUsuario | iniciais }}</div>
                   {{ r.nomeUsuario }}
@@ -157,9 +177,7 @@
     <!-- LINHA DO TEMPO -->
     <div class="dash-card" *ngIf="usuarioSelecionado && dados.linhaDoTempo?.length">
       <div class="dash-card-header">
-        <h3 class="dash-card-titulo">
-          Linha do tempo &mdash; {{ usuarioSelecionado.nomeUsuario }}
-        </h3>
+        <h3>Linha do tempo &mdash; {{ usuarioSelecionado.nomeUsuario }}</h3>
         <button mat-icon-button (click)="usuarioSelecionado = null">
           <mat-icon>close</mat-icon>
         </button>
