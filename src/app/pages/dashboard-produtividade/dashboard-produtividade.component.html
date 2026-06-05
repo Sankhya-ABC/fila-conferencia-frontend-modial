@@ -1,0 +1,194 @@
+<div class="dash-container">
+
+  <!-- FILTROS -->
+  <div class="dash-filtros">
+    <div class="dash-periodo-btns">
+      <button [class.ativo]="periodo === 'hoje'"   (click)="setPeriodo('hoje')">Hoje</button>
+      <button [class.ativo]="periodo === 'semana'" (click)="setPeriodo('semana')">Semana</button>
+      <button [class.ativo]="periodo === 'mes'"    (click)="setPeriodo('mes')">Mês</button>
+    </div>
+    <mat-form-field appearance="outline" class="dash-filtro-separador">
+      <mat-label>Separador</mat-label>
+      <mat-select [(value)]="idUsuarioFiltro" (selectionChange)="carregarDados()">
+        <mat-option [value]="null">Todos</mat-option>
+        <mat-option *ngFor="let s of separadores" [value]="s.id">
+          {{ s.nome }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- LOADING -->
+  <div class="dash-loading" *ngIf="carregando && !dados">
+    <span class="dash-loading-text">Carregando...</span>
+  </div>
+
+  <ng-container *ngIf="dados">
+
+    <!-- CARDS KPI -->
+    <div class="dash-kpis">
+      <div class="dash-kpi dash-kpi--online">
+        <div class="kpi-dot-online"></div>
+        <span class="kpi-valor">{{ dados.usuariosAtivos }}</span>
+        <span class="kpi-label">Online agora</span>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-valor">{{ dados.totalConferencias }}</span>
+        <span class="kpi-label">Conferências</span>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-valor">{{ dados.tempoMedioSegundos | duracao }}</span>
+        <span class="kpi-label">Tempo médio</span>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-valor">{{ dados.totalItensPorHora }}</span>
+        <span class="kpi-label">Itens/hora</span>
+      </div>
+      <div class="dash-kpi">
+        <span class="kpi-valor">{{ dados.pesoTotalKg | number:'1.0-1' }}t</span>
+        <span class="kpi-label">Peso movim.</span>
+      </div>
+    </div>
+
+    <!-- ATIVIDADE AGORA -->
+    <div class="dash-secao" *ngIf="dados.atividadeAgora?.length">
+      <h3 class="dash-secao-titulo">
+        <span class="dot-ping"></span>
+        Atividade em tempo real
+      </h3>
+      <div class="dash-atividade-lista">
+        <div class="atividade-item" *ngFor="let a of dados.atividadeAgora">
+          <div class="atividade-avatar">{{ a.nomeUsuario | iniciais }}</div>
+          <div class="atividade-info">
+            <span class="atividade-nome">{{ a.nomeUsuario }}</span>
+            <span class="atividade-detalhe">
+              Conf #{{ a.numeroConferencia }} &middot; {{ a.nomeParceiro }}
+            </span>
+          </div>
+          <span class="atividade-tempo">há {{ a.minutosAtivo }}min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING + PICOS -->
+    <div class="dash-grid-dois">
+
+      <!-- RANKING -->
+      <div class="dash-card">
+        <h3 class="dash-card-titulo">Ranking separadores</h3>
+        <div class="ranking-lista">
+          <div class="ranking-item"
+               *ngFor="let r of dados.ranking; let i = index"
+               (click)="selecionarSeparador(r)"
+               [class.ranking-item--selecionado]="usuarioSelecionado?.idUsuario === r.idUsuario">
+            <span class="ranking-pos">{{ i + 1 }}</span>
+            <div class="ranking-avatar">{{ r.nomeUsuario | iniciais }}</div>
+            <div class="ranking-info">
+              <span class="ranking-nome">{{ r.nomeUsuario }}</span>
+              <div class="ranking-barra-wrap">
+                <div class="ranking-barra"
+                     [style.width.%]="(r.totalConferencias / maxConferencias) * 100">
+                </div>
+              </div>
+            </div>
+            <span class="ranking-valor">{{ r.totalConferencias }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PICOS POR HORA -->
+      <div class="dash-card">
+        <h3 class="dash-card-titulo">Conferências por hora</h3>
+        <div class="pico-chart">
+          <div class="pico-barra-wrap"
+               *ngFor="let p of dados.picos"
+               [matTooltip]="p.hora + 'h: ' + p.total + ' conf.'">
+            <div class="pico-barra"
+                 [style.height.%]="(p.total / maxPico) * 100"
+                 [class.pico-barra--destaque]="p.total === maxPico">
+            </div>
+            <span class="pico-hora" *ngIf="p.hora % 3 === 0">{{ p.hora }}h</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TABELA DETALHAMENTO -->
+    <div class="dash-card dash-card--tabela">
+      <h3 class="dash-card-titulo">Detalhamento</h3>
+      <div class="dash-tabela-wrap">
+        <table class="dash-tabela">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Separador</th>
+              <th>Conf.</th>
+              <th>T. Médio</th>
+              <th>Itens</th>
+              <th>Bipagens</th>
+              <th>Cubagens</th>
+              <th>Logins</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of dados.ranking; let i = index"
+                (click)="selecionarSeparador(r)"
+                [class.tr--selecionado]="usuarioSelecionado?.idUsuario === r.idUsuario">
+              <td class="td-pos">{{ i + 1 }}</td>
+              <td class="td-nome">
+                <div class="td-nome-inner">
+                  <div class="td-avatar">{{ r.nomeUsuario | iniciais }}</div>
+                  {{ r.nomeUsuario }}
+                </div>
+              </td>
+              <td>{{ r.totalConferencias }}</td>
+              <td>{{ r.tempoMedioSegundos | duracao }}</td>
+              <td>{{ r.totalItens }}</td>
+              <td>{{ r.totalBipagens }}</td>
+              <td>{{ r.totalCubagens }}</td>
+              <td>{{ r.totalLogins }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LINHA DO TEMPO -->
+    <div class="dash-card" *ngIf="usuarioSelecionado && dados.linhaDoTempo?.length">
+      <div class="dash-card-header">
+        <h3 class="dash-card-titulo">
+          Linha do tempo &mdash; {{ usuarioSelecionado.nomeUsuario }}
+        </h3>
+        <button mat-icon-button (click)="usuarioSelecionado = null">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item"
+             *ngFor="let t of dados.linhaDoTempo"
+             [class.timeline-item--abandonada]="t.abandonada">
+          <div class="timeline-horario">
+            <span>{{ t.dtAbertura | date:'HH:mm' }}</span>
+            <div class="timeline-linha"></div>
+            <span>{{ t.dtFechamento | date:'HH:mm' }}</span>
+          </div>
+          <div class="timeline-conteudo">
+            <span class="timeline-conf">Conf #{{ t.numeroConferencia }}</span>
+            <span class="timeline-parceiro">{{ t.nomeParceiro }}</span>
+            <div class="timeline-meta">
+              <span>{{ t.duracaoSegundos | duracao }}</span>
+              <span>&middot;</span>
+              <span>{{ t.totalItens }} itens</span>
+              <span>&middot;</span>
+              <span>{{ t.totalVolumes }} vol.</span>
+              <span class="timeline-abandonada" *ngIf="t.abandonada">&#9888; Abandonada</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

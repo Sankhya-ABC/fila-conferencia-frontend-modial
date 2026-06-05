@@ -8,6 +8,7 @@ import { SeparacaoComponent } from './pages/separacao/separacao.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { UsuarioComponent } from './pages/usuario/usuario.component';
 import { RedefinirUsuarioComponent } from './pages/redefinir-usuario/redefinir-usuario.component';
+import { DashboardProdutividadeComponent } from './pages/dashboard-produtividade/dashboard-produtividade.component';
 
 export const routes: Routes = [
   {
@@ -39,6 +40,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     path: 'separacao/:numeroUnico',
     component: SeparacaoComponent,
+  },
+  {
+    canActivate: [adminGuard],
+    path: 'dashboard-produtividade',
+    component: DashboardProdutividadeComponent,
   },
   {
     path: '',

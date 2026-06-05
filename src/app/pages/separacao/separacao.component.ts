@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -19,6 +19,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { forkJoin, interval, Subscription } from 'rxjs';
+import { SessaoService } from '../../services/sessao/sessao.service';
 import { filter, first, switchMap, timeout } from 'rxjs/operators';
 import { RoboLoaderComponent } from '../../shared/components/robo-loader/robo-loader.component';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -40,6 +41,7 @@ interface GrupoVolume {
   peso: number;
 }
 import { VolumeService } from '../../services/volume/volume.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-separacao',
@@ -63,7 +65,7 @@ import { VolumeService } from '../../services/volume/volume.service';
   templateUrl: './separacao.component.html',
   styleUrl: './separacao.component.scss',
 })
-export class SeparacaoComponent implements OnInit {
+export class SeparacaoComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private conferenciaService: ConferenciaService,
@@ -74,6 +76,7 @@ export class SeparacaoComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private authService: AuthService,
+    private sessaoService: SessaoService,
   ) {}
 
   // read scanner
@@ -157,6 +160,7 @@ export class SeparacaoComponent implements OnInit {
   carregando = true;
   preparandoSessao = false;
   private sessaoProntaSub?: Subscription;
+  private heartbeatSub?: Subscription;
   private devolvendoEmAndamento = false;
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
@@ -210,6 +214,7 @@ export class SeparacaoComponent implements OnInit {
     if (!this.numeroUnico) return;
 
     this.inicializarConferencia();
+    this.iniciarHeartbeat();
 
     const user = this.authService.getUser();
     this.operadorNome = (user?.nome || '').split(' ').slice(0, 2).join(' ');
@@ -221,6 +226,34 @@ export class SeparacaoComponent implements OnInit {
   ngOnDestroy() {
     window.removeEventListener('keydown', this.listenScanner);
     this.sessaoProntaSub?.unsubscribe();
+    this.pararHeartbeat();
+    this.registrarFechamentoSessao();
+  }
+
+  private iniciarHeartbeat() {
+    this.sessaoService.registrarAbertura(this.numeroUnico!).subscribe();
+
+    this.sessaoService.heartbeat({
+      numeroConferencia: this.dadosGerais?.numeroConferencia,
+    }).subscribe();
+
+    this.heartbeatSub = interval(120000).subscribe(() => {
+      this.sessaoService.heartbeat({
+        numeroConferencia: this.dadosGerais?.numeroConferencia,
+      }).subscribe();
+    });
+  }
+
+  private pararHeartbeat() {
+    this.heartbeatSub?.unsubscribe();
+  }
+
+  private registrarFechamentoSessao() {
+    if (!this.numeroUnico) return;
+    const token = this.authService.getUser().token;
+    const url = `${environment.API_GATEWAY}/api/sessao/${this.numeroUnico}/fechar`;
+    const blob = new Blob([JSON.stringify({ token })], { type: 'application/json' });
+    navigator.sendBeacon(url, blob);
   }
 
   @HostListener('window:keydown', ['$event'])
