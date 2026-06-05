@@ -35,6 +35,11 @@ export class ImpressaoEtiquetasComponent implements OnInit {
   carregando = false;
   imprimindo: number | null = null;
   filtroAberto = false;
+  page = 0;
+  perPage = 15;
+  total = 0;
+
+  get totalPages(): number { return Math.max(Math.ceil(this.total / this.perPage), 1); }
 
   constructor(
     private fb: FormBuilder,
@@ -72,11 +77,12 @@ export class ImpressaoEtiquetasComponent implements OnInit {
     this.buscar();
   }
 
-  buscar(): void {
+  buscar(resetPage = true): void {
+    if (resetPage) this.page = 0;
     this.carregando = true;
     const v = this.filters.value;
 
-    const params: any = { codigoStatus: 'F', perPage: 100, page: 0 };
+    const params: any = { codigoStatus: 'F', perPage: this.perPage, page: this.page };
     if (v.numeroUnico?.trim())  params.numeroUnico  = v.numeroUnico.trim();
     if (v.numeroModial?.trim()) params.numeroModial = v.numeroModial.trim();
     if (v.numeroNota?.trim())   params.numeroNota   = v.numeroNota.trim();
@@ -86,9 +92,18 @@ export class ImpressaoEtiquetasComponent implements OnInit {
     ).subscribe({
       next: (resp: any) => {
         this.items = Array.isArray(resp) ? resp : (resp?.data ?? resp?.content ?? resp?.items ?? []);
+        this.total = resp?.total ?? this.items.length;
       },
-      error: () => (this.items = []),
+      error: () => { this.items = []; this.total = 0; },
     });
+  }
+
+  prevPage(): void {
+    if (this.page > 0) { this.page--; this.buscar(false); }
+  }
+
+  nextPage(): void {
+    if ((this.page + 1) * this.perPage < this.total) { this.page++; this.buscar(false); }
   }
 
   limpar(): void {

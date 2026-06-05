@@ -75,7 +75,7 @@
 <!-- LISTA -->
 <div class="user-list-container">
 
-  <!-- Header da tabela -->
+  <!-- Header fixo -->
   <div class="user-list-header">
     <span class="col-usuario">Usuário</span>
     <span class="col-email">Login</span>
@@ -83,6 +83,9 @@
     <span class="col-status">Status</span>
     <span class="col-acoes">Ações</span>
   </div>
+
+  <!-- Scroll interno -->
+  <div class="user-rows-scroll">
 
   <!-- Skeleton -->
   <ng-container *ngIf="carregando">
@@ -159,6 +162,8 @@
     <mat-icon>person_off</mat-icon>
     <span>Nenhum usuário encontrado</span>
   </div>
+
+  </div><!-- /user-rows-scroll -->
 </div>
 
 <!-- Paginação -->

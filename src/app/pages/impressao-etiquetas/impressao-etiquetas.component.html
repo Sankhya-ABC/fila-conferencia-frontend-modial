@@ -8,7 +8,7 @@
 
   <div class="painel-direita">
     <div class="painel-contagem">
-      <span class="contagem-valor">{{ carregando ? '...' : items.length }}</span>
+      <span class="contagem-valor">{{ carregando ? '...' : total }}</span>
       <span class="contagem-label">finalizadas</span>
     </div>
 
@@ -133,4 +133,20 @@
   <mat-icon>print_disabled</mat-icon>
   <span>Nenhuma conferência finalizada</span>
   <p>Ajuste os filtros ou aguarde novas conferências finalizadas.</p>
+</div>
+
+<!-- PAGINAÇÃO -->
+<div class="ie-paginacao" *ngIf="total > 0">
+  <span class="ie-paginacao-info">
+    {{ items.length === 0 ? 'Sem resultados' : (page * perPage + 1) + '–' + (page * perPage + items.length) + ' de ' + total }}
+  </span>
+  <div class="ie-paginacao-controles">
+    <button mat-icon-button [disabled]="page === 0" (click)="prevPage()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="ie-paginacao-pagina">{{ page + 1 }} / {{ totalPages }}</span>
+    <button mat-icon-button [disabled]="(page + 1) * perPage >= total" (click)="nextPage()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
 </div>
