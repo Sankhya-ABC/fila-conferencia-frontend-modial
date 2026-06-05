@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,7 +19,6 @@ import { UsuarioService } from '../../services/usuario/usuario.service';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -40,8 +39,6 @@ export class UsuarioComponent implements OnInit {
   ) {}
 
   dataSource = new MatTableDataSource<any>([]);
-  page = 0;
-  perPage = 25;
   total = 0;
   carregando = false;
   filtroAberto = false;
@@ -58,10 +55,6 @@ export class UsuarioComponent implements OnInit {
   ];
 
   filters!: FormGroup;
-
-  get totalPages(): number {
-    return Math.max(Math.ceil(this.total / this.perPage), 1);
-  }
 
   get activeFilterCount(): number {
     const v = this.filters?.value ?? {};
@@ -83,7 +76,6 @@ export class UsuarioComponent implements OnInit {
   }
 
   onPesquisar(): void {
-    this.page = 0;
     this.filtroAberto = false;
     this.applyFilter();
   }
@@ -93,33 +85,19 @@ export class UsuarioComponent implements OnInit {
     this.dataSource.data = [];
     const { nomeEmail, perfil, status } = this.filters.value;
 
-    const params: any = { page: this.page, perPage: this.perPage };
+    const params: any = {};
     if (nomeEmail) params.nomeEmail = nomeEmail;
     if (perfil)    params.perfil    = perfil;
     if (status != null) params.status = status;
 
     this.usuarioService.getUsuarios(params).subscribe({
       next: (resp: any) => {
-        this.dataSource.data = resp.data;
-        this.total = resp.total;
+        this.dataSource.data = Array.isArray(resp) ? resp : (resp?.data ?? []);
+        this.total = resp?.total ?? this.dataSource.data.length;
         this.carregando = false;
       },
       error: () => { this.carregando = false; },
     });
-  }
-
-  prevPage(): void {
-    if (this.page > 0) { this.page--; this.applyFilter(); }
-  }
-
-  nextPage(): void {
-    if ((this.page + 1) * this.perPage < this.total) { this.page++; this.applyFilter(); }
-  }
-
-  onPerPageChange(value: number): void {
-    this.perPage = Number(value);
-    this.page = 0;
-    this.applyFilter();
   }
 
   atualizarStatus(usuario: any): void {

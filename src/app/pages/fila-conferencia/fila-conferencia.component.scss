@@ -300,7 +300,6 @@
 /* ─── Container principal com desfoque ao filtrar ─── */
 .fila-desfocada {
   .cards-grid,
-  .paginacao,
   .fila-vazia {
     opacity: 0.45;
     pointer-events: none;
@@ -796,7 +795,7 @@
   line-height: 1.4;
 }
 
-/* ─── Paginação compacta ─── */
+/* ─── Paginação fixa (fora do scroll) ─── */
 .paginacao {
   display: flex;
   align-items: center;
@@ -805,7 +804,8 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  margin-top: 4px;
+  margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .paginacao-info {

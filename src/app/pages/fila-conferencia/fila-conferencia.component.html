@@ -360,7 +360,10 @@
   <p>Tente ajustar os filtros ou aguarde novos pedidos.</p>
 </div>
 
-<!-- PAGINAÇÃO COMPACTA -->
+
+</div><!-- /fila-container -->
+
+<!-- PAGINAÇÃO FIXA -->
 <div class="paginacao">
   <span class="paginacao-info">
     {{ dataSource.data.length === 0 ? 'Sem resultados' : pageStart + '–' + pageEnd + (hasNextPage ? '+' : '') }}
@@ -382,5 +385,3 @@
     </button>
   </div>
 </div>
-
-</div><!-- /fila-container -->

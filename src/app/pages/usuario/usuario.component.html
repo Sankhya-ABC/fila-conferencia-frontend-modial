@@ -166,24 +166,3 @@
   </div><!-- /user-rows-scroll -->
 </div>
 
-<!-- Paginação -->
-<div class="paginacao" *ngIf="total > 0">
-  <span class="paginacao-info">
-    {{ dataSource.data.length === 0 ? 'Sem resultados' : (page * perPage + 1) + '–' + (page * perPage + dataSource.data.length) + ' de ' + total }}
-  </span>
-  <div class="paginacao-controles">
-    <span class="paginacao-por-label">Por página:</span>
-    <select class="paginacao-select" [ngModel]="perPage" (ngModelChange)="onPerPageChange($event)">
-      <option [value]="10">10</option>
-      <option [value]="25">25</option>
-      <option [value]="50">50</option>
-    </select>
-    <button mat-icon-button [disabled]="page === 0" (click)="prevPage()">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
-    <span class="paginacao-pagina">{{ page + 1 }} / {{ totalPages }}</span>
-    <button mat-icon-button [disabled]="(page + 1) * perPage >= total" (click)="nextPage()">
-      <mat-icon>chevron_right</mat-icon>
-    </button>
-  </div>
-</div>
