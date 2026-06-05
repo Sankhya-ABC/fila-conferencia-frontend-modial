@@ -310,7 +310,7 @@
 /* ─── Grid kanban ─── */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
   margin-bottom: 8px;
   align-items: start;
@@ -367,10 +367,18 @@
   font-weight: 700;
   border-radius: 20px;
   padding: 3px 8px 3px 5px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
 
-  mat-icon { font-size: 13px; height: 13px; width: 13px; }
+  mat-icon { font-size: 13px; height: 13px; width: 13px; flex-shrink: 0; }
+
+  &__text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
 
   &.badge--ac { background: #fef3c7; color: #92400e; }
   &.badge--a  { background: #d1fae5; color: #065f46; }

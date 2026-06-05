@@ -237,7 +237,7 @@
     <div class="card-head">
       <span class="card-status-badge" [ngClass]="statusBadgeClass(item.codigoStatus)">
         <mat-icon>{{ statusIcon(item.codigoStatus) }}</mat-icon>
-        {{ descricaoStatus(item.codigoStatus) }}
+        <span class="card-status-badge__text">{{ descricaoStatus(item.codigoStatus) }}</span>
       </span>
       <div class="card-head-right">
         <span class="card-tipo-tag"
