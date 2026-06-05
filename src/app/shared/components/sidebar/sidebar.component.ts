@@ -14,10 +14,16 @@ import { Perfil } from '../../../services/auth/auth.model';
   styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent {
+  collapsed = true;
+
   constructor(
     public router: Router,
     private authService: AuthService,
   ) {}
+
+  toggle() {
+    this.collapsed = !this.collapsed;
+  }
 
   get isAdmin(): boolean {
     return this.authService.getUser()?.perfil === Perfil.ADMINISTRADOR;

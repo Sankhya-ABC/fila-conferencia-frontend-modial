@@ -1,12 +1,10 @@
-<nav class="sidebar">
+<nav class="sidebar" [class.sidebar--collapsed]="collapsed">
 
-  <!-- Brand -->
-  <div class="sidebar-brand">
-    <div class="sidebar-brand-icon">
-      <mat-icon>inventory_2</mat-icon>
-    </div>
-    <span class="sidebar-brand-name">Conferência</span>
-  </div>
+  <!-- Toggle -->
+  <button class="sidebar-toggle" (click)="toggle()"
+          [attr.aria-label]="collapsed ? 'Expandir menu' : 'Recolher menu'">
+    <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+  </button>
 
   <!-- Nav -->
   <div class="sidebar-nav">
@@ -14,7 +12,7 @@
     <a class="sidebar-item"
        routerLink="/fila-conferencia"
        routerLinkActive="sidebar-item--active"
-       matTooltip="Fila de Conferência"
+       [matTooltip]="collapsed ? 'Fila de Conferência' : ''"
        matTooltipPosition="right">
       <mat-icon>list_alt</mat-icon>
       <span class="sidebar-item-label">Fila</span>
@@ -24,7 +22,7 @@
        *ngIf="isAdmin"
        routerLink="/dashboard-produtividade"
        routerLinkActive="sidebar-item--active"
-       matTooltip="Dashboard de Produtividade"
+       [matTooltip]="collapsed ? 'Dashboard' : ''"
        matTooltipPosition="right">
       <mat-icon>bar_chart</mat-icon>
       <span class="sidebar-item-label">Dashboard</span>
@@ -34,7 +32,7 @@
        *ngIf="isAdmin"
        routerLink="/usuario"
        routerLinkActive="sidebar-item--active"
-       matTooltip="Usuários"
+       [matTooltip]="collapsed ? 'Usuários' : ''"
        matTooltipPosition="right">
       <mat-icon>group</mat-icon>
       <span class="sidebar-item-label">Usuários</span>
@@ -44,18 +42,20 @@
 
   <div class="sidebar-spacer"></div>
 
-  <!-- Footer: usuário + logout -->
+  <!-- Footer -->
   <div class="sidebar-footer">
-    <div class="sidebar-user">
-      <div class="sidebar-avatar">{{ iniciaisUsuario }}</div>
-      <div class="sidebar-user-info">
-        <span class="sidebar-user-nome">{{ nomeUsuario }}</span>
-        <span class="sidebar-user-perfil">{{ isAdmin ? 'Administrador' : 'Separador' }}</span>
-      </div>
+    <div class="sidebar-avatar"
+         [matTooltip]="collapsed ? nomeUsuario : ''"
+         matTooltipPosition="right">
+      {{ iniciaisUsuario }}
+    </div>
+    <div class="sidebar-user-info">
+      <span class="sidebar-user-nome">{{ nomeUsuario }}</span>
+      <span class="sidebar-user-perfil">{{ isAdmin ? 'Administrador' : 'Separador' }}</span>
     </div>
     <button class="sidebar-logout"
             (click)="logout()"
-            matTooltip="Sair"
+            [matTooltip]="collapsed ? 'Sair' : ''"
             matTooltipPosition="right">
       <mat-icon>logout</mat-icon>
     </button>
