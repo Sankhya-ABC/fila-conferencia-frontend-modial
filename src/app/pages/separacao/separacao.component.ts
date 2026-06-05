@@ -118,7 +118,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   ];
   dataSourceConferidos = new MatTableDataSource<ItemPedidoDTO>([]);
 
-  dadosGerais!: DadosBasicosPedidoDTO;
+  dadosGerais?: DadosBasicosPedidoDTO;
   numeroUnico: number | null = null;
   idUsuario = this.authService.getUser().idUsuario;
   operadorNome = '';
@@ -421,7 +421,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       .postIniciarConferencia({ idUsuario: this.idUsuario, numeroUnico })
       .subscribe({
         next: (res) => {
-          this.dadosGerais.numeroConferencia = res.numeroConferencia;
+          this.dadosGerais!.numeroConferencia = res.numeroConferencia;
           this.preparandoSessao = true;
 
           // Polling leve (só banco local, sem Sankhya) até a sessão estar pronta
@@ -741,7 +741,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     this.conferenciaService
       .postFinalizarConferencia({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
       })
       .subscribe({
         next: () => this.abrirModalConferenciaFinalizada(),
@@ -751,7 +751,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   private finalizarConferenciaAposVolumes() {
     this.conferenciaService
       .postFinalizarConferencia({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
       })
       .subscribe({
         next: () => this.abrirModalConferenciaFinalizada(),
@@ -1041,7 +1041,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     this.separacaoService
       .postDevolverItemConferido({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
         numeroUnico: this.numeroUnico!,
         idProduto: item.idProduto,
         controle: item.controle ?? '',
@@ -1086,7 +1086,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   salvarDimensoes(volume: VolumeFrontDTO) {
     this.volumeService
       .postAtualizarDimensoesVolume({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
         numeroVolume: volume.numeroVolume,
         largura: volume.largura,
         comprimento: volume.comprimento,
@@ -1239,7 +1239,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     this.separacaoService
       .postRemoverVolume({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
         numeroVolume: volume.numeroVolume,
       })
       .subscribe({
@@ -1295,7 +1295,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const moverTudo = qtdMover >= moving.qtdDisponivel;
 
     this.separacaoService.moverItemVolume({
-      numeroConferencia: this.dadosGerais.numeroConferencia!,
+      numeroConferencia: this.dadosGerais!.numeroConferencia!,
       idProduto: moving.idProduto,
       controle: moving.controle,
       seqVolOrigem: moving.seqVolOrigem,
@@ -1357,7 +1357,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     this.separacaoService
       .postItemConferidoVolume({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
         numeroVolume: this.volumeAtivo?.numeroVolume || 1,
         idProduto: item.idProduto,
         controle: item.controle ?? '',
@@ -1483,7 +1483,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   imprimirEtiquetas() {
-    const numeroConferencia = this.dadosGerais.numeroConferencia!;
+    const numeroConferencia = this.dadosGerais!.numeroConferencia!;
 
     this.arquivoService.imprimirEtiqueta(numeroConferencia).subscribe({
       next: () => {
@@ -1591,7 +1591,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
   isSemVolumes(): boolean {
     return !this.dadosGerais?.formacaoVolumes ||
-           this.dadosGerais.formacaoVolumes === 'N';
+           this.dadosGerais!.formacaoVolumes === 'N';
   }
 
   isVolumesDetalhados(): boolean {
@@ -1679,7 +1679,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     if (!this.formCubagem.valid) return;
 
     const payload = {
-      numeroConferencia: this.dadosGerais.numeroConferencia,
+      numeroConferencia: this.dadosGerais!.numeroConferencia,
       quantidadeLote: this.formCubagem.value.quantidade,
       altura: this.formCubagem.value.altura,
       largura: this.formCubagem.value.largura,
@@ -1688,7 +1688,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     };
 
     this.volumeService.gerarVolumesLote(payload).subscribe(() => {
-      this.carregarVolumes(this.dadosGerais.numeroConferencia);
+      this.carregarVolumes(this.dadosGerais!.numeroConferencia);
       this.formCubagem.reset();
       this.fecharModalCriarVolumes();
     });
@@ -1696,7 +1696,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
   deletarVolumeLote(volume: any) {
     const payload = {
-      numeroConferencia: this.dadosGerais.numeroConferencia,
+      numeroConferencia: this.dadosGerais!.numeroConferencia,
       altura: volume.altura,
       largura: volume.largura,
       comprimento: volume.comprimento,
@@ -1704,7 +1704,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     };
 
     this.volumeService.deletarVolumesLote(payload).subscribe(() => {
-      this.carregarVolumes(this.dadosGerais.numeroConferencia);
+      this.carregarVolumes(this.dadosGerais!.numeroConferencia);
     });
   }
 
@@ -1747,7 +1747,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
     const requests = this.gruposSimplificados.map(grupo =>
       this.volumeService.postSalvarGrupoSimplificado({
-        numeroConferencia: this.dadosGerais.numeroConferencia!,
+        numeroConferencia: this.dadosGerais!.numeroConferencia!,
         qtdVol: grupo.qtdVol,
         largura: grupo.largura,
         comprimento: grupo.comprimento,
@@ -1769,7 +1769,7 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
   salvarDimensoesVolumeLote(volume: any) {
     const payload = {
-      numeroConferencia: this.dadosGerais.numeroConferencia,
+      numeroConferencia: this.dadosGerais!.numeroConferencia,
       numeroVolume: null,
 
       alturaAntiga: volume._alturaAntiga ?? volume.altura,
