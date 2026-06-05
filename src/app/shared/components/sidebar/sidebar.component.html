@@ -1,0 +1,64 @@
+<nav class="sidebar">
+
+  <!-- Brand -->
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <span class="sidebar-brand-name">Conferência</span>
+  </div>
+
+  <!-- Nav -->
+  <div class="sidebar-nav">
+
+    <a class="sidebar-item"
+       routerLink="/fila-conferencia"
+       routerLinkActive="sidebar-item--active"
+       matTooltip="Fila de Conferência"
+       matTooltipPosition="right">
+      <mat-icon>list_alt</mat-icon>
+      <span class="sidebar-item-label">Fila</span>
+    </a>
+
+    <a class="sidebar-item"
+       *ngIf="isAdmin"
+       routerLink="/dashboard-produtividade"
+       routerLinkActive="sidebar-item--active"
+       matTooltip="Dashboard de Produtividade"
+       matTooltipPosition="right">
+      <mat-icon>bar_chart</mat-icon>
+      <span class="sidebar-item-label">Dashboard</span>
+    </a>
+
+    <a class="sidebar-item"
+       *ngIf="isAdmin"
+       routerLink="/usuario"
+       routerLinkActive="sidebar-item--active"
+       matTooltip="Usuários"
+       matTooltipPosition="right">
+      <mat-icon>group</mat-icon>
+      <span class="sidebar-item-label">Usuários</span>
+    </a>
+
+  </div>
+
+  <div class="sidebar-spacer"></div>
+
+  <!-- Footer: usuário + logout -->
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">{{ iniciaisUsuario }}</div>
+      <div class="sidebar-user-info">
+        <span class="sidebar-user-nome">{{ nomeUsuario }}</span>
+        <span class="sidebar-user-perfil">{{ isAdmin ? 'Administrador' : 'Separador' }}</span>
+      </div>
+    </div>
+    <button class="sidebar-logout"
+            (click)="logout()"
+            matTooltip="Sair"
+            matTooltipPosition="right">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
+
+</nav>

@@ -2,10 +2,13 @@
 
   <!-- CABEÇALHO -->
   <div class="dash-header">
-    <h2 class="dash-titulo">
-      Produtividade
-      <span>atualizado a cada 30s</span>
-    </h2>
+    <div class="dash-title">
+      <h2 class="dash-titulo">Produtividade</h2>
+      <span class="live-badge">
+        <span class="live-dot"></span>
+        Ao vivo
+      </span>
+    </div>
     <div class="dash-filtros">
       <div class="dash-periodo-btns">
         <button [class.ativo]="periodo === 'hoje'"   (click)="setPeriodo('hoje')">Hoje</button>

@@ -3,21 +3,21 @@
 @use "../styles/breakpoints" as *;
 
 :host {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: clip; // clip não quebra position:sticky interno
+  display: block;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.container {
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main {
   flex: 1;
-  min-height: 0;
-  padding: $space-24;
-  margin: 8px;
-  border: 2px solid var(--color-primary);
-  border-radius: 16px;
-  box-sizing: border-box;
-  overflow-x: clip; // clip não quebra sticky, hidden quebra
-  overflow-y: auto;
   min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
 }

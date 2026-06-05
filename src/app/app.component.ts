@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { HeaderComponent } from './shared/components/header/header.component';
 import { map, Observable } from 'rxjs';
 import { RouteStateService } from './services/route-state/route-state.service';
 import { LoadingOverlayComponent } from './shared/components/loading-overlay/loading-overlay.component';
+import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +12,7 @@ import { LoadingOverlayComponent } from './shared/components/loading-overlay/loa
   imports: [
     CommonModule,
     RouterOutlet,
-    HeaderComponent,
+    SidebarComponent,
     LoadingOverlayComponent,
   ],
   templateUrl: './app.component.html',
@@ -22,8 +22,6 @@ export class AppComponent {
   hideContainer$: Observable<boolean>;
 
   constructor(private routeState: RouteStateService) {
-    this.hideContainer$ = this.routeState.hideContainer$.pipe(
-      map((hide) => hide),
-    );
+    this.hideContainer$ = this.routeState.hideContainer$.pipe(map(h => h));
   }
 }
