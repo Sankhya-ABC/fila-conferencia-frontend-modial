@@ -35,7 +35,7 @@
     <div class="dash-kpis">
       <div class="dash-kpi dash-kpi--online">
         <div class="kpi-dot-online"></div>
-        <mat-icon class="kpi-icone">sensors</mat-icon>
+        <mat-icon class="kpi-icone">radio_button_checked</mat-icon>
         <span class="kpi-valor">{{ dados.usuariosAtivos }}</span>
         <span class="kpi-label">Online agora</span>
       </div>
@@ -47,17 +47,18 @@
       <div class="dash-kpi dash-kpi--tempo">
         <mat-icon class="kpi-icone">schedule</mat-icon>
         <span class="kpi-valor">{{ dados.tempoMedioSegundos | duracao }}</span>
+        <span class="kpi-hint" *ngIf="!dados.tempoMedioSegundos">sem dados de tempo</span>
         <span class="kpi-label">Tempo médio</span>
       </div>
       <div class="dash-kpi dash-kpi--itens">
         <mat-icon class="kpi-icone">qr_code_scanner</mat-icon>
-        <span class="kpi-valor">{{ dados.totalItensPorHora }}</span>
+        <span class="kpi-valor">{{ dados.totalItensPorHora | number:'1.0-0' }}</span>
         <span class="kpi-label">Itens/hora</span>
       </div>
       <div class="dash-kpi dash-kpi--peso">
         <mat-icon class="kpi-icone">scale</mat-icon>
         <span class="kpi-valor">
-          {{ (dados.pesoTotalKg / 1000) | number:'1.1-1' }}t
+          {{ dados.pesoTotalKg > 0 ? ((dados.pesoTotalKg / 1000) | number:'1.1-1') + 't' : '—' }}
         </span>
         <span class="kpi-label">Peso movim.</span>
       </div>

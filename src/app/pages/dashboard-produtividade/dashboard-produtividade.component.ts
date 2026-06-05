@@ -81,7 +81,10 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
       idUsuarioTimeline: this.usuarioSelecionado?.idUsuario ?? null,
     }).subscribe({
       next: dados => {
-        this.dados = dados;
+        this.dados = {
+          ...dados,
+          totalItensPorHora: Math.round(dados.totalItensPorHora) || 0,
+        };
         this.carregando = false;
       },
       error: () => { this.carregando = false; },
