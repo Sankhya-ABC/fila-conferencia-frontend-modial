@@ -20,7 +20,7 @@ export function authInterceptor(
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 401) {
+      if (error.status === 401 && !req.url.includes('/auths/login')) {
         authService.logout();
         router.navigate(['/login']);
       }
