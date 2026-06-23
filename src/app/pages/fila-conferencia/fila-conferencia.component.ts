@@ -77,6 +77,10 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get totalLabel(): string {
     return this._hasNextPage ? `${this.total}+` : `${this.total}`;
   }
+
+  get temNumtalao(): boolean {
+    return this.authService.hasModulo('AD_NUMTALAO');
+  }
   filtroAberto = false;
   filtroAvancadoAberto = false;
   carregando = false;
@@ -182,7 +186,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   private criarForm(): void {
     this.filters = this.fb.group({
       codigoStatus: [[]],
-      tipoNegocio: [['VENDAS']],
+      tipoNegocio: [['VENDAS', 'COMPRAS']],
       numeroNota: [],
       numeroUnico: [],
       numeroModial: [],
@@ -211,7 +215,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get activeFilterCount(): number {
     const v = this.filters.value;
     let count = 0;
-    const defaultNegocio = ['VENDAS'];
+    const defaultNegocio = ['VENDAS', 'COMPRAS'];
     const negocioVal = v.tipoNegocio;
     if (negocioVal && JSON.stringify([...negocioVal].sort()) !== JSON.stringify([...defaultNegocio].sort())) count++;
     const statusVal = v.codigoStatus;

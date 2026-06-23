@@ -58,9 +58,13 @@ export class ImpressaoEtiquetasComponent implements OnInit {
       .map((w: string) => w[0]).join('').toUpperCase();
   }
 
+  get temNumtalao(): boolean {
+    return this.authService.hasModulo('AD_NUMTALAO');
+  }
+
   get temFiltroAtivo(): boolean {
     const v = this.filters?.value;
-    return !!(v?.numeroUnico?.trim() || v?.numeroModial?.trim() || v?.numeroNota?.trim());
+    return !!(v?.numeroUnico?.trim() || (!this.temNumtalao ? false : v?.numeroModial?.trim()) || v?.numeroNota?.trim());
   }
 
   ngOnInit(): void {

@@ -72,6 +72,9 @@ export interface DadosBasicosPedidoDTO {
   codigoTipoMovimento: string;
   descricaoTipoOperacao: string;
   formacaoVolumes?: 'N' | 'D' | 'T' | 'S';
+  obterQtdBalanca?: 'B' | 'N' | 'S' | null;
+  qtdAmaior?: 'C' | 'D' | null;
+  temCubagem?: boolean;
 
   idParceiro: number;
   nomeParceiro: string;

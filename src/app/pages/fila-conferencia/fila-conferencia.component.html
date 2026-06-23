@@ -41,8 +41,9 @@
         <!-- BLOCO 1 — Identificadores -->
         <div class="filtro-destaque-wrapper">
           <span class="filtro-secao-label">Identificadores</span>
-          <div class="filtro-row-duplo">
-            <mat-form-field appearance="outline" class="filtro-field">
+          <div [class]="temNumtalao ? 'filtro-row-duplo' : ''">
+            <mat-form-field appearance="outline" class="filtro-field"
+                            *ngIf="temNumtalao">
               <mat-label>Nº Modial</mat-label>
               <input matInput formControlName="numeroModial" />
             </mat-form-field>
@@ -261,7 +262,7 @@
 
     <!-- GRID DE DADOS -->
     <div class="card-dados">
-      <div class="card-dado">
+      <div class="card-dado" *ngIf="temNumtalao">
         <span class="card-dado-label">Nº Modial</span>
         <span class="card-dado-valor card-dado-valor--destaque">
           {{ item.AD_NUMTALAO || item.numeroModial || item.numTalao || '—' }}

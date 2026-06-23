@@ -7,7 +7,7 @@ import { filter } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class RouteStateService {
-  private routesToHideContainer = ['login', 'redefinir-senha', 'erro', 'separacao'];
+  private routesToHideContainer = ['login', 'redefinir-senha', 'erro', 'separacao', 'master'];
   private _hideContainer$ = new BehaviorSubject<boolean>(false);
   public hideContainer$ = this._hideContainer$.asObservable();
 

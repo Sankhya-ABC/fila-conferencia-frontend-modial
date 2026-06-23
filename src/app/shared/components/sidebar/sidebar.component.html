@@ -60,6 +60,15 @@
       <span>Usuários</span>
     </a>
 
+    <a class="sidebar-item"
+       *ngIf="isAdmin"
+       routerLink="/balancas"
+       routerLinkActive="sidebar-item--active"
+       (click)="toggle()">
+      <mat-icon>scale</mat-icon>
+      <span>Balanças</span>
+    </a>
+
   </div>
 
   <div class="sidebar-spacer"></div>

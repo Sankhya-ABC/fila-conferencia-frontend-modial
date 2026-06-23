@@ -31,6 +31,7 @@ import { ItemPedidoDTO } from '../../services/separacao/separacao.model';
 import { SeparacaoService } from '../../services/separacao/separacao.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { VolumeFrontDTO, VolumeItemDTO } from '../../services/volume/volume.model';
+import { UmaDTO } from '../../services/separacao/separacao.model';
 
 interface GrupoVolume {
   id: string;
@@ -41,6 +42,8 @@ interface GrupoVolume {
   peso: number;
 }
 import { VolumeService } from '../../services/volume/volume.service';
+import { BalancaService } from '../../services/balanca/balanca.service';
+import { BalancaDTO, StatusBalancaResponse } from '../../services/balanca/balanca.model';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -72,6 +75,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     private separacaoService: SeparacaoService,
     private arquivoService: ArquivoService,
     private volumeService: VolumeService,
+    private balancaService: BalancaService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
@@ -90,8 +94,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     'idProduto',
     'nomeProduto',
     'codigoBarras',
-    'quantidadeBase',
-    'quantidadeConvertida',
+    'quantidadeComercial',
+    'quantidadePadrao',
     'idMarca',
     'nomeMarca',
     'idFornecedor',
@@ -107,8 +111,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     'idProduto',
     'nomeProduto',
     'codigoBarras',
-    'quantidadeBase',
-    'quantidadeConvertida',
+    'quantidadeComercial',
+    'quantidadePadrao',
     'idMarca',
     'nomeMarca',
     'idFornecedor',
@@ -138,8 +142,57 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   focusIndexPendentes = -1;
   private _ultimoBarcodeProcessado = '';
 
+  // modal peso
+  mostrarModalPeso = false;
+  pesoAtualLeitura: number | null = null;
+  pesoCapturadoDaBalanca = false;
+  balancas: BalancaDTO[] = [];
+  balancaSelecionadaId: string | null = null;
+  capturandoPeso = false;
+  erroCapturaBalanca: string | null = null;
+  formPeso!: FormGroup;
+  private _acaoAposPeso: (() => void) | null = null;
+
+  // UMA (Unidade de Movimentação e Armazenagem)
+  umasDisponiveis: UmaDTO[] = [];
+  umaSelecionada: UmaDTO | null = null;
+
+  // Peso capturado por item pesável (AD_PESAVEL='S'), key: `${idProduto}|${controle}`
+  pesoPesavelMap: Map<string, number> = new Map();
+
+  // Exclusão de sessão
+  mostrarConfirmExcluirSessao = false;
+  excluindoSessao = false;
+
+  // Seletor de balança na top bar
+  mostrarSeletorBalancaTopbar = false;
+
+  // peso modal — modo integrado com balança
+  modoEntradaPeso: 'manual' | 'balanca' = 'manual';
+  statusBalancaConf: 'verificando' | 'conectado' | 'desconectado' = 'desconectado';
+  pesoBalancaAtual = 0;
+  capturaAutoAtiva = false;
+  private taraValor = 0;
+  private pollingPesoSub?: Subscription;
+  private pesoAnteriorPoll: number | null = null;
+  private estabilidadeTimer?: ReturnType<typeof setTimeout>;
+  private readonly ESTABILIDADE_MS = 2000;
+
   get volumeAtivo(): VolumeFrontDTO | undefined {
     return this.volumes.find(v => v.ativo);
+  }
+
+  get usaBalanca(): boolean {
+    return this.dadosGerais?.obterQtdBalanca !== 'N';
+  }
+
+  get balancaObrigatoria(): boolean {
+    return this.dadosGerais?.obterQtdBalanca === 'B';
+  }
+
+  get balancaAtualNome(): string | null {
+    if (!this.balancaSelecionadaId) return null;
+    return this.balancas.find(b => b.id === this.balancaSelecionadaId)?.nome ?? null;
   }
 
   // form
@@ -151,6 +204,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   itemSelecionado: ItemPedidoDTO | null = null;
   ultimoProduto: ItemPedidoDTO | null = null;
   controlesDisponiveis: string[] = [];
+  controleModoLote = false;
   produtoIdentificado = false;
   codvolAtual: string | null = null;
   itemMovendo: { idProduto: number; controle: string; seqVolOrigem?: number; descricaoProduto: string; qtdDisponivel: number; qtdMover: number } | null = null;
@@ -184,6 +238,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   @ViewChild('inputIdentificador') inputIdentificador!: any;
   @ViewChild('inputQuantidade') inputQuantidade!: any;
   @ViewChild('selectControle') selectControleRef?: MatSelect;
+  @ViewChild('inputControleLote') inputControleLoteRef?: any;
 
   ngOnInit(): void {
     this.listenScanner();
@@ -192,7 +247,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     this.formConferencia = this.fb.group({
       identificador: [''],
-      quantidadeConvertida: [null],
+      quantidadePadrao: [null],
       controle: [''],
     });
 
@@ -211,10 +266,26 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       peso: [null, [Validators.required, Validators.min(0.1)]],
     });
 
+    this.formPeso = this.fb.group({
+      peso: [null, [Validators.required, Validators.min(0.001)]],
+    });
+
     if (!this.numeroUnico) return;
 
     this.inicializarConferencia();
     this.iniciarHeartbeat();
+
+    this.balancaService.listar().subscribe({
+      next: (b) => {
+        this.balancas = b;
+        if (b.length === 0) return;
+        const padrao = localStorage.getItem('balanca_padrao_conf');
+        const achada = padrao ? b.find(x => x.id === padrao) : null;
+        if (!this.balancaSelecionadaId) {
+          this.balancaSelecionadaId = achada?.id ?? (b.length === 1 ? b[0].id : null);
+        }
+      },
+    });
 
     const user = this.authService.getUser();
     this.operadorNome = (user?.nome || '').split(' ').slice(0, 2).join(' ');
@@ -227,6 +298,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     window.removeEventListener('keydown', this.listenScanner);
     this.sessaoProntaSub?.unsubscribe();
     this.pararHeartbeat();
+    this.pararPollingPeso();
     this.registrarFechamentoSessao();
   }
 
@@ -282,6 +354,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         break;
       case 'Escape':
         event.preventDefault();
+        if (this.mostrarModalPeso) {
+          this.cancelarPeso();
+          return;
+        }
         if (this.toast) {
           this.toast = null;
           return;
@@ -347,6 +423,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   processarLeitura(codigo: string) {
     if (!codigo) return;
+    if (this.mostrarModalPeso) return;
 
     this.formConferencia.patchValue({
       identificador: codigo,
@@ -367,15 +444,15 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   // conferir
   onSubmitConferencia(): void {
     this.formConferencia.markAllAsTouched();
-    this.onBlurQuantidadeConvertida();
+    this.onBlurQuantidadePadrao();
 
-    if (!this.itemSelecionado || this.quantidadeConvertidaCtrl?.invalid) return;
+    if (!this.itemSelecionado || this.quantidadePadraoCtrl?.invalid) return;
 
-    const valor = Number(this.quantidadeConvertidaCtrl?.value);
+    const valor = Number(this.quantidadePadraoCtrl?.value);
     if (!valor || valor <= 0) return;
 
-    const max = Number(this.itemSelecionado.quantidadeConvertida);
-    if (valor > max) {
+    const max = Number(this.itemSelecionado.quantidadePadrao);
+    if (valor > max && this.dadosGerais?.qtdAmaior !== 'D') {
       this.playSound('invalido');
       this.mostrarToast(`Quantidade ${valor} excede o pendente de ${max}.`, 'aviso');
       return;
@@ -386,7 +463,14 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     );
     const controleItem = this.normalizarControle(this.itemSelecionado.controle ?? '');
 
-    if (controleForm !== controleItem) {
+    if (this.controleModoLote && !controleForm) {
+      this.playSound('erro');
+      this.mostrarToast('Informe o número do lote.', 'aviso');
+      this.focarSelectControle();
+      return;
+    }
+
+    if (!this.controleModoLote && controleForm !== controleItem) {
       this.playSound('erro');
       this.mostrarToast('Controle inválido para este produto.', 'aviso');
       return;
@@ -464,7 +548,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         const mapConferidos = new Map<string, number>();
         itensConferidos.forEach((i) => {
           const k = chave(i);
-          mapConferidos.set(k, (mapConferidos.get(k) || 0) + Number(i.quantidadeConvertida));
+          mapConferidos.set(k, (mapConferidos.get(k) || 0) + Number(i.quantidadePadrao));
         });
 
         const pedidosAtualizados: ItemPedidoDTO[] = [];
@@ -473,13 +557,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         itensPedido.forEach((item) => {
           const qtdConferida = mapConferidos.get(chave(item)) || 0;
           if (qtdConferida > 0) {
-            const fator = item.quantidadeBase / item.quantidadeConvertida;
-            const qtdBaseConferida = Number((qtdConferida * fator).toFixed(5));
-            conferidos.push({ ...item, quantidadeConvertida: qtdConferida, quantidadeBase: qtdBaseConferida });
-            const restanteConvertido = Number((item.quantidadeConvertida - qtdConferida).toFixed(5));
-            const restanteBase = Number((item.quantidadeBase - qtdBaseConferida).toFixed(5));
-            if (restanteConvertido > 0) {
-              pedidosAtualizados.push({ ...item, quantidadeConvertida: restanteConvertido, quantidadeBase: restanteBase });
+            const fator = item.quantidadeComercial / item.quantidadePadrao;
+            const qtdComercialConferida = Number((qtdConferida * fator).toFixed(5));
+            conferidos.push({ ...item, quantidadePadrao: qtdConferida, quantidadeComercial: qtdComercialConferida });
+            const restantePadrao = Number((item.quantidadePadrao - qtdConferida).toFixed(5));
+            const restanteComercial = Number((item.quantidadeComercial - qtdComercialConferida).toFixed(5));
+            if (restantePadrao > 0) {
+              pedidosAtualizados.push({ ...item, quantidadePadrao: restantePadrao, quantidadeComercial: restanteComercial });
             }
           } else {
             pedidosAtualizados.push(item);
@@ -558,7 +642,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         itensConferidos.forEach((i) => {
           const k = chave(i);
           const atual = mapConferidos.get(k) || 0;
-          mapConferidos.set(k, atual + Number(i.quantidadeConvertida));
+          mapConferidos.set(k, atual + Number(i.quantidadePadrao));
         });
 
         const pedidosAtualizados: ItemPedidoDTO[] = [];
@@ -568,29 +652,29 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           const qtdConferida = mapConferidos.get(chave(item)) || 0;
 
           if (qtdConferida > 0) {
-            const fator = item.quantidadeBase / item.quantidadeConvertida;
+            const fator = item.quantidadeComercial / item.quantidadePadrao;
 
-            const qtdBaseConferida = Number((qtdConferida * fator).toFixed(5));
+            const qtdComercialConferida = Number((qtdConferida * fator).toFixed(5));
 
             conferidos.push({
               ...item,
-              quantidadeConvertida: qtdConferida,
-              quantidadeBase: qtdBaseConferida,
+              quantidadePadrao: qtdConferida,
+              quantidadeComercial: qtdComercialConferida,
             });
 
-            const restanteConvertido = Number(
-              (item.quantidadeConvertida - qtdConferida).toFixed(5),
+            const restantePadrao = Number(
+              (item.quantidadePadrao - qtdConferida).toFixed(5),
             );
 
-            const restanteBase = Number(
-              (item.quantidadeBase - qtdBaseConferida).toFixed(5),
+            const restanteComercial = Number(
+              (item.quantidadeComercial - qtdComercialConferida).toFixed(5),
             );
 
-            if (restanteConvertido > 0) {
+            if (restantePadrao > 0) {
               pedidosAtualizados.push({
                 ...item,
-                quantidadeConvertida: restanteConvertido,
-                quantidadeBase: restanteBase,
+                quantidadePadrao: restantePadrao,
+                quantidadeComercial: restanteComercial,
               });
             }
           } else {
@@ -670,8 +754,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.dataSourcePedidos.data.length > 0;
   }
 
-  get quantidadeConvertidaCtrl() {
-    return this.formConferencia.get('quantidadeConvertida');
+  get quantidadePadraoCtrl() {
+    return this.formConferencia.get('quantidadePadrao');
   }
 
   get produtoAtualExibido(): ItemPedidoDTO | null {
@@ -695,13 +779,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         const k = chave(i);
         itensVolumes.set(
           k,
-          (itensVolumes.get(k) || 0) + i.quantidadeConvertida,
+          (itensVolumes.get(k) || 0) + i.quantidadePadrao,
         );
       });
     });
 
     return this.dataSourceConferidos.data.every((i) => {
-      return itensVolumes.get(chave(i)) === i.quantidadeConvertida;
+      return itensVolumes.get(chave(i)) === i.quantidadePadrao;
     });
   }
 
@@ -805,6 +889,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           this.codvolAtual = resolved.codvol || null;
           this.controleVeioDoScanner = !!(resolved.controle?.trim());
 
+          // UMAs para produtos com conferência por peso
+          this.umasDisponiveis = resolved.umas ?? [];
+          this.umaSelecionada = this.umasDisponiveis.find(u => u.padrao) ?? null;
+
           const controlePreferido = controleNorm && controleNorm !== ' '
             ? controleNorm
             : undefined;
@@ -831,7 +919,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     if (exactItem) {
       this.itensDoProdutoAtual = [];
       this.selecionarItem(exactItem);
-      this.focarCampoQuantidade();
+      this.onControleConfirmado();
       return;
     }
 
@@ -843,7 +931,32 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.itensDoProdutoAtual = [];
     this.selecionarItem(fallback);
     this.formConferencia.patchValue({ controle }, { emitEvent: false });
-    this.focarCampoQuantidade();
+    this.onControleConfirmado();
+  }
+
+  onUmaSelecionadaChange(codUma: string): void {
+    this.umaSelecionada = this.umasDisponiveis.find(u => u.codUma === codUma) ?? null;
+  }
+
+  private calcularQtdPorPeso(): number {
+    const peso = this.pesoAtualLeitura ?? 0;
+    const umaPeso = this.umaSelecionada?.peso;
+    if (umaPeso && umaPeso > 0) return Number((peso / umaPeso).toFixed(5));
+    return peso;
+  }
+
+  onControleConfirmado(): void {
+    const item = this.itemSelecionado;
+    if (item?.usaConfPeso && this.pesoAtualLeitura !== null && this.pesoAtualLeitura > 0) {
+      if (this.controleModoLote) {
+        const lote = (this.formConferencia.get('controle')?.value ?? '').trim();
+        if (!lote) { this.focarSelectControle(); return; }
+      }
+      this.formConferencia.patchValue({ quantidadePadrao: this.calcularQtdPorPeso() });
+      this.onConferir();
+    } else {
+      this.focarCampoQuantidade();
+    }
   }
 
   selecionarItem(item: ItemPedidoDTO, viaScanner = false) {
@@ -861,9 +974,9 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.imagemAtual = item.imagem || null;
 
     if (viaScanner) {
-      this.quantidadeConvertidaCtrl?.setErrors(null);
+      this.quantidadePadraoCtrl?.setErrors(null);
     } else {
-      this.onBlurQuantidadeConvertida();
+      this.onBlurQuantidadePadrao();
     }
   }
 
@@ -932,6 +1045,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   isControleLocked(): boolean {
+    if (this.controleModoLote) return false;
     if (this.controlesDisponiveis.length === 0) return true;
     if (this.controleVeioDoScanner) return true;
     if (
@@ -955,8 +1069,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   onTabQuantidade() {
-    this.onBlurQuantidadeConvertida();
-    if (!this.itemSelecionado || !this.quantidadeConvertidaCtrl?.value || this.quantidadeConvertidaCtrl?.invalid) {
+    this.onBlurQuantidadePadrao();
+    if (!this.itemSelecionado || !this.quantidadePadraoCtrl?.value || this.quantidadePadraoCtrl?.invalid) {
       this.playSound('invalido');
       this.focarCampoQuantidade();
       return;
@@ -966,7 +1080,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   private focarSelectControle() {
     setTimeout(() => {
-      this.selectControleRef?.focus();
+      if (this.controleModoLote) {
+        this.inputControleLoteRef?.nativeElement?.focus();
+      } else {
+        this.selectControleRef?.focus();
+      }
     }, 50);
   }
 
@@ -974,6 +1092,34 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     itensDoProduto: ItemPedidoDTO[],
     controlePreferido?: string,
   ) {
+    const tipControle = itensDoProduto[0]?.tipControle;
+
+    // Lote livre: operador digita qualquer valor alfanumérico
+    if (tipControle === 'L') {
+      this.controleModoLote = true;
+      this.controlesDisponiveis = [];
+      this.itensDoProdutoAtual = itensDoProduto;
+      this.imagemAtual = itensDoProduto[0]?.imagem || null;
+      this.produtoIdentificado = true;
+      if (itensDoProduto[0]) this.selecionarItem(itensDoProduto[0], true);
+      this.formConferencia.patchValue({ controle: '' });
+      this.playSound('atencao');
+      this.controleRequerAtencao = true;
+      setTimeout(() => { this.controleRequerAtencao = false; }, 2500);
+      const firstItem = itensDoProduto[0];
+      if (this.usaBalanca && firstItem?.usaConfPeso) {
+        this._acaoAposPeso = () => {
+          this.formConferencia.patchValue({ quantidadePadrao: this.calcularQtdPorPeso() });
+          this.focarSelectControle();
+        };
+        this.abrirModalPeso();
+      } else {
+        this.focarSelectControle();
+      }
+      return;
+    }
+
+    this.controleModoLote = false;
     const lisContest = itensDoProduto[0]?.lisControles?.trim();
     if (lisContest) {
       this.controlesDisponiveis = lisContest.split(/\r?\n/).map((c) => c.trim()).filter((c) => c);
@@ -1004,7 +1150,15 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       this.selecionarItem(item, true);
       this.produtoIdentificado = true;
       this.controleRequerAtencao = false;
-      this.focarCampoQuantidade();
+      if (this.usaBalanca && item.usaConfPeso) {
+        this._acaoAposPeso = () => {
+          this.formConferencia.patchValue({ quantidadePadrao: this.calcularQtdPorPeso() });
+          this.onConferir();
+        };
+        this.abrirModalPeso();
+      } else {
+        this.focarCampoQuantidade();
+      }
       return;
     }
 
@@ -1020,7 +1174,15 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       this.selecionarItem(item, true);
       this.produtoIdentificado = true;
       this.controleRequerAtencao = false;
-      this.focarCampoQuantidade();
+      if (this.usaBalanca && item.usaConfPeso) {
+        this._acaoAposPeso = () => {
+          this.formConferencia.patchValue({ quantidadePadrao: this.calcularQtdPorPeso() });
+          this.onConferir();
+        };
+        this.abrirModalPeso();
+      } else {
+        this.focarCampoQuantidade();
+      }
       return;
     }
 
@@ -1031,8 +1193,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.produtoIdentificado = true;
     this.playSound('atencao');
     this.controleRequerAtencao = true;
-    this.focarSelectControle();
     setTimeout(() => { this.controleRequerAtencao = false; }, 2500);
+    if (this.usaBalanca && itensDoProduto[0]?.usaConfPeso) {
+      this._acaoAposPeso = () => this.focarSelectControle();
+      this.abrirModalPeso();
+    } else {
+      this.focarSelectControle();
+    }
   }
 
   onDevolverItemConferido(item: ItemPedidoDTO) {
@@ -1059,27 +1226,19 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const k = chave(item);
     this.itensParciaisChaves.delete(k);
 
-    // Remove dos conferidos
-    const conferidos = this.dataSourceConferidos.data.filter((i) => chave(i) !== k);
-
-    // Devolve aos pendentes (acumula se já existe parcial)
-    const existente = this.dataSourcePedidos.data.find((i) => chave(i) === k);
-    const pedidos = existente
-      ? this.dataSourcePedidos.data.map((i) =>
-          chave(i) === k
-            ? { ...i, quantidadeConvertida: i.quantidadeConvertida + item.quantidadeConvertida, quantidadeBase: i.quantidadeBase + item.quantidadeBase }
-            : i,
-        )
-      : [...this.dataSourcePedidos.data, { ...item }];
-
-    this.dataSourceConferidos.data = conferidos;
-    this.dataSourcePedidos.data = pedidos;
+    // Remove dos conferidos (imediato)
+    this.dataSourceConferidos.data = this.dataSourceConferidos.data.filter((i) => chave(i) !== k);
 
     // Remove do volume local se detalhado
     if (this.isVolumesDetalhados()) {
       this.volumes.forEach((v) => {
         v.itens = v.itens.filter((i) => `${i.idProduto}#${i.controle ?? ''}` !== k);
       });
+    }
+
+    // Recarrega pendentes do servidor para restaurar a quantidade original do pedido
+    if (this.numeroUnico) {
+      this.carregarItensPedido(this.numeroUnico);
     }
   }
 
@@ -1096,8 +1255,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  onBlurQuantidadeConvertida() {
-    const ctrl = this.quantidadeConvertidaCtrl;
+  onBlurQuantidadePadrao() {
+    const ctrl = this.quantidadePadraoCtrl;
     if (!ctrl) return;
 
     if (ctrl.value === null || ctrl.value === '') {
@@ -1187,7 +1346,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     }
   }
 
-  adicionarItemAoVolume(item: ItemPedidoDTO, quantidadeConvertida: number) {
+  adicionarItemAoVolume(item: ItemPedidoDTO, quantidadePadrao: number) {
     this.garantirVolumeAtivo();
 
     const ativo = this.volumeAtivo;
@@ -1196,15 +1355,15 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const existente = ativo.itens.find((i) => this.mesmaChaveItem(i, item));
 
     if (existente) {
-      existente.quantidadeConvertida += quantidadeConvertida;
+      existente.quantidadePadrao += quantidadePadrao;
     } else {
       ativo.itens.push({
         idProduto: item.idProduto,
         descricaoProduto: item.nomeProduto,
         imagem: item.imagem || null,
-        quantidadeConvertida,
-        quantidadeBase: item.quantidadeBase,
-        unidade: item.unidade,
+        quantidadePadrao,
+        quantidadeComercial: item.quantidadeComercial,
+        unidade: item.unidadeComercial,
         controle: item.controle ?? '',
       });
     }
@@ -1256,8 +1415,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       controle: item.controle ?? '',
       seqVolOrigem: volume.numeroVolume,
       descricaoProduto: item.descricaoProduto,
-      qtdDisponivel: item.quantidadeConvertida,
-      qtdMover: item.quantidadeConvertida,
+      qtdDisponivel: item.quantidadePadrao,
+      qtdMover: item.quantidadePadrao,
     };
   }
 
@@ -1267,8 +1426,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       controle: item.controle ?? '',
       seqVolOrigem: undefined,
       descricaoProduto: item.nomeProduto,
-      qtdDisponivel: item.quantidadeConvertida,
-      qtdMover: item.quantidadeConvertida,
+      qtdDisponivel: item.quantidadePadrao,
+      qtdMover: item.quantidadePadrao,
     };
   }
 
@@ -1318,23 +1477,23 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         const itemOrigem = volOrigem.itens.find((i) => `${i.idProduto}|${i.controle ?? ''}` === chave);
         if (!itemOrigem) return;
 
-        const fator = itemOrigem.quantidadeBase / itemOrigem.quantidadeConvertida;
+        const fator = itemOrigem.quantidadeComercial / itemOrigem.quantidadePadrao;
 
         // Atualiza origem
         if (moverTudo) {
           volOrigem.itens = volOrigem.itens.filter((i) => `${i.idProduto}|${i.controle ?? ''}` !== chave);
         } else {
-          itemOrigem.quantidadeConvertida = Number((itemOrigem.quantidadeConvertida - qtdMover).toFixed(5));
-          itemOrigem.quantidadeBase = Number((itemOrigem.quantidadeConvertida * fator).toFixed(5));
+          itemOrigem.quantidadePadrao = Number((itemOrigem.quantidadePadrao - qtdMover).toFixed(5));
+          itemOrigem.quantidadeComercial = Number((itemOrigem.quantidadePadrao * fator).toFixed(5));
         }
 
         // Atualiza destino
         const existente = volDest.itens.find((i) => `${i.idProduto}|${i.controle ?? ''}` === chave);
         if (existente) {
-          existente.quantidadeConvertida += qtdMover;
-          existente.quantidadeBase += Number((qtdMover * fator).toFixed(5));
+          existente.quantidadePadrao += qtdMover;
+          existente.quantidadeComercial += Number((qtdMover * fator).toFixed(5));
         } else {
-          volDest.itens.push({ ...itemOrigem, quantidadeConvertida: qtdMover, quantidadeBase: Number((qtdMover * fator).toFixed(5)) });
+          volDest.itens.push({ ...itemOrigem, quantidadePadrao: qtdMover, quantidadeComercial: Number((qtdMover * fator).toFixed(5)) });
         }
 
         this.volumes = [...this.volumes];
@@ -1348,21 +1507,46 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     if (!this.itemSelecionado) return;
     if (this.isVolumesDetalhados() && !this.volumeAtivo) return;
 
-    const quantidadeConvertida = Number(this.quantidadeConvertidaCtrl?.value);
-    if (!quantidadeConvertida || quantidadeConvertida <= 0) return;
+    const quantidadePadrao = Number(this.quantidadePadraoCtrl?.value);
+    if (!quantidadePadrao || quantidadePadrao <= 0) return;
+
+    const precisaPeso = this.usaBalanca && this.itemSelecionado?.usaConfPeso === true;
+    if (precisaPeso && (this.pesoAtualLeitura === null || this.pesoAtualLeitura <= 0)) {
+      this._acaoAposPeso = () => this.focarCampoQuantidade();
+      this.abrirModalPeso();
+      return;
+    }
 
     this.conferindoEmAndamento = true;
-    this.itemConferindoGhost = { ...this.itemSelecionado };
-    const item = { ...this.itemSelecionado };
+    const controleEnvio = this.controleModoLote
+      ? this.normalizarControle(this.formConferencia.get('controle')?.value ?? '')
+      : (this.itemSelecionado!.controle ?? '');
+    const item = this.controleModoLote
+      ? { ...this.itemSelecionado!, controle: controleEnvio }
+      : { ...this.itemSelecionado! };
+    this.itemConferindoGhost = { ...item };
+
+    // Itens pesáveis (AD_PESAVEL='S'): grava peso no Sankhya TGFITE (fire-and-forget)
+    if (item.pesavel && item.sequencia != null && this.pesoAtualLeitura != null && this.pesoAtualLeitura > 0) {
+      const chave = `${item.idProduto}|${controleEnvio}`;
+      this.pesoPesavelMap.set(chave, this.pesoAtualLeitura);
+      this.separacaoService.patchItemPeso({
+        nunota: this.dadosGerais!.numeroUnico!,
+        sequencia: item.sequencia,
+        pesobruto: this.pesoAtualLeitura,
+        pesoliq: this.pesoAtualLeitura,
+      }).subscribe({ error: err => console.error('[pesavel] falha ao gravar peso no TGFITE:', err) });
+    }
 
     this.separacaoService
       .postItemConferidoVolume({
         numeroConferencia: this.dadosGerais!.numeroConferencia!,
         numeroVolume: this.volumeAtivo?.numeroVolume || 1,
         idProduto: item.idProduto,
-        controle: item.controle ?? '',
-        quantidadeConvertida,
-        unidade: this.codvolAtual || item.unidade,
+        controle: controleEnvio,
+        quantidadePadrao,
+        unidade: this.codvolAtual || item.unidadeComercial,
+        peso: this.pesoAtualLeitura ?? undefined,
       })
       .subscribe({
         next: () => {
@@ -1370,7 +1554,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           this.ultimoProduto = { ...item };
           this.imagemAtual = this.ultimoProduto.imagem || null;
           this.limparFormulario();
-          this.aplicarConferenciaOtimista(item, quantidadeConvertida);
+          this.aplicarConferenciaOtimista(item, quantidadePadrao);
           if (this.isVolumesSimplificadoTela() && this.dataSourcePedidos.data.length === 0) {
             setTimeout(() => this.abrirModalVolumesSimplificado(), 300);
           }
@@ -1384,36 +1568,45 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       });
   }
 
-  private aplicarConferenciaOtimista(item: ItemPedidoDTO, quantidadeConvertida: number) {
+  private aplicarConferenciaOtimista(item: ItemPedidoDTO, quantidadePadrao: number) {
+    const modoLote = item.tipControle === 'L';
     const chave = (i: { idProduto: number; controle?: string }) =>
       `${i.idProduto}#${i.controle ?? ''}`;
+    // Em modo lote o controle nos pendentes é vazio/espaço (não vem da NF),
+    // então fazemos match apenas por produto para reduzir o primeiro item encontrado.
+    const chavePendente = (i: { idProduto: number }) =>
+      modoLote ? `${i.idProduto}` : chave(i as any);
     const k = chave(item);
+    const kPendente = chavePendente(item);
 
-    const fator = item.quantidadeBase / item.quantidadeConvertida;
-    const qtdBaseConferida = Number((quantidadeConvertida * fator).toFixed(5));
+    const fator = item.quantidadeComercial / item.quantidadePadrao;
+    const qtdComercialConferida = Number((quantidadePadrao * fator).toFixed(5));
 
     // Remove ou reduz o item dos pendentes
+    let pendenteTocado = false;
     const pedidosAtualizados = this.dataSourcePedidos.data
       .map((i) => {
-        if (chave(i) !== k) return i;
-        const restante = Number((i.quantidadeConvertida - quantidadeConvertida).toFixed(5));
-        const restanteBase = Number((i.quantidadeBase - qtdBaseConferida).toFixed(5));
-        return restante > 0 ? { ...i, quantidadeConvertida: restante, quantidadeBase: restanteBase } : null;
+        if (chavePendente(i) !== kPendente) return i;
+        if (modoLote && pendenteTocado) return i; // lote: reduz apenas o primeiro match
+        pendenteTocado = true;
+        const restante = Number((i.quantidadePadrao - quantidadePadrao).toFixed(5));
+        const restanteComercial = Number((i.quantidadeComercial - qtdComercialConferida).toFixed(5));
+        return restante > 0 ? { ...i, quantidadePadrao: restante, quantidadeComercial: restanteComercial } : null;
       })
       .filter((i): i is ItemPedidoDTO => i !== null);
 
-    // Acumula no conferidos
+    // Acumula no conferidos (sempre por idProduto+controle digitado)
     const existente = this.dataSourceConferidos.data.find((i) => chave(i) === k);
     const conferidos = existente
       ? this.dataSourceConferidos.data.map((i) =>
           chave(i) === k
-            ? { ...i, quantidadeConvertida: i.quantidadeConvertida + quantidadeConvertida, quantidadeBase: i.quantidadeBase + qtdBaseConferida }
+            ? { ...i, quantidadePadrao: i.quantidadePadrao + quantidadePadrao, quantidadeComercial: i.quantidadeComercial + qtdComercialConferida }
             : i,
         )
-      : [...this.dataSourceConferidos.data, { ...item, quantidadeConvertida, quantidadeBase: qtdBaseConferida }];
+      : [...this.dataSourceConferidos.data, { ...item, quantidadePadrao, quantidadeComercial: qtdComercialConferida }];
 
     // Rastrear parciais: se o item ainda restou, é conferido parcial
-    if (pedidosAtualizados.some(i => chave(i) === k)) {
+    if (pedidosAtualizados.some(i => chavePendente(i) === kPendente)) {
       this.itensParciaisChaves.add(k);
     }
 
@@ -1421,7 +1614,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.dataSourceConferidos.data = conferidos;
 
     if (this.isVolumesDetalhados()) {
-      this.adicionarItemAoVolume(item, quantidadeConvertida);
+      this.adicionarItemAoVolume(item, quantidadePadrao);
     }
 
     this.verificarSeFinalizouConferencia();
@@ -1448,11 +1641,20 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.itensDoProdutoAtual = [];
     this.codvolAtual = null;
     this.controlesDisponiveis = [];
+    this.controleModoLote = false;
     this.produtoIdentificado = false;
     this._ultimoBarcodeProcessado = '';
     this.controleVeioDoScanner = false;
     this.controleRequerAtencao = false;
     this.itemConferindoGhost = null;
+    this.pesoAtualLeitura = null;
+    this.pesoCapturadoDaBalanca = false;
+    this.erroCapturaBalanca = null;
+    this.mostrarModalPeso = false;
+    this._acaoAposPeso = null;
+    this.umasDisponiveis = [];
+    this.umaSelecionada = null;
+    if (this.formPeso) this.formPeso.reset();
 
     this.formConferencia.reset();
 
@@ -1476,6 +1678,22 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   voltarParaFila() {
     this.dialogRefConferenciaFinalizada?.close();
     this.router.navigate(['/fila-conferencia']);
+  }
+
+  confirmarExcluirSessao() {
+    this.mostrarConfirmExcluirSessao = true;
+  }
+
+  excluirSessao() {
+    if (!this.dadosGerais?.numeroUnico) return;
+    this.excluindoSessao = true;
+    this.conferenciaService.deleteSessao(this.dadosGerais.numeroUnico).subscribe({
+      next: () => this.router.navigate(['/fila-conferencia']),
+      error: (err) => {
+        console.error('Erro ao excluir sessão', err);
+        this.excluindoSessao = false;
+      },
+    });
   }
 
   logout() {
@@ -1664,15 +1882,16 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
   }
 
   isGerarVolumeLoteDisabled(): boolean {
-    const values = [
-      this.quantidadeCubagemCtrl?.value,
+    const qtd = this.quantidadeCubagemCtrl?.value;
+    if (!qtd || Number(qtd) <= 0) return true;
+    if (!this.dadosGerais?.temCubagem) return false;
+    const dims = [
       this.larguraCubagemCtrl?.value,
       this.comprimentoCubagemCtrl?.value,
       this.alturaCubagemCtrl?.value,
       this.pesoCubagemCtrl?.value,
     ];
-
-    return values.some((v) => !v || Number(v) <= 0);
+    return dims.some((v) => !v || Number(v) <= 0);
   }
 
   gerarVolumesLote() {
@@ -1728,10 +1947,10 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     const grupo: GrupoVolume = {
       id: Date.now().toString(),
       qtdVol: Number(this.formCubagem.value.quantidade),
-      largura: Number(this.formCubagem.value.largura),
-      comprimento: Number(this.formCubagem.value.comprimento),
-      altura: Number(this.formCubagem.value.altura),
-      peso: Number(this.formCubagem.value.peso),
+      largura: this.dadosGerais?.temCubagem ? Number(this.formCubagem.value.largura) : 0,
+      comprimento: this.dadosGerais?.temCubagem ? Number(this.formCubagem.value.comprimento) : 0,
+      altura: this.dadosGerais?.temCubagem ? Number(this.formCubagem.value.altura) : 0,
+      peso: this.dadosGerais?.temCubagem ? Number(this.formCubagem.value.peso) : 0,
     };
 
     this.gruposSimplificados = [...this.gruposSimplificados, grupo];
@@ -1765,6 +1984,234 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
       },
       error: (err) => console.error(err),
     });
+  }
+
+  // ─── Modal de peso ───────────────────────────────────────────────────────────
+
+  abrirModalPeso() {
+    this.pesoCapturadoDaBalanca = false;
+    this.erroCapturaBalanca = null;
+    this.pesoBalancaAtual = 0;
+    this.taraValor = 0;
+    this.pesoAnteriorPoll = null;
+    this.statusBalancaConf = 'verificando';
+    this.formPeso.reset();
+
+    if (this.usaBalanca && this.balancaSelecionadaId) {
+      this.modoEntradaPeso = 'balanca';
+      this.iniciarOuPollarBalanca();
+    } else {
+      this.modoEntradaPeso = 'manual';
+      setTimeout(() => {
+        (document.querySelector('.mp-peso-input') as HTMLInputElement)?.focus();
+      }, 100);
+    }
+
+    this.mostrarModalPeso = true;
+  }
+
+  confirmarPeso() {
+    this.formPeso.markAllAsTouched();
+    if (this.formPeso.invalid) return;
+    this.pararPollingPeso();
+    this.pesoAtualLeitura = Number(this.formPeso.value.peso);
+
+    if (this.modoEntradaPeso === 'balanca' && this.balancaSelecionadaId) {
+      const bal = this.balancas.find(b => b.id === this.balancaSelecionadaId);
+      if (bal) {
+        this.mostrarToast(
+          `Pesado via ${bal.nome}: ${this.pesoAtualLeitura.toFixed(3).replace('.', ',')} kg`,
+          'ok',
+        );
+      }
+    }
+
+    this.mostrarModalPeso = false;
+    const acao = this._acaoAposPeso;
+    this._acaoAposPeso = null;
+    acao?.();
+  }
+
+  cancelarPeso() {
+    this.pararPollingPeso();
+    this.mostrarModalPeso = false;
+    this._acaoAposPeso = null;
+    this.limparFormulario();
+    this.focarCampoIdentificador();
+  }
+
+  capturarPesoDaBalanca() {
+    if (!this.balancaSelecionadaId || this.capturandoPeso) return;
+    this.capturandoPeso = true;
+    this.erroCapturaBalanca = null;
+    this.balancaService.capturarPeso(this.balancaSelecionadaId).subscribe({
+      next: (res) => {
+        const pesoLiquido = Math.max(0, res.peso - this.taraValor);
+        this.formPeso.patchValue({ peso: pesoLiquido });
+        this.pesoBalancaAtual = pesoLiquido;
+        this.pesoCapturadoDaBalanca = true;
+        this.capturandoPeso = false;
+      },
+      error: (err) => {
+        this.erroCapturaBalanca =
+          err?.error?.message || 'Falha na comunicação com a balança. Digite o peso manualmente.';
+        this.capturandoPeso = false;
+      },
+    });
+  }
+
+  // ─── Modo e polling de balança ───────────────────────────────────────────────
+
+  selecionarModoPeso(modo: 'manual' | 'balanca') {
+    this.modoEntradaPeso = modo;
+    if (modo === 'balanca') {
+      this.iniciarPollingPeso();
+    } else {
+      this.pararPollingPeso();
+      setTimeout(() => {
+        (document.querySelector('.mp-peso-input') as HTMLInputElement)?.focus();
+      }, 80);
+    }
+  }
+
+  onBalancaSelecionadaChange() {
+    if (this.balancaSelecionadaId) {
+      localStorage.setItem('fila_balanca_id', this.balancaSelecionadaId);
+    }
+    this.statusBalancaConf = 'verificando';
+    this.pesoBalancaAtual = 0;
+    this.taraValor = 0;
+    this.pesoAnteriorPoll = null;
+    this.limparTimerEstabilidade();
+    this.pararPollingPeso();
+    if (this.mostrarModalPeso) this.iniciarPollingPeso();
+  }
+
+  onBalancaSelecionadaTopbarChange() {
+    if (this.balancaSelecionadaId) {
+      localStorage.setItem('fila_balanca_id', this.balancaSelecionadaId);
+    }
+    this.mostrarSeletorBalancaTopbar = false;
+  }
+
+  taraBalanca() {
+    this.taraValor = this.pesoBalancaAtual;
+    this.pesoBalancaAtual = 0;
+    this.pesoAnteriorPoll = null;
+    this.limparTimerEstabilidade();
+  }
+
+  atualizarStatusBalanca() {
+    if (!this.balancaSelecionadaId) return;
+    this.statusBalancaConf = 'verificando';
+    this.balancaService.verificarStatus(this.balancaSelecionadaId).subscribe({
+      next: (res) => this.onStatusAtualizado(res),
+      error: () => { this.statusBalancaConf = 'desconectado'; },
+    });
+  }
+
+  private iniciarPollingPeso() {
+    this.pararPollingPeso();
+    if (!this.balancaSelecionadaId) return;
+    const id = this.balancaSelecionadaId;
+    this.statusBalancaConf = 'verificando';
+    this.pollingPesoSub = interval(600).pipe(
+      switchMap(() => this.balancaService.verificarStatus(id)),
+    ).subscribe({
+      next: (res) => this.onStatusAtualizado(res),
+      error: () => { this.statusBalancaConf = 'desconectado'; },
+    });
+  }
+
+  private pararPollingPeso() {
+    this.pollingPesoSub?.unsubscribe();
+    this.pollingPesoSub = undefined;
+    this.limparTimerEstabilidade();
+  }
+
+  private precisaIniciarDriver(): boolean {
+    const t = this.balancas.find(b => b.id === this.balancaSelecionadaId)?.tipoComunicacao;
+    return t === 'SERIAL_RS232' || t === 'SERIAL_USB' || t === 'TOLEDO_TCP';
+  }
+
+  private iniciarOuPollarBalanca() {
+    if (!this.balancaSelecionadaId) return;
+    this.statusBalancaConf = 'verificando';
+    if (this.precisaIniciarDriver()) {
+      this.balancaService.iniciarLeitura(this.balancaSelecionadaId).subscribe({
+        next: () => this.iniciarPollingPeso(),
+        error: () => this.iniciarPollingPeso(),
+      });
+    } else {
+      this.iniciarPollingPeso();
+    }
+  }
+
+  reconectarBalanca() {
+    if (!this.balancaSelecionadaId) return;
+    this.pararPollingPeso();
+    this.iniciarOuPollarBalanca();
+  }
+
+  private onStatusAtualizado(res: StatusBalancaResponse) {
+    this.statusBalancaConf = res.conectado ? 'conectado' : 'desconectado';
+
+    // Se o peso bruto caiu significativamente abaixo da tara (container removido),
+    // reseta a tara automaticamente para não travar o display em 0.
+    if (this.taraValor > 0 && res.pesoAtual < this.taraValor - 0.1) {
+      this.taraValor = 0;
+    }
+
+    const pesoLiquido = Math.max(0, res.pesoAtual - this.taraValor);
+    this.pesoBalancaAtual = pesoLiquido;
+
+    if (!this.capturaAutoAtiva || !res.conectado || pesoLiquido < 0.001) {
+      if (!this.capturaAutoAtiva) this.limparTimerEstabilidade();
+      this.pesoAnteriorPoll = pesoLiquido;
+      return;
+    }
+
+    const diff = Math.abs(pesoLiquido - (this.pesoAnteriorPoll ?? -1));
+    if (diff < 0.005) {
+      if (!this.estabilidadeTimer) {
+        this.estabilidadeTimer = setTimeout(() => this.autoCapturarPeso(), this.ESTABILIDADE_MS);
+      }
+    } else {
+      this.limparTimerEstabilidade();
+    }
+    this.pesoAnteriorPoll = pesoLiquido;
+  }
+
+  private limparTimerEstabilidade() {
+    if (this.estabilidadeTimer) {
+      clearTimeout(this.estabilidadeTimer);
+      this.estabilidadeTimer = undefined;
+    }
+  }
+
+  private autoCapturarPeso() {
+    this.limparTimerEstabilidade();
+    if (this.pesoBalancaAtual < 0.001) return;
+    this.formPeso.patchValue({ peso: this.pesoBalancaAtual });
+    this.pesoCapturadoDaBalanca = true;
+    this.beepCaptura();
+    setTimeout(() => this.confirmarPeso(), 80);
+  }
+
+  private beepCaptura() {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+    } catch { /* AudioContext pode ser bloqueado */ }
   }
 
   salvarDimensoesVolumeLote(volume: any) {

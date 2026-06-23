@@ -1,6 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,7 +17,12 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Perfil } from '../../services/auth/auth.model';
 import { CodigoDescricao } from '../../services/dominio/dominio.model';
-import { UsuarioService } from '../../services/usuario/usuario.service';
+import {
+  UsuarioService,
+  CriarUsuarioPayload,
+  AtualizarUsuarioPayload,
+} from '../../services/usuario/usuario.service';
+import { AuthService } from '../../services/auth/auth.service';
 
 @Component({
   selector: 'app-usuario',
@@ -45,21 +55,39 @@ export class UsuarioComponent implements OnInit {
 
   listPerfil: CodigoDescricao[] = [
     { codigo: null, descricao: 'Todos' },
-    ...Object.values(Perfil).map(p => ({ codigo: p, descricao: p })),
+    ...Object.values(Perfil).map((p) => ({ codigo: p, descricao: p })),
   ];
+
+  listPerfilModal: CodigoDescricao[] = Object.values(Perfil).map((p) => ({
+    codigo: p,
+    descricao: p === 'ADMINISTRADOR' ? 'Administrador' : 'Separador',
+  }));
 
   listStatus: CodigoDescricao[] = [
     { codigo: null, descricao: 'Todos' },
-    { codigo: true,  descricao: 'Ativo' },
+    { codigo: true, descricao: 'Ativo' },
     { codigo: false, descricao: 'Inativo' },
   ];
 
   filters!: FormGroup;
 
+  /* Modal criar/editar */
+  modalAberto = false;
+  modalModo: 'criar' | 'editar' = 'criar';
+  modalForm!: FormGroup;
+  modalCarregando = false;
+  modalErro = '';
+  private codigoEditando: number | null = null;
+
+  /* Confirmação de exclusão */
+  deleteInfo: { codigo: number; nome: string } | null = null;
+  deleteCarregando = false;
+
   get activeFilterCount(): number {
     const v = this.filters?.value ?? {};
-    return [v.nomeEmail, v.perfil, v.status != null ? v.status : null]
-      .filter(x => x !== null && x !== undefined && x !== '').length;
+    return [v.nomeEmail, v.perfil, v.status != null ? v.status : null].filter(
+      (x) => x !== null && x !== undefined && x !== '',
+    ).length;
   }
 
   private criarForm(): void {
@@ -87,7 +115,7 @@ export class UsuarioComponent implements OnInit {
 
     const params: any = {};
     if (nomeEmail) params.nomeEmail = nomeEmail;
-    if (perfil)    params.perfil    = perfil;
+    if (perfil) params.perfil = perfil;
     if (status != null) params.status = status;
 
     this.usuarioService.getUsuarios(params).subscribe({
@@ -96,7 +124,9 @@ export class UsuarioComponent implements OnInit {
         this.total = resp?.total ?? this.dataSource.data.length;
         this.carregando = false;
       },
-      error: () => { this.carregando = false; },
+      error: () => {
+        this.carregando = false;
+      },
     });
   }
 
@@ -111,6 +141,116 @@ export class UsuarioComponent implements OnInit {
   }
 
   iniciais(nome: string): string {
-    return (nome || '').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    return (nome || '')
+      .split(' ')
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  /* ── Modal criar/editar ── */
+
+  abrirModalCriar(): void {
+    this.modalModo = 'criar';
+    this.codigoEditando = null;
+    this.modalErro = '';
+    this.modalForm = this.fb.group({
+      nome: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      perfil: ['', Validators.required],
+      senha: ['', [Validators.required, Validators.minLength(6)]],
+    });
+    this.modalAberto = true;
+  }
+
+  abrirModalEditar(u: any): void {
+    this.modalModo = 'editar';
+    this.codigoEditando = u.codigo;
+    this.modalErro = '';
+    this.modalForm = this.fb.group({
+      nome: [u.nome, Validators.required],
+      email: [u.email, [Validators.required, Validators.email]],
+      perfil: [u.perfil, Validators.required],
+      senha: ['', Validators.minLength(6)],
+    });
+    this.modalAberto = true;
+  }
+
+  fecharModal(): void {
+    if (this.modalCarregando) return;
+    this.modalAberto = false;
+  }
+
+  salvarModal(): void {
+    if (this.modalForm.invalid || this.modalCarregando) return;
+    this.modalCarregando = true;
+    this.modalErro = '';
+
+    if (this.modalModo === 'criar') {
+      const payload: CriarUsuarioPayload = this.modalForm.value;
+      this.usuarioService.criarUsuario(payload).subscribe({
+        next: () => {
+          this.modalCarregando = false;
+          this.modalAberto = false;
+          this.applyFilter();
+        },
+        error: (err: any) => {
+          this.modalCarregando = false;
+          this.modalErro =
+            err?.error?.message ?? 'Erro ao criar usuário. Tente novamente.';
+        },
+      });
+    } else {
+      const v = this.modalForm.value;
+      const payload: AtualizarUsuarioPayload = {
+        nome: v.nome,
+        email: v.email,
+        perfil: v.perfil,
+      };
+      if (v.senha) payload.senha = v.senha;
+
+      this.usuarioService
+        .atualizarUsuario(this.codigoEditando!, payload)
+        .subscribe({
+          next: () => {
+            this.modalCarregando = false;
+            this.modalAberto = false;
+            this.applyFilter();
+          },
+          error: (err: any) => {
+            this.modalCarregando = false;
+            this.modalErro =
+              err?.error?.message ??
+              'Erro ao atualizar usuário. Tente novamente.';
+          },
+        });
+    }
+  }
+
+  /* ── Exclusão ── */
+
+  pedirDelete(u: any): void {
+    this.deleteInfo = { codigo: u.codigo, nome: u.nome };
+  }
+
+  cancelarDelete(): void {
+    if (this.deleteCarregando) return;
+    this.deleteInfo = null;
+  }
+
+  confirmarDelete(): void {
+    if (!this.deleteInfo || this.deleteCarregando) return;
+    this.deleteCarregando = true;
+    this.usuarioService.deletarUsuario(this.deleteInfo.codigo).subscribe({
+      next: () => {
+        this.deleteCarregando = false;
+        this.deleteInfo = null;
+        this.applyFilter();
+      },
+      error: () => {
+        this.deleteCarregando = false;
+      },
+    });
   }
 }

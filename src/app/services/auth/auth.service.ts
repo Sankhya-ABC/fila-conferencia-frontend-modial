@@ -49,9 +49,14 @@ export class AuthService {
   }
 
   logout(): void {
+    const token = this.getUser()?.token;
+    if (token) {
+      this.http.post('/auths/logout', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).subscribe({ error: () => {} });
+    }
     localStorage.removeItem(SESSION_KEYS.AUTH_USER);
-    this.userSubject.next(null);
-    this.router.navigate(['/login']);
+    window.location.href = '/login';
   }
 
   getUser(): SessionData {
@@ -60,5 +65,10 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.getUser()?.token;
+  }
+
+  hasModulo(modulo: string): boolean {
+    const lista = this.getUser()?.snkModulos ?? '';
+    return lista.split(',').map(m => m.trim()).includes(modulo);
   }
 }

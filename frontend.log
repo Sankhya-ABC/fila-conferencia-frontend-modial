@@ -1,0 +1,299 @@
+- Building...
+
+Initial chunk files | Names         |  Raw size
+main.js             | main          | 487.35 kB | 
+polyfills.js        | polyfills     |  88.09 kB | 
+styles.css          | styles        |  87.52 kB | 
+
+                    | Initial total | 662.95 kB
+
+Application bundle generation complete. [21.118 seconds]
+
+Watch mode enabled. Watching for file changes...
+  ➜  Local:   http://localhost:4200/
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 487.60 kB | 
+
+Application bundle generation complete. [3.660 seconds]
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 490.71 kB | 
+
+Application bundle generation complete. [5.380 seconds]
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 506.73 kB | 
+
+Application bundle generation complete. [1.022 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:41:15:
+      41 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 506.73 kB | 
+
+Application bundle generation complete. [0.796 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:41:15:
+      41 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 506.73 kB | 
+
+Application bundle generation complete. [0.817 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:41:15:
+      41 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Initial chunk files | Names |  Raw size
+main.js             | main  | 509.34 kB | 
+
+Application bundle generation complete. [0.445 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:41:15:
+      41 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Page reload sent to client(s).
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [1.176 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [3.022 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [0.176 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [0.791 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [0.207 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+- Changes detected. Rebuilding...
+
+Application bundle generation failed. [0.160 seconds]
+
+▲ [WARNING] NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.html:257:60:
+      257 │ ...rteza que deseja excluir <strong>{{ deleteInfo?.nome }}</strong>?
+          ╵                                                    ~~~~
+
+  Error occurs in the template of component UsuarioComponent.
+
+    src/app/pages/usuario/usuario.component.ts:43:15:
+      43 │   templateUrl: './usuario.component.html',
+         ╵                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:18:9:
+      18 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+
+✘ [ERROR] TS2300: Duplicate identifier 'Perfil'. [plugin angular-compiler]
+
+    src/app/pages/usuario/usuario.component.ts:26:9:
+      26 │ import { Perfil } from '../../services/auth/auth.model';
+         ╵          ~~~~~~
+
+

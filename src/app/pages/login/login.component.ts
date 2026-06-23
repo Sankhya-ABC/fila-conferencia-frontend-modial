@@ -90,9 +90,13 @@ export class LoginComponent {
     this.loading = true;
 
     this.authService.login(this.form.getRawValue()).subscribe({
-      next: () => {
+      next: (resp) => {
         this.loading = false;
-        this.router.navigate(['/fila-conferencia']);
+        if (resp.perfil === 'MASTER') {
+          this.router.navigate(['/master/tenants']);
+        } else {
+          this.router.navigate(['/fila-conferencia']);
+        }
       },
       error: (err) => {
         this.loading = false;

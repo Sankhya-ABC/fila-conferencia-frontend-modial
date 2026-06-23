@@ -6,6 +6,7 @@ export interface LoginRequest {
 export enum Perfil {
   ADMINISTRADOR = 'ADMINISTRADOR',
   SEPARADOR = 'SEPARADOR',
+  MASTER = 'MASTER',
 }
 
 export interface SessionData {
@@ -13,6 +14,7 @@ export interface SessionData {
   nome: string;
   idUsuario: number;
   perfil: Perfil;
+  snkModulos?: string;
 }
 
 export interface RedefinirSenhaParams {

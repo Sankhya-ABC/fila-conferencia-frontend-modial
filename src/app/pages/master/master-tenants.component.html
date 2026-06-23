@@ -1,0 +1,206 @@
+<div class="master-layout">
+
+  <!-- TOPBAR -->
+  <header class="master-topbar">
+    <div class="master-topbar-brand">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <span>Painel Master</span>
+    </div>
+    <div class="master-topbar-user">
+      <span>{{ nomeUsuario }}</span>
+      <button mat-icon-button matTooltip="Sair" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- OVERLAY modal -->
+  <div class="modal-overlay" *ngIf="modalAberto" (click)="fecharModal()"></div>
+
+  <!-- CONTEÚDO -->
+  <main class="master-main">
+
+    <!-- Cabeçalho da seção -->
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Clientes</h1>
+        <p class="section-sub">{{ tenants.length }} tenant(s) cadastrado(s)</p>
+      </div>
+      <button mat-flat-button color="primary" class="btn-novo" (click)="abrirCriar()">
+        <mat-icon>add_business</mat-icon>
+        Novo cliente
+      </button>
+    </div>
+
+    <!-- Skeleton -->
+    <ng-container *ngIf="carregando">
+      <div class="tenant-card tenant-card--sk" *ngFor="let i of [1,2,3]">
+        <div class="sk sk--title"></div>
+        <div class="sk sk--sub"></div>
+      </div>
+    </ng-container>
+
+    <!-- Cards de tenant -->
+    <div class="tenant-card" *ngFor="let t of tenants" [class.tenant-card--inativo]="!t.ativo">
+
+      <div class="tenant-card-top">
+        <div class="tenant-av" [class.tenant-av--inativo]="!t.ativo">
+          {{ t.nome[0].toUpperCase() }}
+        </div>
+        <div class="tenant-info">
+          <span class="tenant-nome">{{ t.nome }}</span>
+          <span class="tenant-slug">{{ t.slug }}</span>
+        </div>
+        <span class="status-badge" [class.status-badge--ativo]="t.ativo">
+          <span class="status-dot"></span>
+          {{ t.ativo ? 'Ativo' : 'Inativo' }}
+        </span>
+      </div>
+
+      <div class="tenant-meta">
+        <span class="meta-item">
+          <mat-icon>link</mat-icon>{{ t.snkHost }}/{{ t.snkGateway }}
+        </span>
+        <span class="meta-item">
+          <mat-icon>storage</mat-icon>{{ t.dbDialect === 'ORACLE' ? 'Oracle' : 'SQL Server' }}
+        </span>
+        <span class="meta-item">
+          <mat-icon>calendar_today</mat-icon>Desde {{ t.criadoEm | date:'dd/MM/yyyy' }}
+        </span>
+      </div>
+
+      <div class="sync-resultado" *ngIf="syncResultado[t.slug]">
+        {{ syncResultado[t.slug] }}
+      </div>
+
+      <div class="tenant-actions">
+        <button mat-stroked-button (click)="abrirEditar(t)">
+          <mat-icon>edit</mat-icon> Editar
+        </button>
+        <button mat-stroked-button
+                [class.btn-sync--loading]="sincronizando[t.slug]"
+                [disabled]="sincronizando[t.slug] || !t.ativo"
+                (click)="sincronizar(t)">
+          <mat-icon>sync</mat-icon>
+          {{ sincronizando[t.slug] ? 'Sincronizando...' : 'Sync Sankhya' }}
+        </button>
+        <button mat-stroked-button
+                [class.btn-toggle--ativo]="t.ativo"
+                (click)="toggleAtivo(t)">
+          <mat-icon>{{ t.ativo ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+          {{ t.ativo ? 'Inativar' : 'Ativar' }}
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Vazio -->
+    <div class="empty" *ngIf="!carregando && tenants.length === 0">
+      <mat-icon>business_center</mat-icon>
+      <span>Nenhum cliente cadastrado. Clique em "Novo cliente" para começar.</span>
+    </div>
+
+  </main>
+
+  <!-- MODAL CRIAR / EDITAR -->
+  <div class="modal" *ngIf="modalAberto" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-titulo">
+        <mat-icon>{{ modalModo === 'criar' ? 'add_business' : 'edit' }}</mat-icon>
+        {{ modalModo === 'criar' ? 'Novo cliente' : 'Editar ' + slugEditando }}
+      </span>
+      <button mat-icon-button (click)="fecharModal()" [disabled]="modalCarregando">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <form *ngIf="modalForm" [formGroup]="modalForm" class="modal-body" (ngSubmit)="salvar()">
+
+      <div class="modal-section-label">Dados do cliente</div>
+
+      <ng-container *ngIf="modalModo === 'criar'">
+        <mat-form-field appearance="outline" class="modal-field">
+          <mat-label>Slug (identificador único)</mat-label>
+          <input matInput formControlName="slug" placeholder="ex: negri, modial" autocomplete="off" />
+          <mat-hint>Só minúsculas, números e hífens. Não pode ser alterado depois.</mat-hint>
+          <mat-error *ngIf="modalForm.get('slug')?.hasError('required')">Obrigatório</mat-error>
+          <mat-error *ngIf="modalForm.get('slug')?.hasError('pattern')">Só minúsculas, números e hífens</mat-error>
+        </mat-form-field>
+      </ng-container>
+
+      <mat-form-field appearance="outline" class="modal-field">
+        <mat-label>Nome do cliente</mat-label>
+        <input matInput formControlName="nome" autocomplete="off" />
+        <mat-error>Obrigatório</mat-error>
+      </mat-form-field>
+
+      <div class="modal-section-label">Credenciais Sankhya</div>
+
+      <div class="modal-row-duplo">
+        <mat-form-field appearance="outline" class="modal-field">
+          <mat-label>Host Sankhya</mat-label>
+          <input matInput formControlName="snkHost" autocomplete="off" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="modal-field">
+          <mat-label>Gateway</mat-label>
+          <input matInput formControlName="snkGateway" autocomplete="off" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="modal-field">
+        <mat-label>X-Token</mat-label>
+        <input matInput formControlName="snkXToken" autocomplete="off" />
+        <mat-error>Obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="modal-field">
+        <mat-label>Client ID</mat-label>
+        <input matInput formControlName="snkClientId" autocomplete="off" />
+        <mat-error>Obrigatório</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="modal-field">
+        <mat-label>Client Secret</mat-label>
+        <input matInput formControlName="snkClientSecret" autocomplete="off" />
+        <mat-error>Obrigatório</mat-error>
+      </mat-form-field>
+
+      <div class="modal-section-label">Banco de dados Sankhya</div>
+
+      <mat-form-field appearance="outline" class="modal-field">
+        <mat-label>Dialeto do banco</mat-label>
+        <mat-select formControlName="dbDialect">
+          <mat-option value="SQLSERVER">SQL Server</mat-option>
+          <mat-option value="ORACLE">Oracle</mat-option>
+        </mat-select>
+        <mat-hint>Define a sintaxe SQL usada nas queries de imagem de produto</mat-hint>
+      </mat-form-field>
+
+      <div class="modal-section-label">Módulos Sankhya ativos</div>
+      <div class="modulos-lista">
+        <label class="modulo-item" *ngFor="let m of todosModulos"
+               (click)="toggleModulo(m)">
+          <span class="modulo-check" [class.modulo-check--on]="isModuloAtivo(m)">
+            <mat-icon>{{ isModuloAtivo(m) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+          </span>
+          <span class="modulo-nome">{{ m }}</span>
+        </label>
+      </div>
+
+      <div class="modal-erro" *ngIf="modalErro">
+        <mat-icon>error_outline</mat-icon> {{ modalErro }}
+      </div>
+    </form>
+
+    <div class="modal-footer">
+      <button mat-stroked-button (click)="fecharModal()" [disabled]="modalCarregando">Cancelar</button>
+      <button mat-flat-button color="primary" (click)="salvar()"
+              [disabled]="modalForm.invalid || modalCarregando">
+        <span class="modal-spinner" *ngIf="modalCarregando"></span>
+        <mat-icon *ngIf="!modalCarregando">{{ modalModo === 'criar' ? 'rocket_launch' : 'save' }}</mat-icon>
+        {{ modalCarregando ? (modalModo === 'criar' ? 'Provisionando...' : 'Salvando...') : (modalModo === 'criar' ? 'Provisionar' : 'Salvar') }}
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -9,8 +9,8 @@ export interface VolumeItemDTO {
   idProduto: number;
   descricaoProduto: string;
   imagem: string | null;
-  quantidadeConvertida: number;
-  quantidadeBase: number;
+  quantidadePadrao: number;
+  quantidadeComercial: number;
   unidade: string;
   controle?: string;
 }

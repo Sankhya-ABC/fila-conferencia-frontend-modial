@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { SKIP_ERROR_TOAST, SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
+  GravarPesoItemParams,
   ItemPedidoDTO,
   ItensConferidosResponse,
   MoverItemVolumeParams,
@@ -68,6 +69,12 @@ export class SeparacaoService {
     body: PostDevolverItemConferidoParams,
   ): Observable<null> {
     return this.http.post<null>('/separacoes/devolver-item-conferido', body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
+  }
+
+  patchItemPeso(body: GravarPesoItemParams): Observable<null> {
+    return this.http.patch<null>('/separacoes/item-peso', body, {
       context: new HttpContext().set(SKIP_LOADING, true),
     });
   }

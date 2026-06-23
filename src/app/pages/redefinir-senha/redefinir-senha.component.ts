@@ -33,21 +33,19 @@ export class RedefinirSenhaComponent {
   ) {}
 
   token!: string;
-  email!: string;
   loading = false;
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
       this.token = params['token'];
-      this.email = params['email'];
-
-      if (!this.token || !this.email) {
+      if (!this.token) {
         this.router.navigate(['/erro']);
       }
     });
   }
 
   form = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
     senha: ['', Validators.required],
     confirmarSenha: ['', Validators.required],
   });
@@ -59,9 +57,9 @@ export class RedefinirSenhaComponent {
 
     this.authService
       .redefinirSenha({
+        email: this.form.value.email!,
         senha: this.form.value.senha!,
         token: this.token,
-        email: this.email,
       })
       .subscribe({
         next: () => {

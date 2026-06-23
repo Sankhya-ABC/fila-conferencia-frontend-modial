@@ -64,4 +64,8 @@ export class ConferenciaService {
   ): Observable<null> {
     return this.http.post<null>('/conferencias/finalizar-conferencia', body);
   }
+
+  deleteSessao(numeroUnico: number): Observable<null> {
+    return this.http.post<null>('/conferencias/excluir-sessao', { numeroUnico });
+  }
 }

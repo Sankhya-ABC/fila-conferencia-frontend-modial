@@ -8,12 +8,13 @@ export interface ItemPedidoDTO {
 
   codigoBarras?: string[];
 
-  unidade: string;
-  quantidadeBase: number;
-  quantidadeConvertida: number;
+  unidadeComercial: string;
+  unidadePadrao: string;
+  quantidadeComercial: number;
+  quantidadePadrao: number;
 
-  quantidadeBaseConferida: number;
-  quantidadeConvertidaConferida: number;
+  quantidadeComercialConferida: number;
+  quantidadePadraoConferida: number;
 
   idMarca: number;
   nomeMarca: string;
@@ -22,14 +23,25 @@ export interface ItemPedidoDTO {
   nomeFornecedor: string;
 
   controle: string;
+  tipControle?: string | null;
   complemento: string;
   lisControles?: string | null;
+  usaConfPeso?: boolean;
+  pesavel?: boolean;
+  sequencia?: number;
+}
+
+export interface GravarPesoItemParams {
+  nunota: number;
+  sequencia: number;
+  pesobruto: number;
+  pesoliq: number;
 }
 
 export interface ItensConferidosResponse {
   idProduto: number;
   controle?: string;
-  quantidadeConvertida: number;
+  quantidadePadrao: number;
 }
 
 export interface PostItemConferidoVolumeParams {
@@ -37,13 +49,23 @@ export interface PostItemConferidoVolumeParams {
   numeroVolume: number;
   idProduto: number;
   controle: string;
-  quantidadeConvertida: number;
+  quantidadePadrao: number;
   unidade: string;
+  peso?: number;
 }
 
 export interface PostRemoverVolumeParams {
   numeroConferencia: number;
   numeroVolume: number;
+}
+
+export interface UmaDTO {
+  codUma: string;
+  descricao: string;
+  peso: number | null;
+  codVol: string | null;
+  codBarra: string | null;
+  padrao: boolean;
 }
 
 export interface ResolverCodigoBarrasResponse {
@@ -60,6 +82,9 @@ export interface ResolverCodigoBarrasResponse {
   fatorConv: number | null;
   divideMult: string | null;
   lisControles?: string | null;
+  usaConfPeso?: boolean;
+  pesavel?: boolean;
+  umas?: UmaDTO[];
 }
 
 export interface PostDevolverItemConferidoParams {

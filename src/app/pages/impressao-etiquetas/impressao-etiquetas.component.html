@@ -44,7 +44,8 @@
             <input matInput formControlName="numeroUnico" />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filtro-field">
+          <mat-form-field appearance="outline" class="filtro-field"
+                          *ngIf="temNumtalao">
             <mat-label>Nº Modial</mat-label>
             <input matInput formControlName="numeroModial" />
           </mat-form-field>
@@ -85,7 +86,7 @@
     </div>
 
     <div class="ie-card-body">
-      <div class="ie-dado">
+      <div class="ie-dado" *ngIf="temNumtalao">
         <span class="ie-dado-label">Nº Modial</span>
         <span class="ie-dado-valor ie-dado-valor--destaque">
           {{ item.AD_NUMTALAO || item.numeroModial || item.numTalao || '—' }}

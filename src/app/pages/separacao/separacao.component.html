@@ -75,6 +75,53 @@
           aria-label="Ver atalhos de teclado">
     <mat-icon>keyboard</mat-icon>
   </button>
+  <div class="balanca-topbar-wrap" *ngIf="usaBalanca && balancas.length > 0">
+    <button mat-icon-button
+            class="btn-balanca-topbar"
+            [class.btn-balanca-topbar--ativa]="!!balancaSelecionadaId"
+            (click)="mostrarSeletorBalancaTopbar = !mostrarSeletorBalancaTopbar"
+            [matTooltip]="balancaAtualNome ? 'Balança: ' + balancaAtualNome : 'Selecionar balança'"
+            aria-label="Selecionar balança">
+      <mat-icon>scale</mat-icon>
+    </button>
+    <div class="balanca-topbar-overlay" *ngIf="mostrarSeletorBalancaTopbar"
+         (click)="mostrarSeletorBalancaTopbar = false"></div>
+    <div class="balanca-topbar-popover" *ngIf="mostrarSeletorBalancaTopbar">
+      <span class="bt-titulo">Balança ativa</span>
+      <select class="bt-select"
+              [(ngModel)]="balancaSelecionadaId"
+              (ngModelChange)="onBalancaSelecionadaTopbarChange()">
+        <option [ngValue]="null">— Nenhuma —</option>
+        <option *ngFor="let b of balancas" [value]="b.id">{{ b.nome }}</option>
+      </select>
+      <span class="bt-hint" *ngIf="balancaAtualNome">
+        <mat-icon>check_circle</mat-icon> {{ balancaAtualNome }}
+      </span>
+    </div>
+  </div>
+  <button mat-icon-button
+          class="btn-excluir-sessao"
+          (click)="confirmarExcluirSessao()"
+          matTooltip="Excluir sessão"
+          aria-label="Excluir sessão de conferência">
+    <mat-icon>delete_outline</mat-icon>
+  </button>
+</div>
+
+<!-- MODAL: Confirmar exclusão de sessão -->
+<div class="excluir-sessao-overlay" *ngIf="mostrarConfirmExcluirSessao" (click)="$event.target === $event.currentTarget && (mostrarConfirmExcluirSessao = false)">
+  <div class="excluir-sessao-dialog" role="dialog" aria-modal="true">
+    <mat-icon class="excluir-sessao-icon">warning_amber</mat-icon>
+    <p class="excluir-sessao-titulo">Excluir sessão?</p>
+    <p class="excluir-sessao-desc">Todo o progresso desta conferência será perdido e a conferência no Sankhya será cancelada. Esta ação não pode ser desfeita.</p>
+    <div class="excluir-sessao-footer">
+      <button class="es-btn es-btn--ghost" type="button" (click)="mostrarConfirmExcluirSessao = false">Cancelar</button>
+      <button class="es-btn es-btn--danger" type="button" [disabled]="excluindoSessao" (click)="excluirSessao()">
+        <mat-icon *ngIf="!excluindoSessao">delete</mat-icon>
+        <span>{{ excluindoSessao ? 'Excluindo...' : 'Excluir sessão' }}</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- PAINEL DE ATALHOS -->
@@ -164,8 +211,21 @@
                   [class.identificado]="produtoIdentificado"
                   [class.field-controle--locked]="isControleLocked()"
                   [class.field-controle--atencao]="controleRequerAtencao">
-    <mat-label>Controle</mat-label>
-    <mat-select
+    <mat-label>{{ controleModoLote ? 'Nº do Lote' : 'Controle' }}</mat-label>
+
+    <!-- Modo lote: digitação livre -->
+    <input *ngIf="controleModoLote"
+      matInput
+      #inputControleLote
+      formControlName="controle"
+      autocomplete="off"
+      placeholder="Digite o número do lote"
+      (keydown.enter)="$event.preventDefault(); onControleConfirmado()"
+      (keydown.tab)="$event.preventDefault(); onControleConfirmado()"
+    />
+
+    <!-- Modo normal: seleção de lista -->
+    <mat-select *ngIf="!controleModoLote"
       #selectControle
       formControlName="controle"
       (selectionChange)="onControleChange($event.value)"
@@ -190,12 +250,14 @@
       matInput
       #inputQuantidade
       type="number"
-      formControlName="quantidadeConvertida"
-      (blur)="onBlurQuantidadeConvertida()"
+      formControlName="quantidadePadrao"
+      [readonly]="!!(itemSelecionado?.usaConfPeso && usaBalanca)"
+      (blur)="onBlurQuantidadePadrao()"
       (keydown.enter)="$event.preventDefault(); onTabQuantidade()"
       (keydown.tab)="$event.preventDefault(); onTabQuantidade()"
     />
-    <mat-error *ngIf="quantidadeConvertidaCtrl?.hasError('menorQueZero')">Maior que zero</mat-error>
+    <mat-error *ngIf="quantidadePadraoCtrl?.hasError('menorQueZero')">Maior que zero</mat-error>
+    <mat-hint *ngIf="itemSelecionado?.usaConfPeso && usaBalanca">Pesagem</mat-hint>
   </mat-form-field>
 
   <button
@@ -204,7 +266,7 @@
     type="button"
     class="btn-conferir"
     [class.btn-conferir--loading]="conferindoEmAndamento"
-    [disabled]="!itemSelecionado || !quantidadeConvertidaCtrl?.value || conferindoEmAndamento"
+    [disabled]="!itemSelecionado || !quantidadePadraoCtrl?.value || conferindoEmAndamento"
     (click)="onSubmitConferencia()"
     (keydown.tab)="$event.preventDefault(); onSubmitConferencia()"
     (keydown.enter)="$event.preventDefault(); onSubmitConferencia()"
@@ -301,11 +363,16 @@
         <div class="item-dados">
           <div class="item-linha">
             <span class="item-descricao">{{ item.idProduto }} - {{ item.nomeProduto }}</span>
-            <span class="item-qtd-principal">Quantidade: {{ item.quantidadeConvertida }}UN</span>
+            <span class="item-qtd-principal" [class.item-qtd-principal--balanca]="item.usaConfPeso">
+              <mat-icon *ngIf="item.usaConfPeso" class="item-qtd-icon">scale</mat-icon>{{ item.quantidadePadrao | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}
+            </span>
           </div>
-          <div class="item-linha" *ngIf="item.controle || item.unidade !== 'UN'">
+          <div class="item-linha" *ngIf="item.controle || item.unidadeComercial !== item.unidadePadrao">
             <span class="item-info-sec">{{ item.controle ? 'Controle: ' + item.controle : '' }}</span>
-            <span class="item-qtd-alt" *ngIf="item.unidade !== 'UN'">Qtd. Alt.: {{ item.quantidadeBase }} {{ item.unidade }}</span>
+            <span class="item-qtd-alt" *ngIf="item.unidadeComercial !== item.unidadePadrao">Pedido: {{ item.quantidadeComercial | number:'1.3-3':'pt-BR' }} {{ item.unidadeComercial }}</span>
+          </div>
+          <div class="item-linha" *ngIf="item.pesavel && pesoPesavelMap.get(item.idProduto + '|' + item.controle) as pesoCapt">
+            <span class="item-peso-badge">⚖ {{ pesoCapt | number:'1.3-3':'pt-BR' }} kg</span>
           </div>
         </div>
       </div>
@@ -364,11 +431,11 @@
           <div class="item-dados">
             <div class="item-linha">
               <span class="item-descricao">{{ item.idProduto }} - {{ item.nomeProduto }}</span>
-              <span class="item-qtd-principal">Quantidade: {{ item.quantidadeConvertida }}UN</span>
+              <span class="item-qtd-principal">{{ item.quantidadePadrao | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</span>
             </div>
-            <div class="item-linha" *ngIf="item.controle || item.unidade !== 'UN'">
+            <div class="item-linha" *ngIf="item.controle || item.unidadeComercial !== item.unidadePadrao">
               <span class="item-info-sec">{{ item.controle ? 'Controle: ' + item.controle : '' }}</span>
-              <span class="item-qtd-alt" *ngIf="item.unidade !== 'UN'">Qtd. Alt.: {{ item.quantidadeBase }} {{ item.unidade }}</span>
+              <span class="item-qtd-alt" *ngIf="item.unidadeComercial !== item.unidadePadrao">Pedido: {{ item.quantidadeComercial | number:'1.3-3':'pt-BR' }} {{ item.unidadeComercial }}</span>
             </div>
           </div>
           <button mat-icon-button class="btn-desfazer"
@@ -393,7 +460,7 @@
              (ultimoProduto ? 'Último conferido' : 'Aguardando leitura') }}
         </span>
         <span class="painel-badge painel-badge-qtd" *ngIf="produtoAtualExibido">
-          {{ produtoAtualExibido.quantidadeConvertida }} UN
+          {{ produtoAtualExibido.quantidadePadrao | number:'1.3-3':'pt-BR' }} {{ produtoAtualExibido.unidadePadrao }}
         </span>
       </div>
       <div class="produto-imagem-stage">
@@ -456,7 +523,7 @@
           <input matInput type="number" formControlName="quantidade"
                  (blur)="onBlurFieldsFormCubagem('quantidade')" />
         </mat-form-field>
-        <div class="vol-dims-grid">
+        <div class="vol-dims-grid" *ngIf="dadosGerais?.temCubagem">
           <mat-form-field appearance="outline" class="dim-field">
             <mat-label>Larg. (cm)</mat-label>
             <input matInput type="number" formControlName="largura"
@@ -525,7 +592,7 @@
                    [class.vol-item-mini--movendo]="itemMovendo?.idProduto === i.idProduto && itemMovendo?.controle === (i.controle ?? '') && itemMovendo?.seqVolOrigem === v.numeroVolume">
                 <mat-icon>chevron_right</mat-icon>
                 <span class="vol-item-mini-nome">{{ i.idProduto }} — {{ i.descricaoProduto }}</span>
-                <span class="vol-item-mini-qtd">{{ i.quantidadeConvertida }}</span>
+                <span class="vol-item-mini-qtd">{{ i.quantidadePadrao | number:'1.3-3':'pt-BR' }}</span>
                 <button mat-icon-button class="btn-mover-item"
                         (click)="iniciarMoverItem(i, v); $event.stopPropagation()"
                         matTooltip="Mover para outro volume"
@@ -627,7 +694,7 @@
     <div class="vs-grupos-area" *ngIf="gruposSimplificados.length > 0">
       <div class="vs-grupo-chip" *ngFor="let grupo of gruposSimplificados">
         <span class="vs-grupo-chip-qtd">{{ grupo.qtdVol }}×</span>
-        <span class="vs-grupo-chip-dims">
+        <span class="vs-grupo-chip-dims" *ngIf="dadosGerais?.temCubagem">
           {{ grupo.largura }}×{{ grupo.comprimento }}×{{ grupo.altura }} cm
           · {{ grupo.peso }} kg
         </span>
@@ -659,35 +726,37 @@
                (blur)="onBlurFieldsFormCubagem('quantidade')" />
       </mat-form-field>
 
-      <span class="vs-add-sep">×</span>
+      <ng-container *ngIf="dadosGerais?.temCubagem">
+        <span class="vs-add-sep">×</span>
 
-      <mat-form-field appearance="outline" class="vs-field">
-        <mat-label>Larg.</mat-label>
-        <input matInput type="number" formControlName="largura"
-               (blur)="onBlurFieldsFormCubagem('largura')" />
-        <span matSuffix class="vs-suffix">cm</span>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="vs-field">
+          <mat-label>Larg.</mat-label>
+          <input matInput type="number" formControlName="largura"
+                 (blur)="onBlurFieldsFormCubagem('largura')" />
+          <span matSuffix class="vs-suffix">cm</span>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="vs-field">
-        <mat-label>Comp.</mat-label>
-        <input matInput type="number" formControlName="comprimento"
-               (blur)="onBlurFieldsFormCubagem('comprimento')" />
-        <span matSuffix class="vs-suffix">cm</span>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="vs-field">
+          <mat-label>Comp.</mat-label>
+          <input matInput type="number" formControlName="comprimento"
+                 (blur)="onBlurFieldsFormCubagem('comprimento')" />
+          <span matSuffix class="vs-suffix">cm</span>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="vs-field">
-        <mat-label>Alt.</mat-label>
-        <input matInput type="number" formControlName="altura"
-               (blur)="onBlurFieldsFormCubagem('altura')" />
-        <span matSuffix class="vs-suffix">cm</span>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="vs-field">
+          <mat-label>Alt.</mat-label>
+          <input matInput type="number" formControlName="altura"
+                 (blur)="onBlurFieldsFormCubagem('altura')" />
+          <span matSuffix class="vs-suffix">cm</span>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="vs-field">
-        <mat-label>Peso</mat-label>
-        <input matInput type="number" formControlName="peso"
-               (blur)="onBlurFieldsFormCubagem('peso')" />
-        <span matSuffix class="vs-suffix">kg</span>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="vs-field">
+          <mat-label>Peso</mat-label>
+          <input matInput type="number" formControlName="peso"
+                 (blur)="onBlurFieldsFormCubagem('peso')" />
+          <span matSuffix class="vs-suffix">kg</span>
+        </mat-form-field>
+      </ng-container>
 
       <button mat-flat-button color="primary"
               class="vs-btn-add"
@@ -742,6 +811,207 @@
 </ng-container>
 </div>
 
+
+<!-- MODAL: REGISTRO DE PESO -->
+<div class="mp-overlay" *ngIf="mostrarModalPeso" [formGroup]="formPeso"
+     (click)="$event.target === $event.currentTarget && cancelarPeso()">
+  <div class="mp-dialog" role="dialog" aria-modal="true">
+
+    <!-- ── Header ── -->
+    <div class="mp-header">
+      <div class="mp-header-meta">
+        <span class="mp-label">{{ itemSelecionado?.usaConfPeso ? 'Pesagem' : 'Registrar Peso' }}</span>
+        <span class="mp-badge-esperado" *ngIf="produtoAtualExibido?.quantidadePadrao">
+          Esperado: {{ produtoAtualExibido!.quantidadePadrao | number:'1.3-3':'pt-BR' }} {{ produtoAtualExibido!.unidadePadrao }}
+          <span class="mp-badge-comercial" *ngIf="produtoAtualExibido!.unidadeComercial !== produtoAtualExibido!.unidadePadrao">
+            ({{ produtoAtualExibido!.quantidadeComercial | number:'1.3-3':'pt-BR' }} {{ produtoAtualExibido!.unidadeComercial }})
+          </span>
+        </span>
+      </div>
+      <p class="mp-produto-nome" *ngIf="produtoAtualExibido">{{ produtoAtualExibido.nomeProduto }}</p>
+    </div>
+
+    <!-- ── Segmented control de modo (oculto quando balança é obrigatória) ── -->
+    <div class="mp-mode-bar" *ngIf="balancas.length > 0 && !balancaObrigatoria">
+      <div class="mp-segmented">
+        <button type="button" class="mp-seg-btn"
+                [class.mp-seg-btn--active]="modoEntradaPeso === 'manual'"
+                (click)="selecionarModoPeso('manual')">
+          <mat-icon>keyboard</mat-icon>
+          Manual
+        </button>
+        <button type="button" class="mp-seg-btn"
+                [class.mp-seg-btn--active]="modoEntradaPeso === 'balanca'"
+                (click)="selecionarModoPeso('balanca')">
+          <mat-icon>scale</mat-icon>
+          Balança
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Body ── -->
+    <div class="mp-body">
+
+      <!-- UMA select -->
+      <div class="mp-uma-section" *ngIf="itemSelecionado?.usaConfPeso && umasDisponiveis.length > 0">
+        <label class="mp-section-label" for="mp-uma-select">Unidade de Movimentação (U.M.A.)</label>
+        <select id="mp-uma-select" class="mp-uma-select"
+                [ngModel]="umaSelecionada?.codUma ?? ''"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onUmaSelecionadaChange($event)">
+          <option value="">Sem UMA — qtd = peso direto</option>
+          <option *ngFor="let uma of umasDisponiveis" [value]="uma.codUma">
+            {{ uma.codUma }} — {{ uma.descricao }}{{ uma.peso != null ? ' (' + (uma.peso | number:'1.3-3':'pt-BR') + ' kg)' : '' }}
+          </option>
+        </select>
+      </div>
+
+      <!-- ── MODO MANUAL ── -->
+      <ng-container *ngIf="modoEntradaPeso === 'manual' || balancas.length === 0">
+        <div class="mp-peso-input-wrap">
+          <input
+            class="mp-peso-input"
+            type="number" formControlName="peso"
+            min="0.001" step="0.001" placeholder="0,000"
+            (keydown.enter)="$event.preventDefault(); confirmarPeso()"
+            (keydown.escape)="$event.preventDefault(); cancelarPeso()"
+          />
+          <span class="mp-peso-unit">kg</span>
+          <mat-icon class="mp-sensor-icon" *ngIf="pesoCapturadoDaBalanca"
+                    matTooltip="Capturado da balança">sensors</mat-icon>
+        </div>
+        <div class="mp-peso-errors">
+          <span *ngIf="formPeso.get('peso')?.touched && formPeso.get('peso')?.hasError('required')">Informe o peso</span>
+          <span *ngIf="formPeso.get('peso')?.touched && formPeso.get('peso')?.hasError('min')">Peso deve ser maior que zero</span>
+        </div>
+
+        <!-- Diferença em relação ao esperado -->
+        <div class="mp-diff-row" *ngIf="produtoAtualExibido?.quantidadePadrao && formPeso.get('peso')?.value">
+          <ng-container *ngIf="(formPeso.get('peso')?.value - produtoAtualExibido!.quantidadePadrao) as diff">
+            <span class="mp-diff-chip"
+                  [class.mp-diff-chip--over]="diff > 0"
+                  [class.mp-diff-chip--under]="diff < 0">
+              {{ diff > 0 ? '+' : '' }}{{ diff | number:'1.3-3':'pt-BR' }} kg
+            </span>
+            <span class="mp-diff-label">em relação ao esperado</span>
+          </ng-container>
+        </div>
+      </ng-container>
+
+      <!-- ── MODO BALANÇA ── (campo oculto mantém o valor no form) -->
+      <input *ngIf="modoEntradaPeso === 'balanca'" class="mp-hidden-input"
+             type="number" formControlName="peso" tabindex="-1" aria-hidden="true" />
+
+      <div class="mp-balanca-panel" *ngIf="modoEntradaPeso === 'balanca'">
+
+        <!-- Aviso quando nenhuma balança foi selecionada na top bar -->
+        <div class="mp-offline-banner" *ngIf="!balancaSelecionadaId">
+          <mat-icon>scale</mat-icon>
+          <span>Selecione uma balança no botão <mat-icon style="font-size:14px;vertical-align:middle">scale</mat-icon> da barra superior.</span>
+        </div>
+
+        <!-- Live panel -->
+        <div class="mp-live-card" *ngIf="balancaSelecionadaId">
+
+          <!-- Status badge -->
+          <div class="mp-status-row">
+            <span class="mp-status-badge"
+                  [class.mp-status-badge--ok]="statusBalancaConf === 'conectado'"
+                  [class.mp-status-badge--busy]="statusBalancaConf === 'verificando'"
+                  [class.mp-status-badge--err]="statusBalancaConf === 'desconectado'">
+              <span class="mp-status-dot"></span>
+              {{ statusBalancaConf === 'conectado' ? 'Conectada'
+               : statusBalancaConf === 'verificando' ? 'Verificando…'
+               : 'Desconectada' }}
+            </span>
+            <button type="button" class="mp-icon-btn"
+                    (click)="atualizarStatusBalanca()" matTooltip="Atualizar status">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+
+          <!-- Leitura ao vivo -->
+          <div class="mp-live-display" [class.mp-live-display--active]="statusBalancaConf === 'conectado'">
+            <span class="mp-live-val">{{ pesoBalancaAtual.toFixed(3).replace('.', ',') }}</span>
+            <span class="mp-live-unit">Kg</span>
+            <span class="mp-live-pulse" *ngIf="statusBalancaConf === 'conectado'">
+              <span class="mp-pulse-dot"></span>ao vivo
+            </span>
+          </div>
+
+          <!-- Ações -->
+          <div class="mp-balanca-actions">
+            <button class="mp-btn mp-btn--primary" type="button"
+                    [disabled]="!balancaSelecionadaId || capturandoPeso || statusBalancaConf !== 'conectado'"
+                    (click)="capturarPesoDaBalanca()">
+              <mat-icon>{{ capturandoPeso ? 'hourglass_top' : 'sensors' }}</mat-icon>
+              {{ capturandoPeso ? 'Aguardando…' : 'Capturar Peso' }}
+            </button>
+            <button class="mp-btn mp-btn--secondary" type="button"
+                    [disabled]="statusBalancaConf !== 'conectado'"
+                    (click)="taraBalanca()" matTooltip="Zerar display (Tara)">
+              <mat-icon>exposure_zero</mat-icon>
+              Tara
+            </button>
+          </div>
+
+          <!-- Auto-captura switch -->
+          <div class="mp-autocap-row">
+            <span class="mp-autocap-label">Captura automática ao estabilizar (2 s)</span>
+            <label class="mp-switch">
+              <input type="checkbox"
+                     [(ngModel)]="capturaAutoAtiva"
+                     [ngModelOptions]="{standalone: true}" />
+              <span class="mp-switch-track"></span>
+            </label>
+          </div>
+
+          <!-- Offline -->
+          <div class="mp-offline-banner" *ngIf="statusBalancaConf === 'desconectado'">
+            <mat-icon>signal_disconnected</mat-icon>
+            <span>Balança desconectada.</span>
+            <button type="button" class="mp-link-btn" (click)="reconectarBalanca()">
+              Tentar reconectar
+            </button>
+            <button type="button" class="mp-link-btn" *ngIf="!balancaObrigatoria"
+                    (click)="selecionarModoPeso('manual')">
+              Usar digitação manual
+            </button>
+          </div>
+
+        </div><!-- /mp-live-card -->
+
+        <!-- Peso capturado badge -->
+        <div class="mp-captured-badge" *ngIf="pesoCapturadoDaBalanca && formPeso.get('peso')?.value">
+          <mat-icon>check_circle</mat-icon>
+          Peso capturado: {{ formPeso.get('peso')?.value | number:'1.3-3':'pt-BR' }} kg
+        </div>
+
+        <!-- Erro -->
+        <div class="mp-error-banner" *ngIf="erroCapturaBalanca">
+          <mat-icon>warning</mat-icon>
+          <span>{{ erroCapturaBalanca }}</span>
+        </div>
+
+      </div><!-- /mp-balanca-panel -->
+
+    </div><!-- /mp-body -->
+
+    <!-- ── Footer ── -->
+    <div class="mp-footer">
+      <button class="mp-btn mp-btn--ghost" type="button" (click)="cancelarPeso()">
+        Cancelar
+      </button>
+      <button class="mp-btn mp-btn--primary" type="button"
+              [disabled]="formPeso.invalid || capturandoPeso"
+              (click)="confirmarPeso()">
+        <mat-icon>check</mat-icon>
+        Confirmar
+      </button>
+    </div>
+
+  </div>
+</div>
 
 <!-- MODAL: CONFERÊNCIA FINALIZADA -->
 <ng-template #modalConferenciaFinalizada let-fechar="fechar">

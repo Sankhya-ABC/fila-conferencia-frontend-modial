@@ -1,5 +1,7 @@
-<!-- BACKDROP -->
+<!-- BACKDROP (filtro + modal) -->
 <div class="filtro-backdrop" *ngIf="filtroAberto" (click)="filtroAberto = false"></div>
+<div class="modal-overlay" *ngIf="modalAberto" (click)="fecharModal()"></div>
+<div class="modal-overlay modal-overlay--delete" *ngIf="deleteInfo" (click)="cancelarDelete()"></div>
 
 <!-- BANNER -->
 <div class="painel-header">
@@ -16,6 +18,11 @@
       <span class="contagem-valor">{{ total }}</span>
       <span class="contagem-label">usuários</span>
     </div>
+
+    <button mat-flat-button color="primary" class="btn-novo" (click)="abrirModalCriar()">
+      <mat-icon>person_add</mat-icon>
+      Novo usuário
+    </button>
 
     <div class="filtro-btn-wrapper">
       <button mat-flat-button
@@ -148,6 +155,18 @@
         <mat-icon>{{ u.ativo ? 'toggle_off' : 'toggle_on' }}</mat-icon>
       </button>
       <button class="btn-acao"
+              matTooltip="Editar"
+              matTooltipPosition="above"
+              (click)="abrirModalEditar(u)">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button class="btn-acao btn-acao--danger"
+              matTooltip="Excluir"
+              matTooltipPosition="above"
+              (click)="pedirDelete(u)">
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+      <button class="btn-acao"
               matTooltip="Redefinir senha"
               matTooltipPosition="above"
               (click)="redefinirAtivarLote([u.email])">
@@ -166,3 +185,84 @@
   </div><!-- /user-rows-scroll -->
 </div>
 
+<!-- MODAL CRIAR / EDITAR -->
+<div class="modal" *ngIf="modalAberto" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <span class="modal-titulo">
+      {{ modalModo === 'criar' ? 'Novo usuário' : 'Editar usuário' }}
+    </span>
+    <button mat-icon-button (click)="fecharModal()" [disabled]="modalCarregando">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="modalForm" class="modal-body" (ngSubmit)="salvarModal()">
+    <mat-form-field appearance="outline" class="modal-field">
+      <mat-label>Nome completo</mat-label>
+      <input matInput formControlName="nome" autocomplete="off" />
+      <mat-error *ngIf="modalForm.get('nome')?.hasError('required')">Nome obrigatório</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="modal-field">
+      <mat-label>E-mail (login)</mat-label>
+      <input matInput formControlName="email" type="email" autocomplete="off" />
+      <mat-error *ngIf="modalForm.get('email')?.hasError('required')">E-mail obrigatório</mat-error>
+      <mat-error *ngIf="modalForm.get('email')?.hasError('email')">E-mail inválido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="modal-field">
+      <mat-label>Perfil</mat-label>
+      <mat-select formControlName="perfil">
+        <mat-option *ngFor="let p of listPerfilModal" [value]="p.codigo">
+          {{ p.descricao }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="modalForm.get('perfil')?.hasError('required')">Perfil obrigatório</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="modal-field">
+      <mat-label>{{ modalModo === 'criar' ? 'Senha' : 'Nova senha (opcional)' }}</mat-label>
+      <input matInput formControlName="senha" type="password" autocomplete="new-password" />
+      <mat-error *ngIf="modalForm.get('senha')?.hasError('required')">Senha obrigatória</mat-error>
+      <mat-error *ngIf="modalForm.get('senha')?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
+    </mat-form-field>
+
+    <div class="modal-erro" *ngIf="modalErro">
+      <mat-icon>error_outline</mat-icon>
+      {{ modalErro }}
+    </div>
+  </form>
+
+  <div class="modal-footer">
+    <button mat-stroked-button (click)="fecharModal()" [disabled]="modalCarregando">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="salvarModal()"
+            [disabled]="modalForm.invalid || modalCarregando">
+      <mat-icon *ngIf="!modalCarregando">save</mat-icon>
+      <span class="modal-spinner" *ngIf="modalCarregando"></span>
+      {{ modalCarregando ? 'Salvando...' : 'Salvar' }}
+    </button>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="modal modal--delete" *ngIf="deleteInfo" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <span class="modal-titulo modal-titulo--danger">
+      <mat-icon>warning_amber</mat-icon>
+      Excluir usuário
+    </span>
+  </div>
+  <div class="modal-body">
+    <p class="delete-msg">
+      Tem certeza que deseja excluir <strong>{{ deleteInfo!.nome }}</strong>?
+      <br>Esta ação não pode ser desfeita.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button mat-stroked-button (click)="cancelarDelete()" [disabled]="deleteCarregando">Cancelar</button>
+    <button mat-flat-button color="warn" (click)="confirmarDelete()" [disabled]="deleteCarregando">
+      <span class="modal-spinner" *ngIf="deleteCarregando"></span>
+      {{ deleteCarregando ? 'Excluindo...' : 'Excluir' }}
+    </button>
+  </div>
+</div>

@@ -1,0 +1,396 @@
+<!-- ── Overlay delete ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="deleteInfo" (click)="cancelarDelete()"></div>
+
+<!-- ══════════════════════════════════════════════════════════ VISTA: LISTA === -->
+<ng-container *ngIf="vista === 'lista'">
+
+  <div class="painel-header">
+    <div class="painel-icon"><mat-icon>scale</mat-icon></div>
+    <div class="painel-info">
+      <p class="painel-titulo">Balanças</p>
+      <span class="painel-sub">Integração serial Toledo</span>
+    </div>
+    <div class="painel-direita">
+      <div class="painel-contagem">
+        <span class="contagem-valor">{{ balancas.length }}</span>
+        <span class="contagem-label">balanças</span>
+      </div>
+      <button mat-flat-button color="primary" (click)="novaBalanca()">
+        <mat-icon>add</mat-icon> Nova balança
+      </button>
+    </div>
+  </div>
+
+  <div class="balanca-list-container">
+    <div class="balanca-list-header">
+      <span class="col-nome">Nome</span>
+      <span class="col-tipo">Tipo</span>
+      <span class="col-endereco">Porta / Endereço</span>
+      <span class="col-protocolo">Protocolo</span>
+      <span class="col-acoes">Ações</span>
+    </div>
+
+    <div class="balanca-rows-scroll">
+      <!-- Skeleton -->
+      <ng-container *ngIf="carregando">
+        <div class="balanca-row balanca-row--skeleton" *ngFor="let i of [1,2,3]">
+          <div class="sk sk--nome"></div>
+          <div class="sk sk--badge"></div>
+          <div class="sk sk--addr"></div>
+          <div class="sk sk--badge"></div>
+          <div class="sk sk--acoes"></div>
+        </div>
+      </ng-container>
+
+      <!-- Rows -->
+      <div class="balanca-row" *ngFor="let b of balancas">
+        <div class="col-nome">
+          <div class="balanca-icon"><mat-icon>scale</mat-icon></div>
+          <span class="balanca-nome">{{ b.nome }}</span>
+        </div>
+        <div class="col-tipo">
+          <span class="tipo-badge"
+                [class.tipo-badge--serial]="b.tipoComunicacao.startsWith('SERIAL')"
+                [class.tipo-badge--tcp]="b.tipoComunicacao === 'TOLEDO_TCP'">
+            {{ tipoBadgeLabel(b) }}
+          </span>
+        </div>
+        <div class="col-endereco">
+          <span class="endereco-text">{{ enderecoLabel(b) }}</span>
+        </div>
+        <div class="col-protocolo">
+          <span class="protocolo-text">
+            {{ b.tipoComunicacao.startsWith('SERIAL') ? b.protocoloSerial : b.protocolo }}
+          </span>
+        </div>
+        <div class="col-acoes">
+          <button class="btn-acao" matTooltip="Configurar" matTooltipPosition="above" (click)="editarBalanca(b)">
+            <mat-icon>settings</mat-icon>
+          </button>
+          <button class="btn-acao btn-acao--danger" matTooltip="Excluir" matTooltipPosition="above" (click)="pedirDelete(b)">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Vazio -->
+      <div class="balanca-vazio" *ngIf="!carregando && balancas.length === 0">
+        <mat-icon>cable</mat-icon>
+        <span>Nenhuma balança cadastrada</span>
+        <button mat-stroked-button (click)="novaBalanca()">Cadastrar primeira balança</button>
+      </div>
+    </div>
+  </div>
+
+</ng-container>
+
+<!-- ══════════════════════════════════════════════════ VISTA: CONFIGURAR ═══ -->
+<ng-container *ngIf="vista === 'configurar'">
+
+  <!-- Breadcrumb -->
+  <div class="config-breadcrumb">
+    <button class="btn-voltar" (click)="voltarLista()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Balanças</span>
+    </button>
+    <mat-icon class="breadcrumb-sep">chevron_right</mat-icon>
+    <span class="breadcrumb-atual">{{ editandoId ? (form.get('nome')?.value || 'Editar') : 'Nova balança' }}</span>
+  </div>
+
+  <div class="config-layout">
+
+    <!-- ─ Coluna esquerda: formulário ─────────────────────────────────────── -->
+    <form [formGroup]="form" class="config-form-col">
+
+      <!-- Card: Dados da Balança -->
+      <div class="config-card">
+        <div class="config-card-header">
+          <mat-icon>scale</mat-icon>
+          <span>Dados da Balança</span>
+        </div>
+        <div class="config-card-body">
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Nome da balança *</mat-label>
+            <input matInput formControlName="nome" placeholder="Ex: Balança Açougue 1" autocomplete="off" />
+            <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome obrigatório</mat-error>
+          </mat-form-field>
+
+          <div class="field-row">
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Fabricante</mat-label>
+              <mat-select formControlName="fabricante">
+                <mat-option value="Toledo">Toledo</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Modelo</mat-label>
+              <mat-select formControlName="modelo">
+                <mat-option [value]="null">— Selecione —</mat-option>
+                <mat-option *ngFor="let m of modelos" [value]="m">{{ m }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Tipo de Comunicação *</mat-label>
+            <mat-select formControlName="tipoComunicacao">
+              <mat-option *ngFor="let t of tiposComunicacao" [value]="t.value">{{ t.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+        </div>
+      </div>
+
+      <!-- Card: Configuração Serial (só para SERIAL) -->
+      <div class="config-card" *ngIf="isSerial">
+        <div class="config-card-header">
+          <mat-icon>settings_input_component</mat-icon>
+          <span>Configuração da Porta Serial</span>
+        </div>
+        <div class="config-card-body">
+
+          <div class="porta-com-row">
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Porta COM *</mat-label>
+              <mat-select formControlName="portaCom">
+                <mat-option [value]="null">— Selecione —</mat-option>
+                <mat-option *ngFor="let p of portasCOM" [value]="p">{{ p }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button type="button" class="btn-refresh" matTooltip="Atualizar portas"
+                    [class.spinning]="carregandoPortas"
+                    (click)="carregarPortas()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+
+          <div class="field-row">
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Baud Rate *</mat-label>
+              <mat-select formControlName="baudRate">
+                <mat-option *ngFor="let b of baudRates" [value]="b">{{ b }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Data Bits *</mat-label>
+              <mat-select formControlName="dataBits">
+                <mat-option *ngFor="let d of databitsList" [value]="d">{{ d }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Paridade *</mat-label>
+              <mat-select formControlName="paridade">
+                <mat-option *ngFor="let p of paridades" [value]="p.value">{{ p.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>Stop Bits *</mat-label>
+              <mat-select formControlName="stopBits">
+                <mat-option *ngFor="let s of stopBitsList" [value]="s">{{ s }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Protocolo *</mat-label>
+            <mat-select formControlName="protocoloSerial">
+              <mat-option *ngFor="let p of protocolosSerial" [value]="p.value">{{ p.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+        </div>
+      </div>
+
+      <!-- Card: Configuração Rede (HTTP / TCP) -->
+      <div class="config-card" *ngIf="isHTTP || isTCP">
+        <div class="config-card-header">
+          <mat-icon>lan</mat-icon>
+          <span>Configuração de Rede</span>
+        </div>
+        <div class="config-card-body">
+          <div class="field-row">
+            <mat-form-field appearance="outline" class="field-grow">
+              <mat-label>IP</mat-label>
+              <input matInput formControlName="ip" placeholder="192.168.1.100" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="width:110px;flex-shrink:0">
+              <mat-label>Porta</mat-label>
+              <input matInput formControlName="porta" type="number" />
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="field-full" *ngIf="isHTTP">
+            <mat-label>Rota</mat-label>
+            <input matInput formControlName="rota" placeholder="/peso" />
+          </mat-form-field>
+          <div class="config-info" *ngIf="isTCP">
+            <mat-icon>info_outline</mat-icon>
+            Protocolo SICS — envia comando <code>SI</code> via TCP e lê a resposta.
+          </div>
+        </div>
+      </div>
+
+      <!-- Erro salvar -->
+      <div class="config-erro" *ngIf="erroSalvar">
+        <mat-icon>error_outline</mat-icon>
+        {{ erroSalvar }}
+      </div>
+
+      <!-- Ações -->
+      <div class="config-footer-btns">
+        <button type="button" mat-stroked-button (click)="voltarLista()" [disabled]="salvando">Cancelar</button>
+        <button type="button" mat-flat-button color="primary" (click)="salvar()"
+                [disabled]="form.invalid || salvando">
+          <mat-icon *ngIf="!salvando">save</mat-icon>
+          <span class="mini-spinner" *ngIf="salvando"></span>
+          {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Cadastrar balança') }}
+        </button>
+      </div>
+
+    </form><!-- /form col esquerda -->
+
+    <!-- ─ Coluna direita: teste + logs ────────────────────────────────────── -->
+    <div class="config-test-col">
+
+      <!-- Card: Teste de Comunicação -->
+      <div class="config-card">
+        <div class="config-card-header">
+          <mat-icon>wifi_tethering</mat-icon>
+          <span>Teste de Comunicação</span>
+        </div>
+        <div class="config-card-body">
+
+          <!-- Status indicator -->
+          <div class="status-row">
+            <span class="status-dot"
+                  [class.status-dot--conectado]="statusConexao === 'conectado'"
+                  [class.status-dot--conectando]="statusConexao === 'conectando'"
+                  [class.status-dot--erro]="statusConexao === 'erro'">
+            </span>
+            <span class="status-label">
+              {{ statusConexao === 'desconectado' ? 'Desconectado'
+               : statusConexao === 'conectando'  ? 'Conectando...'
+               : statusConexao === 'conectado'   ? 'Conectado'
+               : 'Erro de comunicação' }}
+            </span>
+          </div>
+
+          <!-- Peso display -->
+          <div class="peso-display">
+            <span class="peso-valor">{{ pesoFormatado }}</span>
+            <span class="peso-unidade">Kg</span>
+            <span class="peso-lendo" *ngIf="lendoPeso">
+              <span class="pulse-dot"></span> ao vivo
+            </span>
+          </div>
+
+          <!-- Mensagem status -->
+          <div class="status-msg" *ngIf="mensagemStatus"
+               [class.status-msg--ok]="statusConexao === 'conectado'"
+               [class.status-msg--erro]="statusConexao === 'erro'">
+            {{ mensagemStatus }}
+          </div>
+
+          <!-- Aviso: não serial -->
+          <div class="config-info" *ngIf="!isSerial">
+            <mat-icon>info_outline</mat-icon>
+            Painel de teste disponível apenas para comunicação serial. Use "Capturar peso" na tela de separação para HTTP/TCP.
+          </div>
+
+          <!-- Botões de teste -->
+          <div class="teste-btns">
+            <button mat-stroked-button (click)="testarConexao()"
+                    [disabled]="statusConexao === 'conectando' || !isSerial">
+              <mat-icon>cable</mat-icon>
+              Testar Comunicação
+            </button>
+
+            <button mat-flat-button color="primary"
+                    (click)="iniciarLeitura()"
+                    [disabled]="lendoPeso || !editandoId || !isSerial">
+              <mat-icon>play_arrow</mat-icon>
+              Iniciar Leitura
+            </button>
+
+            <button mat-stroked-button color="warn"
+                    (click)="pararLeitura()"
+                    [disabled]="!lendoPeso">
+              <mat-icon>stop</mat-icon>
+              Parar Leitura
+            </button>
+
+            <button mat-stroked-button
+                    *ngIf="isDevMode"
+                    class="btn-simular"
+                    [disabled]="!editandoId"
+                    (click)="simularPeso()"
+                    matTooltip="Apenas em ambiente de desenvolvimento">
+              <mat-icon>science</mat-icon>
+              Simular Peso
+            </button>
+          </div>
+
+          <!-- Aviso salvar primeiro -->
+          <div class="config-info config-info--warn" *ngIf="isSerial && !editandoId">
+            <mat-icon>save</mat-icon>
+            Salve a configuração para habilitar Iniciar Leitura e Simular Peso.
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card: Log de Comunicação -->
+      <div class="config-card config-card--log">
+        <div class="config-card-header">
+          <mat-icon>terminal</mat-icon>
+          <span>Log de Comunicação</span>
+          <button class="btn-clear-log" (click)="limparLog()" [disabled]="logs.length === 0">
+            <mat-icon>clear_all</mat-icon>
+            Limpar log
+          </button>
+        </div>
+        <div class="log-panel">
+          <div class="log-vazio" *ngIf="logs.length === 0">Aguardando comunicação...</div>
+          <div class="log-entry"
+               *ngFor="let l of logs"
+               [class.log-entry--ok]="l.tipo === 'ok'"
+               [class.log-entry--erro]="l.tipo === 'erro'">
+            <span class="log-hora">[{{ l.hora }}]</span>
+            <span class="log-msg">{{ l.msg }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col direita -->
+
+  </div><!-- /config-layout -->
+
+</ng-container>
+
+<!-- ══════════════════════════════════════════════════ MODAL EXCLUIR ═══════ -->
+<div class="modal modal--delete" *ngIf="deleteInfo" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <span class="modal-titulo modal-titulo--danger">
+      <mat-icon>warning_amber</mat-icon> Excluir balança
+    </span>
+  </div>
+  <div class="modal-body">
+    <p class="delete-msg">
+      Tem certeza que deseja excluir <strong>{{ deleteInfo!.nome }}</strong>?<br>
+      Esta ação não pode ser desfeita.
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button mat-stroked-button (click)="cancelarDelete()" [disabled]="deleteCarregando">Cancelar</button>
+    <button mat-flat-button color="warn" (click)="confirmarDelete()" [disabled]="deleteCarregando">
+      <span class="mini-spinner mini-spinner--warn" *ngIf="deleteCarregando"></span>
+      {{ deleteCarregando ? 'Excluindo...' : 'Excluir' }}
+    </button>
+  </div>
+</div>
