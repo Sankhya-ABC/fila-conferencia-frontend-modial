@@ -74,6 +74,7 @@ export interface DadosBasicosPedidoDTO {
   formacaoVolumes?: 'N' | 'D' | 'T' | 'S';
   obterQtdBalanca?: 'B' | 'N' | 'S' | null;
   qtdAmaior?: 'C' | 'D' | null;
+  fataoConcluir?: string | null;
   temCubagem?: boolean;
 
   idParceiro: number;
@@ -94,4 +95,15 @@ export interface PostIniciarConferenciaResponse {
 
 export interface PostFinalizarConferenciaParams {
   numeroConferencia: number;
+}
+
+export interface TopFaturamento {
+  codTipOper: number;
+  descricao: string;
+}
+
+export interface FaturarNotaParams {
+  nunota: number;
+  codTipOper: number;
+  serie?: string;
 }

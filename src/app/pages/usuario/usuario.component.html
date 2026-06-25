@@ -183,6 +183,26 @@
   </div>
 
   </div><!-- /user-rows-scroll -->
+
+  <!-- PAGINAÇÃO -->
+  <div class="paginacao" *ngIf="!carregando && total > 0">
+    <div class="paginacao-size">
+      <span class="paginacao-size-label">Por página:</span>
+      <select class="paginacao-select" (change)="changePageSize($event)">
+        <option *ngFor="let s of pageSizeOptions" [value]="s" [selected]="s === pageSize">{{ s }}</option>
+      </select>
+    </div>
+    <div class="paginacao-nav">
+      <span class="paginacao-info">Página {{ page + 1 }} de {{ totalPages }}</span>
+      <button class="paginacao-btn" (click)="goToPrevPage()" [disabled]="page === 0">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button class="paginacao-btn" (click)="goToNextPage()" [disabled]="page >= totalPages - 1">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL CRIAR / EDITAR -->
@@ -226,6 +246,14 @@
       <mat-error *ngIf="modalForm.get('senha')?.hasError('required')">Senha obrigatória</mat-error>
       <mat-error *ngIf="modalForm.get('senha')?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
     </mat-form-field>
+
+    <label class="toggle-row" *ngIf="modalModo === 'editar'">
+      <span class="toggle-track" [class.toggle-track--on]="modalForm.get('resetarSenha')?.value">
+        <input type="checkbox" formControlName="resetarSenha" class="toggle-input" />
+        <span class="toggle-thumb"></span>
+      </span>
+      <span class="toggle-text">Forçar troca de senha no próximo acesso</span>
+    </label>
 
     <div class="modal-erro" *ngIf="modalErro">
       <mat-icon>error_outline</mat-icon>

@@ -20,12 +20,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { forkJoin, interval, Subscription } from 'rxjs';
 import { SessaoService } from '../../services/sessao/sessao.service';
-import { filter, first, switchMap, timeout } from 'rxjs/operators';
+import { HeartbeatService } from '../../services/heartbeat/heartbeat.service';
+import { filter, first, map, switchMap, timeout } from 'rxjs/operators';
 import { RoboLoaderComponent } from '../../shared/components/robo-loader/robo-loader.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArquivoService } from '../../services/arquivo/arquivo.service';
 import { AuthService } from '../../services/auth/auth.service';
-import { DadosBasicosPedidoDTO } from '../../services/conferencia/conferencia.model';
+import { DadosBasicosPedidoDTO, TopFaturamento } from '../../services/conferencia/conferencia.model';
 import { ConferenciaService } from '../../services/conferencia/conferencia.service';
 import { ItemPedidoDTO } from '../../services/separacao/separacao.model';
 import { SeparacaoService } from '../../services/separacao/separacao.service';
@@ -43,6 +44,7 @@ interface GrupoVolume {
 }
 import { VolumeService } from '../../services/volume/volume.service';
 import { BalancaService } from '../../services/balanca/balanca.service';
+import { LocalScaleService } from '../../services/balanca/local-scale.service';
 import { BalancaDTO, StatusBalancaResponse } from '../../services/balanca/balanca.model';
 import { environment } from '../../../environments/environment';
 
@@ -76,11 +78,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     private arquivoService: ArquivoService,
     private volumeService: VolumeService,
     private balancaService: BalancaService,
+    private localScale: LocalScaleService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
     private authService: AuthService,
     private sessaoService: SessaoService,
+    private heartbeatService: HeartbeatService,
   ) {}
 
   // read scanner
@@ -164,6 +168,14 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   mostrarConfirmExcluirSessao = false;
   excluindoSessao = false;
 
+  // Faturamento
+  mostrarModalFaturamento = false;
+  topsParaFaturamento: TopFaturamento[] = [];
+  codTipOperFaturamento: number | null = null;
+  faturandoNota = false;
+  erroFaturamento: string | null = null;
+  sucessoFaturamento = false;
+
   // Seletor de balança na top bar
   mostrarSeletorBalancaTopbar = false;
 
@@ -214,7 +226,6 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   carregando = true;
   preparandoSessao = false;
   private sessaoProntaSub?: Subscription;
-  private heartbeatSub?: Subscription;
   private devolvendoEmAndamento = false;
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
@@ -304,20 +315,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   private iniciarHeartbeat() {
     this.sessaoService.registrarAbertura(this.numeroUnico!).subscribe();
-
-    this.sessaoService.heartbeat({
-      numeroConferencia: this.dadosGerais?.numeroConferencia,
-    }).subscribe();
-
-    this.heartbeatSub = interval(120000).subscribe(() => {
-      this.sessaoService.heartbeat({
-        numeroConferencia: this.dadosGerais?.numeroConferencia,
-      }).subscribe();
-    });
+    if (this.dadosGerais?.numeroConferencia) {
+      this.heartbeatService.setSeparando(this.dadosGerais.numeroConferencia);
+    }
   }
 
   private pararHeartbeat() {
-    this.heartbeatSub?.unsubscribe();
+    this.heartbeatService.clearSeparando();
   }
 
   private registrarFechamentoSessao() {
@@ -511,7 +515,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           // Polling leve (só banco local, sem Sankhya) até a sessão estar pronta
           this.sessaoProntaSub = interval(1000).pipe(
             switchMap(() => this.conferenciaService.getSessaoPronta(this.numeroUnico!)),
-            filter((r) => r.pronta),
+            filter((r: any) => r.pronta),
             first(),
             timeout(60000),
           ).subscribe({
@@ -545,17 +549,24 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         const chave = (i: { idProduto: number; controle?: string }) =>
           `${i.idProduto}#${i.controle ?? ''}`;
 
-        const mapConferidos = new Map<string, number>();
+        // Total conferido por chave (idProduto+controle), vindo das leituras locais
+        const totalConferidos = new Map<string, number>();
         itensConferidos.forEach((i) => {
           const k = chave(i);
-          mapConferidos.set(k, (mapConferidos.get(k) || 0) + Number(i.quantidadePadrao));
+          totalConferidos.set(k, (totalConferidos.get(k) || 0) + Number(i.quantidadePadrao));
         });
+        // Rastreia quanto já foi distribuído por chave para itens com a mesma chave
+        const distribuido = new Map<string, number>();
 
         const pedidosAtualizados: ItemPedidoDTO[] = [];
         const conferidos: ItemPedidoDTO[] = [];
 
         itensPedido.forEach((item) => {
-          const qtdConferida = mapConferidos.get(chave(item)) || 0;
+          const k = chave(item);
+          const total = totalConferidos.get(k) || 0;
+          const jaDistribuido = distribuido.get(k) || 0;
+          const qtdConferida = Math.min(Math.max(0, total - jaDistribuido), Number(item.quantidadePadrao));
+          distribuido.set(k, jaDistribuido + qtdConferida);
           if (qtdConferida > 0) {
             const fator = item.quantidadeComercial / item.quantidadePadrao;
             const qtdComercialConferida = Number((qtdConferida * fator).toFixed(5));
@@ -572,7 +583,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
         // Reconstruir parciais: itens com quantidade já conferida mas ainda pendentes
         pedidosAtualizados.forEach(item => {
-          if (mapConferidos.has(this.chaveItem(item))) {
+          if ((totalConferidos.get(chave(item)) || 0) > 0) {
             this.itensParciaisChaves.add(this.chaveItem(item));
           }
         });
@@ -828,7 +839,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         numeroConferencia: this.dadosGerais!.numeroConferencia!,
       })
       .subscribe({
-        next: () => this.abrirModalConferenciaFinalizada(),
+        next: () => this.posFinalizarConferencia(),
       });
   }
 
@@ -838,8 +849,52 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         numeroConferencia: this.dadosGerais!.numeroConferencia!,
       })
       .subscribe({
-        next: () => this.abrirModalConferenciaFinalizada(),
+        next: () => this.posFinalizarConferencia(),
       });
+  }
+
+  private posFinalizarConferencia() {
+    if (this.dadosGerais?.fataoConcluir === 'S') {
+      const tipmov = this.dadosGerais.codigoTipoMovimento ?? 'V';
+      this.conferenciaService.getTopsParaFaturamento(tipmov).subscribe({
+        next: (tops) => {
+          this.topsParaFaturamento = tops;
+          this.codTipOperFaturamento = tops.length === 1 ? tops[0].codTipOper : null;
+          this.erroFaturamento = null;
+          this.sucessoFaturamento = false;
+          this.mostrarModalFaturamento = true;
+        },
+        error: () => {
+          this.abrirModalConferenciaFinalizada();
+        },
+      });
+    } else {
+      this.abrirModalConferenciaFinalizada();
+    }
+  }
+
+  confirmarFaturamento() {
+    if (!this.codTipOperFaturamento) return;
+    this.faturandoNota = true;
+    this.erroFaturamento = null;
+    this.conferenciaService.faturarNota({
+      nunota: this.dadosGerais!.numeroUnico,
+      codTipOper: this.codTipOperFaturamento,
+    }).subscribe({
+      next: () => {
+        this.faturandoNota = false;
+        this.sucessoFaturamento = true;
+      },
+      error: (err) => {
+        this.faturandoNota = false;
+        this.erroFaturamento = err?.error?.message ?? err?.message ?? 'Erro ao faturar nota';
+      },
+    });
+  }
+
+  fecharModalFaturamento() {
+    this.mostrarModalFaturamento = false;
+    this.abrirModalConferenciaFinalizada();
   }
 
   onIniciarConferencia(item: ItemPedidoDTO) {
@@ -1587,7 +1642,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const pedidosAtualizados = this.dataSourcePedidos.data
       .map((i) => {
         if (chavePendente(i) !== kPendente) return i;
-        if (modoLote && pendenteTocado) return i; // lote: reduz apenas o primeiro match
+        if (pendenteTocado) return i; // reduz apenas o primeiro match (evita reduzir linhas duplicadas)
         pendenteTocado = true;
         const restante = Number((i.quantidadePadrao - quantidadePadrao).toFixed(5));
         const restanteComercial = Number((i.quantidadeComercial - qtdComercialConferida).toFixed(5));
@@ -2044,8 +2099,21 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     if (!this.balancaSelecionadaId || this.capturandoPeso) return;
     this.capturandoPeso = true;
     this.erroCapturaBalanca = null;
-    this.balancaService.capturarPeso(this.balancaSelecionadaId).subscribe({
+    const bal = this.balancas.find(b => b.id === this.balancaSelecionadaId);
+    const captura$ = bal && this.localScale.isLocal(bal)
+      ? this.localScale.lerStatus(bal).pipe(
+          map(res => ({ peso: res.pesoAtual, conectado: res.conectado })),
+        )
+      : this.balancaService.capturarPeso(this.balancaSelecionadaId!).pipe(
+          map(res => ({ peso: res.peso, conectado: true })),
+        );
+    captura$.subscribe({
       next: (res) => {
+        if (!res.conectado || res.peso <= 0) {
+          this.erroCapturaBalanca = 'Balança não respondeu ou retornou peso inválido. Digite manualmente.';
+          this.capturandoPeso = false;
+          return;
+        }
         const pesoLiquido = Math.max(0, res.peso - this.taraValor);
         this.formPeso.patchValue({ peso: pesoLiquido });
         this.pesoBalancaAtual = pesoLiquido;
@@ -2104,7 +2172,11 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
   atualizarStatusBalanca() {
     if (!this.balancaSelecionadaId) return;
     this.statusBalancaConf = 'verificando';
-    this.balancaService.verificarStatus(this.balancaSelecionadaId).subscribe({
+    const bal = this.balancas.find(b => b.id === this.balancaSelecionadaId);
+    const status$ = bal && this.localScale.isLocal(bal)
+      ? this.localScale.lerStatus(bal)
+      : this.balancaService.verificarStatus(this.balancaSelecionadaId);
+    status$.subscribe({
       next: (res) => this.onStatusAtualizado(res),
       error: () => { this.statusBalancaConf = 'desconectado'; },
     });
@@ -2114,11 +2186,13 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     this.pararPollingPeso();
     if (!this.balancaSelecionadaId) return;
     const id = this.balancaSelecionadaId;
+    const bal = this.balancas.find(b => b.id === id);
     this.statusBalancaConf = 'verificando';
-    this.pollingPesoSub = interval(600).pipe(
-      switchMap(() => this.balancaService.verificarStatus(id)),
-    ).subscribe({
-      next: (res) => this.onStatusAtualizado(res),
+    const poll$ = bal && this.localScale.isLocal(bal)
+      ? interval(600).pipe(switchMap(() => this.localScale.lerStatus(bal)))
+      : interval(600).pipe(switchMap(() => this.balancaService.verificarStatus(id)));
+    this.pollingPesoSub = poll$.subscribe({
+      next: (res: any) => this.onStatusAtualizado(res),
       error: () => { this.statusBalancaConf = 'desconectado'; },
     });
   }
@@ -2129,15 +2203,16 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     this.limparTimerEstabilidade();
   }
 
-  private precisaIniciarDriver(): boolean {
-    const t = this.balancas.find(b => b.id === this.balancaSelecionadaId)?.tipoComunicacao;
-    return t === 'SERIAL_RS232' || t === 'SERIAL_USB' || t === 'TOLEDO_TCP';
+  private precisaIniciarDriverNoBackend(): boolean {
+    const bal = this.balancas.find(b => b.id === this.balancaSelecionadaId);
+    if (!bal || this.localScale.isLocal(bal)) return false;
+    return bal.tipoComunicacao === 'SERIAL_RS232' || bal.tipoComunicacao === 'SERIAL_USB' || bal.tipoComunicacao === 'TOLEDO_TCP';
   }
 
   private iniciarOuPollarBalanca() {
     if (!this.balancaSelecionadaId) return;
     this.statusBalancaConf = 'verificando';
-    if (this.precisaIniciarDriver()) {
+    if (this.precisaIniciarDriverNoBackend()) {
       this.balancaService.iniciarLeitura(this.balancaSelecionadaId).subscribe({
         next: () => this.iniciarPollingPeso(),
         error: () => this.iniciarPollingPeso(),

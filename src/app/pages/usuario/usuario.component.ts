@@ -53,6 +53,15 @@ export class UsuarioComponent implements OnInit {
   carregando = false;
   filtroAberto = false;
 
+  /* Paginação */
+  page = 0;
+  pageSize = 10;
+  pageSizeOptions = [10, 25, 50];
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.total / this.pageSize));
+  }
+
   listPerfil: CodigoDescricao[] = [
     { codigo: null, descricao: 'Todos' },
     ...Object.values(Perfil).map((p) => ({ codigo: p, descricao: p })),
@@ -105,6 +114,7 @@ export class UsuarioComponent implements OnInit {
 
   onPesquisar(): void {
     this.filtroAberto = false;
+    this.page = 0;
     this.applyFilter();
   }
 
@@ -113,7 +123,7 @@ export class UsuarioComponent implements OnInit {
     this.dataSource.data = [];
     const { nomeEmail, perfil, status } = this.filters.value;
 
-    const params: any = {};
+    const params: any = { page: this.page, perPage: this.pageSize };
     if (nomeEmail) params.nomeEmail = nomeEmail;
     if (perfil) params.perfil = perfil;
     if (status != null) params.status = status;
@@ -128,6 +138,26 @@ export class UsuarioComponent implements OnInit {
         this.carregando = false;
       },
     });
+  }
+
+  goToPrevPage(): void {
+    if (this.page > 0) {
+      this.page--;
+      this.applyFilter();
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.page < this.totalPages - 1) {
+      this.page++;
+      this.applyFilter();
+    }
+  }
+
+  changePageSize(event: Event): void {
+    this.pageSize = Number((event.target as HTMLSelectElement).value);
+    this.page = 0;
+    this.applyFilter();
   }
 
   atualizarStatus(usuario: any): void {
@@ -173,6 +203,7 @@ export class UsuarioComponent implements OnInit {
       email: [u.email, [Validators.required, Validators.email]],
       perfil: [u.perfil, Validators.required],
       senha: ['', Validators.minLength(6)],
+      resetarSenha: [u.resetarSenha ?? false],
     });
     this.modalAberto = true;
   }
@@ -207,6 +238,7 @@ export class UsuarioComponent implements OnInit {
         nome: v.nome,
         email: v.email,
         perfil: v.perfil,
+        resetarSenha: v.resetarSenha,
       };
       if (v.senha) payload.senha = v.senha;
 

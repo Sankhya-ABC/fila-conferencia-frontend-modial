@@ -12,6 +12,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { MatIcon } from '@angular/material/icon';
+import { UsuarioService } from '../../services/usuario/usuario.service';
 
 @Component({
   selector: 'app-login',
@@ -36,6 +37,7 @@ export class LoginComponent {
     private authService: AuthService,
     private dialog: MatDialog,
     private http: HttpClient,
+    private usuarioService: UsuarioService,
   ) {}
 
   // esqueci minha senha
@@ -92,7 +94,10 @@ export class LoginComponent {
     this.authService.login(this.form.getRawValue()).subscribe({
       next: (resp) => {
         this.loading = false;
-        if (resp.perfil === 'MASTER') {
+        if (resp.resetarSenha) {
+          this.idUsuarioTroca = resp.idUsuario;
+          this.mostrarModalTroca = true;
+        } else if (resp.perfil === 'MASTER') {
           this.router.navigate(['/master/tenants']);
         } else {
           this.router.navigate(['/fila-conferencia']);
@@ -101,6 +106,49 @@ export class LoginComponent {
       error: (err) => {
         this.loading = false;
         console.error(err);
+      },
+    });
+  }
+
+  // modal troca de senha obrigatória
+  mostrarModalTroca = false;
+  idUsuarioTroca: number | null = null;
+  mostrarNovaSenha = false;
+  mostrarConfirmarSenha = false;
+  trocaSenhaErro = '';
+  trocaSenhaCarregando = false;
+
+  formTroca = this.fb.nonNullable.group({
+    novaSenha: ['', [Validators.required, Validators.minLength(6)]],
+    confirmarSenha: ['', Validators.required],
+  });
+
+  salvarNovaSenha(): void {
+    if (this.formTroca.invalid || this.trocaSenhaCarregando) return;
+
+    const { novaSenha, confirmarSenha } = this.formTroca.getRawValue();
+    if (novaSenha !== confirmarSenha) {
+      this.trocaSenhaErro = 'As senhas não conferem';
+      return;
+    }
+
+    this.trocaSenhaCarregando = true;
+    this.trocaSenhaErro = '';
+
+    this.usuarioService.alterarSenha(this.idUsuarioTroca!, novaSenha).subscribe({
+      next: () => {
+        this.trocaSenhaCarregando = false;
+        this.mostrarModalTroca = false;
+        const sessao = this.authService.getUser();
+        if (sessao.perfil === 'MASTER') {
+          this.router.navigate(['/master/tenants']);
+        } else {
+          this.router.navigate(['/fila-conferencia']);
+        }
+      },
+      error: (err: any) => {
+        this.trocaSenhaCarregando = false;
+        this.trocaSenhaErro = err?.error?.message ?? 'Erro ao alterar senha. Tente novamente.';
       },
     });
   }

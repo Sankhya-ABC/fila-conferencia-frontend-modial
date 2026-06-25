@@ -93,3 +93,54 @@
     </div>
   </div>
 </ng-template>
+
+<!-- MODAL TROCA DE SENHA OBRIGATÓRIA -->
+<div class="troca-overlay" *ngIf="mostrarModalTroca"></div>
+<div class="troca-modal" *ngIf="mostrarModalTroca" (click)="$event.stopPropagation()">
+  <div class="troca-header">
+    <mat-icon class="troca-icon">lock</mat-icon>
+    <div>
+      <span class="troca-titulo">Redefinição de senha obrigatória</span>
+      <span class="troca-sub">Crie uma nova senha para continuar</span>
+    </div>
+  </div>
+
+  <form [formGroup]="formTroca" class="troca-body" (ngSubmit)="salvarNovaSenha()">
+    <div class="troca-field-wrap">
+      <mat-form-field appearance="outline" class="troca-field">
+        <mat-label>Nova senha</mat-label>
+        <input matInput [type]="mostrarNovaSenha ? 'text' : 'password'" formControlName="novaSenha" autocomplete="new-password" />
+        <button mat-icon-button matSuffix type="button" (click)="mostrarNovaSenha = !mostrarNovaSenha" tabindex="-1">
+          <mat-icon>{{ mostrarNovaSenha ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="formTroca.get('novaSenha')?.hasError('required')">Senha obrigatória</mat-error>
+        <mat-error *ngIf="formTroca.get('novaSenha')?.hasError('minlength')">Mínimo 6 caracteres</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="troca-field-wrap">
+      <mat-form-field appearance="outline" class="troca-field">
+        <mat-label>Confirmar nova senha</mat-label>
+        <input matInput [type]="mostrarConfirmarSenha ? 'text' : 'password'" formControlName="confirmarSenha" autocomplete="new-password" />
+        <button mat-icon-button matSuffix type="button" (click)="mostrarConfirmarSenha = !mostrarConfirmarSenha" tabindex="-1">
+          <mat-icon>{{ mostrarConfirmarSenha ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="formTroca.get('confirmarSenha')?.hasError('required')">Confirmação obrigatória</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="troca-erro" *ngIf="trocaSenhaErro">
+      <mat-icon>error_outline</mat-icon>
+      {{ trocaSenhaErro }}
+    </div>
+  </form>
+
+  <div class="troca-footer">
+    <button mat-flat-button color="primary" (click)="salvarNovaSenha()"
+            [disabled]="formTroca.invalid || trocaSenhaCarregando">
+      <mat-icon *ngIf="!trocaSenhaCarregando">save</mat-icon>
+      <span class="troca-spinner" *ngIf="trocaSenhaCarregando"></span>
+      {{ trocaSenhaCarregando ? 'Salvando...' : 'Salvar nova senha' }}
+    </button>
+  </div>
+</div>

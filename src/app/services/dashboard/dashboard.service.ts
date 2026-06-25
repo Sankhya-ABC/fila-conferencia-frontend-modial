@@ -2,7 +2,7 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
-import { DashboardProdutividadeDTO, GetProdutividadeParams } from './dashboard.model';
+import { AtividadeAgoraDTO, DashboardProdutividadeDTO, GetProdutividadeParams } from './dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -19,5 +19,12 @@ export class DashboardService {
       params: p,
       context: new HttpContext().set(SKIP_LOADING, true),
     });
+  }
+
+  getOnlineAgora(): Observable<{ atividadeAgora: AtividadeAgoraDTO[]; usuariosAtivos: number }> {
+    return this.http.get<{ atividadeAgora: AtividadeAgoraDTO[]; usuariosAtivos: number }>(
+      '/dashboard/online-agora',
+      { context: new HttpContext().set(SKIP_LOADING, true) },
+    );
   }
 }

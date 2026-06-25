@@ -4,11 +4,13 @@ import { Observable } from 'rxjs';
 import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
   DadosBasicosPedidoDTO,
+  FaturarNotaParams,
   FilaConferenciaDTO,
   FilaConferenciaFilter,
   PostFinalizarConferenciaParams,
   PostIniciarConferenciaParams,
   PostIniciarConferenciaResponse,
+  TopFaturamento,
 } from './conferencia.model';
 
 @Injectable({
@@ -67,5 +69,15 @@ export class ConferenciaService {
 
   deleteSessao(numeroUnico: number): Observable<null> {
     return this.http.post<null>('/conferencias/excluir-sessao', { numeroUnico });
+  }
+
+  getTopsParaFaturamento(tipmov: string): Observable<TopFaturamento[]> {
+    return this.http.get<TopFaturamento[]>('/conferencias/tops-faturamento', {
+      params: { tipmov },
+    });
+  }
+
+  faturarNota(params: FaturarNotaParams): Observable<void> {
+    return this.http.post<void>('/conferencias/faturar', params);
   }
 }

@@ -15,6 +15,7 @@ export interface SessionData {
   idUsuario: number;
   perfil: Perfil;
   snkModulos?: string;
+  resetarSenha?: boolean;
 }
 
 export interface RedefinirSenhaParams {

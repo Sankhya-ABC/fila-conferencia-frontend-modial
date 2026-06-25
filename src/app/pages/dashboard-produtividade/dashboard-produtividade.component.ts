@@ -1,5 +1,5 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, NgZone } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,15 +12,17 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { interval, Subscription } from 'rxjs';
 import { DashboardService } from '../../services/dashboard/dashboard.service';
 import {
+  AtividadeAgoraDTO,
   DashboardProdutividadeDTO,
+  PicoDTO,
   RankingItemDTO,
 } from '../../services/dashboard/dashboard.model';
 import { UsuarioService } from '../../services/usuario/usuario.service';
 import { DuracaoPipe } from '../../shared/pipes/duracao.pipe';
 import { IniciaisPipe } from '../../shared/pipes/iniciais.pipe';
 
-export type TabType = 'visao' | 'separadores' | 'atividade';
 export type PeriodoType = 'hoje' | 'semana' | 'mes' | 'custom';
+export type StatusSeparador = 'online' | 'inativo' | 'offline';
 
 @Component({
   selector: 'app-dashboard-produtividade',
@@ -37,8 +39,7 @@ export type PeriodoType = 'hoje' | 'semana' | 'mes' | 'custom';
 })
 export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
 
-  // ── Navegação ──
-  tabAtiva: TabType = 'visao';
+  // ── Período ──
   periodo: PeriodoType = 'hoje';
   dataInicio: Date | null = null;
   dataFim: Date | null = null;
@@ -49,15 +50,19 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
   dados: DashboardProdutividadeDTO | null = null;
   carregando = true;
   separadores: { id: string; nome: string }[] = [];
-  usuarioSelecionado: RankingItemDTO | null = null;
 
-  // ── Carrossel ──
-  carrosselPausado = false;
-  carrosselProgresso = 0;
-  private readonly CARROSSEL_DURACAO = 60000;
-  private carrosselSub?: Subscription;
+  // ── Online agora (polling rápido) ──
+  atividadeAgora: AtividadeAgoraDTO[] = [];
+  usuariosAtivos = 0;
+  atualizandoOnline = false;
+  private onlineSub?: Subscription;
   private dadosSub?: Subscription;
 
+  // ── Drawer ──
+  drawerAberto = false;
+  drawerSeparador: RankingItemDTO | null = null;
+
+  // ── Auxiliares ──
   diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
   horas = Array.from({ length: 24 }, (_, i) => i);
 
@@ -65,7 +70,6 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     private dashboardService: DashboardService,
     private usuarioService: UsuarioService,
     private fb: FormBuilder,
-    private ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
@@ -73,25 +77,37 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     this.carregarSeparadores();
     this.carregarDados();
     this.dadosSub = interval(60000).subscribe(() => this.carregarDados(true));
-    this.iniciarCarrossel();
+    this.carregarOnlineAgora();
+    this.onlineSub = interval(10000).subscribe(() => this.carregarOnlineAgora());
   }
 
   ngOnDestroy(): void {
-    this.carrosselSub?.unsubscribe();
     this.dadosSub?.unsubscribe();
+    this.onlineSub?.unsubscribe();
   }
 
-  setTab(tab: TabType) {
-    this.tabAtiva = tab;
-    this.pausarCarrossel();
-    this.carrosselProgresso = 0;
+  @HostListener('document:keydown.escape')
+  fecharDrawer() {
+    this.drawerAberto = false;
+    this.drawerSeparador = null;
+  }
+
+  private carregarOnlineAgora() {
+    this.atualizandoOnline = true;
+    this.dashboardService.getOnlineAgora().subscribe({
+      next: res => {
+        this.atividadeAgora = res.atividadeAgora;
+        this.usuariosAtivos = res.usuariosAtivos;
+        this.atualizandoOnline = false;
+      },
+      error: () => { this.atualizandoOnline = false; },
+    });
   }
 
   setPeriodo(p: PeriodoType) {
     this.periodo = p;
     if (p !== 'custom') { this.dataInicio = null; this.dataFim = null; }
     this.carregarDados();
-    this.pausarCarrossel();
   }
 
   get periodoLabel(): string {
@@ -102,10 +118,7 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     return 'Período';
   }
 
-  abrirDatePicker() {
-    this.datePickerAberto = !this.datePickerAberto;
-    this.pausarCarrossel();
-  }
+  abrirDatePicker() { this.datePickerAberto = !this.datePickerAberto; }
 
   aplicarDateRange() {
     const v = this.formDate.value;
@@ -118,66 +131,53 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     this.datePickerAberto = false;
   }
 
-  selecionarSeparador(r: RankingItemDTO) {
-    this.usuarioSelecionado = this.usuarioSelecionado?.idUsuario === r.idUsuario ? null : r;
-    this.pausarCarrossel();
+  abrirDrawer(r: RankingItemDTO) {
+    this.drawerSeparador = r;
+    this.drawerAberto = true;
     this.carregarDados(true);
-  }
-
-  private iniciarCarrossel() {
-    const tick = 200;
-    const steps = this.CARROSSEL_DURACAO / tick;
-    this.carrosselSub = interval(tick).subscribe(() => {
-      if (this.carrosselPausado) return;
-      this.carrosselProgresso += 100 / steps;
-      if (this.carrosselProgresso >= 100) {
-        this.carrosselProgresso = 0;
-        this.avancarTab();
-      }
-    });
-  }
-
-  private avancarTab() {
-    const ordem: TabType[] = ['visao', 'separadores', 'atividade'];
-    this.tabAtiva = ordem[(ordem.indexOf(this.tabAtiva) + 1) % ordem.length];
-  }
-
-  pausarCarrossel() { this.carrosselPausado = true; this.carrosselProgresso = 0; }
-
-  toggleCarrossel() {
-    this.carrosselPausado = !this.carrosselPausado;
-    if (!this.carrosselPausado) this.carrosselProgresso = 0;
   }
 
   carregarDados(silencioso = false) {
     if (!silencioso) this.carregando = true;
     const params: any = { periodo: this.periodo };
-    if (this.usuarioSelecionado) params.idUsuarioTimeline = this.usuarioSelecionado.idUsuario;
+    if (this.drawerSeparador) params.idUsuarioTimeline = this.drawerSeparador.idUsuario;
     if (this.periodo === 'custom' && this.dataInicio && this.dataFim) {
       params.dataInicio = this.dataInicio.toISOString().split('T')[0];
       params.dataFim = this.dataFim.toISOString().split('T')[0];
     }
     this.dashboardService.getProdutividade(params).subscribe({
-      next: dados => {
-        this.dados = { ...dados, totalItensPorHora: Math.round(dados.totalItensPorHora) || 0 };
-        this.carregando = false;
-      },
+      next: dados => { this.dados = dados; this.carregando = false; },
       error: () => { this.carregando = false; },
     });
   }
 
   private carregarSeparadores() {
-    this.usuarioService.getUsuarios({ perfil: 'SEPARADOR' }).subscribe({
+    this.usuarioService.getUsuarios({ perfil: 'SEPARADOR' }, { skipLoading: true }).subscribe({
       next: res => { this.separadores = res.data.map((u: any) => ({ id: u.id, nome: u.nome })); },
     });
   }
 
-  get maxPico(): number {
-    return Math.max(...(this.dados?.picos?.map(p => p.total) ?? [1]), 1);
+  // ── Helpers de status ──
+
+  getStatus(idUsuario: number): StatusSeparador {
+    const hb = this.atividadeAgora.find(a => a.idUsuario === idUsuario);
+    if (!hb) return 'offline';
+    if (hb.minutosAtivo > 20 && !hb.numeroConferencia) return 'inativo';
+    return 'online';
+  }
+
+  getAtividadeSeparador(idUsuario: number): AtividadeAgoraDTO | undefined {
+    return this.atividadeAgora.find(a => a.idUsuario === idUsuario);
   }
 
   isOnline(idUsuario: number): boolean {
-    return this.dados?.atividadeAgora?.some(a => a.idUsuario === idUsuario) ?? false;
+    return this.atividadeAgora.some(a => a.idUsuario === idUsuario);
+  }
+
+  // ── Helpers de heatmap e picos ──
+
+  get maxPico(): number {
+    return Math.max(...(this.dados?.picos?.map(p => p.total) ?? [1]), 1);
   }
 
   getPicoHora(): number {
@@ -201,6 +201,27 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
 
   get maxHeatmap(): number {
     return Math.max(...(this.dados?.heatmap?.map(h => h.total) ?? [1]), 1);
+  }
+
+  // ── Picos do separador selecionado (derivados da timeline) ──
+
+  get picosSeparador(): PicoDTO[] {
+    const map = new Map<number, number>();
+    for (const t of this.dados?.linhaDoTempo ?? []) {
+      if (!t.dtAbertura || t.abandonada) continue;
+      const hora = new Date(t.dtAbertura).getHours();
+      map.set(hora, (map.get(hora) ?? 0) + 1);
+    }
+    return Array.from({ length: 24 }, (_, h) => ({ hora: h, total: map.get(h) ?? 0 }));
+  }
+
+  get maxPicoSeparador(): number {
+    return Math.max(...this.picosSeparador.map(p => p.total), 1);
+  }
+
+  get producaoUltimaHoraSeparador(): number {
+    const horaAtual = new Date().getHours();
+    return this.picosSeparador.find(p => p.hora === horaAtual)?.total ?? 0;
   }
 
   trackByIdx(i: number) { return i; }

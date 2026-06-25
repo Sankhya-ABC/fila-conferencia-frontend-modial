@@ -1,8 +1,7 @@
 export interface AtividadeAgoraDTO {
   idUsuario: number;
   nomeUsuario: string;
-  numeroConferencia: number;
-  nomeParceiro: string;
+  numeroConferencia: number | null;
   minutosAtivo: number;
 }
 
@@ -42,9 +41,10 @@ export interface HeatmapCell {
 export interface DashboardProdutividadeDTO {
   usuariosAtivos: number;
   totalConferencias: number;
+  totalCubagens: number;
+  totalItens: number;
   tempoMedioSegundos: number;
-  totalItensPorHora: number;
-  pesoTotalKg: number;
+  producaoUltimaHora: number;
   atividadeAgora: AtividadeAgoraDTO[];
   ranking: RankingItemDTO[];
   picos: PicoDTO[];

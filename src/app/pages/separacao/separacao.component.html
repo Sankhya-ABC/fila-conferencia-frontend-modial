@@ -1024,3 +1024,53 @@
     </div>
   </div>
 </ng-template>
+
+<!-- POPUP FATURAMENTO -->
+<div class="fat-overlay" *ngIf="mostrarModalFaturamento"></div>
+<div class="fat-modal" *ngIf="mostrarModalFaturamento" (click)="$event.stopPropagation()">
+  <div class="fat-header">
+    <mat-icon class="fat-icon">receipt_long</mat-icon>
+    <div>
+      <span class="fat-titulo">Faturar Pedido</span>
+      <span class="fat-sub">Selecione o tipo de operação de destino</span>
+    </div>
+  </div>
+
+  <div class="fat-body">
+    <ng-container *ngIf="!sucessoFaturamento">
+      <div class="fat-select-wrap">
+        <label class="fat-label">Tipo de Operação (TOP)</label>
+        <select class="fat-select" [(ngModel)]="codTipOperFaturamento" [disabled]="faturandoNota">
+          <option [ngValue]="null" disabled>Selecione uma TOP...</option>
+          <option *ngFor="let t of topsParaFaturamento" [ngValue]="t.codTipOper">
+            {{ t.codTipOper }} — {{ t.descricao }}
+          </option>
+        </select>
+      </div>
+
+      <div class="fat-erro" *ngIf="erroFaturamento">
+        <mat-icon>error_outline</mat-icon>
+        {{ erroFaturamento }}
+      </div>
+    </ng-container>
+
+    <div class="fat-sucesso" *ngIf="sucessoFaturamento">
+      <mat-icon>check_circle</mat-icon>
+      <span>Nota faturada com sucesso!</span>
+    </div>
+  </div>
+
+  <div class="fat-footer">
+    <button mat-stroked-button (click)="fecharModalFaturamento()" [disabled]="faturandoNota">
+      {{ sucessoFaturamento ? 'Fechar' : 'Pular' }}
+    </button>
+    <button mat-flat-button color="primary"
+            *ngIf="!sucessoFaturamento"
+            [disabled]="!codTipOperFaturamento || faturandoNota"
+            (click)="confirmarFaturamento()">
+      <span class="fat-spinner" *ngIf="faturandoNota"></span>
+      <mat-icon *ngIf="!faturandoNota">send</mat-icon>
+      {{ faturandoNota ? 'Faturando...' : 'Faturar' }}
+    </button>
+  </div>
+</div>

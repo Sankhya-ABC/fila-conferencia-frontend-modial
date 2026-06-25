@@ -1,7 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Usuario } from './usuario.model';
 import { Perfil } from '../auth/auth.model';
+import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 
 export interface CriarUsuarioPayload {
   nome: string;
@@ -15,15 +16,20 @@ export interface AtualizarUsuarioPayload {
   email?: string;
   perfil?: Perfil;
   senha?: string;
+  resetarSenha?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
   constructor(private http: HttpClient) {}
 
-  getUsuarios(params: any) {
+  getUsuarios(params: any, options: { skipLoading?: boolean } = {}) {
+    const context = options.skipLoading
+      ? new HttpContext().set(SKIP_LOADING, true)
+      : undefined;
     return this.http.get<{ data: Usuario[]; total: number }>('/usuarios', {
       params,
+      ...(context ? { context } : {}),
     });
   }
 
@@ -45,5 +51,9 @@ export class UsuarioService {
 
   redefinirAtivarLote(emails: string[]) {
     return this.http.post(`/usuarios/redefinir-ativar-lote`, { emails });
+  }
+
+  alterarSenha(codigo: number, novaSenha: string) {
+    return this.http.patch(`/usuarios/${codigo}/senha`, { novaSenha });
   }
 }

@@ -9,6 +9,7 @@ export interface Usuario {
   perfil: Perfil;
   senha: string;
   ativo: boolean;
+  resetarSenha: boolean;
   resetToken: string;
   resetTokenExp: string;
   createdAt: string;
