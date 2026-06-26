@@ -137,10 +137,10 @@
   </div>
 
   <!-- ══ MIDDLE: ranking + gráfico ══ -->
-  <div class="dash-middle">
+  <div class="dash-middle" [class.dash-middle--mes]="periodo === 'mes' || periodo === 'custom'">
 
     <!-- Ranking -->
-    <div class="panel panel--flex">
+    <div class="panel panel--flex panel--ranking">
       <div class="panel-hdr">
         <h3>Ranking separadores</h3>
         <span class="badge">{{ periodo }}</span>
@@ -190,7 +190,7 @@
     </div>
 
     <!-- Heatmap / Atividade por hora -->
-    <div class="panel panel--flex">
+    <div class="panel panel--flex panel--chart">
       <div class="panel-hdr">
         <h3>Atividade por hora</h3>
         <span class="badge">{{ periodo }}</span>
