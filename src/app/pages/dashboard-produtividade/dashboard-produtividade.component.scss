@@ -1,5 +1,11 @@
 $mono: 'DM Mono', monospace;
 
+::ng-deep .cal-tip {
+  white-space: pre-line;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 :host {
   display: flex;
   flex-direction: column;
@@ -509,32 +515,100 @@ $mono: 'DM Mono', monospace;
   font-family: $mono;
 }
 
-/* ══ Grade de dias do mês ══ */
-.dias-mes-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  padding: 4px 0;
+/* ══ Calendário heatmap (modo mês) ══ */
+.cal-wrap {
+  padding: 8px 12px 6px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: calFadeIn 200ms ease-out;
 }
 
-.dias-mes-cell {
+@keyframes calFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.cal-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 2px;
+
+  span {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-empty {
+  aspect-ratio: 1;
+}
+
+.cal-cell {
   aspect-ratio: 1;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  position: relative;
 
-  &:hover { transform: scale(1.15); z-index: 1; }
+  &:hover {
+    transform: scale(1.18);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  &--today {
+    outline: 2px solid #16a34a;
+    outline-offset: 1px;
+  }
 }
 
-.dias-mes-num {
+.cal-num {
   font-size: 9px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: rgba(30, 60, 40, 0.75);
   font-family: $mono;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.cal-legend-lbl {
+  font-size: 9px;
+  color: var(--color-text-secondary);
+}
+
+.cal-legend-scale {
+  display: flex;
+  gap: 2px;
+
+  div {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
 }
 
 /* ══ Pico por hora (barras) ══ */

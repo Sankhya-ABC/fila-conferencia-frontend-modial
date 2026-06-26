@@ -39,8 +39,12 @@ export interface HeatmapCell {
 }
 
 export interface DiaMesCell {
+  date: string;
   dia: number;
   total: number;
+  cubagens: number;
+  tempoMedioSegundos: number;
+  operadores: number;
 }
 
 export interface DashboardProdutividadeDTO {
@@ -56,6 +60,7 @@ export interface DashboardProdutividadeDTO {
   linhaDoTempo: LinhaDoTempoDTO[];
   heatmap?: HeatmapCell[];
   diasMes?: DiaMesCell[];
+  mesReferencia?: string;
 }
 
 export interface GetProdutividadeParams {

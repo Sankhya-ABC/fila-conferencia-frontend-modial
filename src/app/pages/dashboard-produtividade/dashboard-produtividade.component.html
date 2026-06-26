@@ -244,16 +244,37 @@
         </div>
       </ng-container>
 
-      <!-- Mês / Custom: grade de dias do mês -->
+      <!-- Mês / Custom: calendário heatmap -->
       <ng-container *ngIf="!carregando && (periodo === 'mes' || periodo === 'custom')">
-        <div class="heatmap-body">
-          <div class="dias-mes-grid">
-            <div class="dias-mes-cell"
-                 *ngFor="let d of diasDoMes; trackBy: trackByIdx"
-                 [style.background]="heatmapCores(getDiaMesTotal(d), maxDiaMes)"
-                 [matTooltip]="'Dia ' + d + ': ' + getDiaMesTotal(d) + ' conf.'">
-              <span class="dias-mes-num">{{ d }}</span>
+        <div class="cal-wrap">
+          <!-- Cabeçalho dias da semana -->
+          <div class="cal-header">
+            <span *ngFor="let d of cabecalhoSemana">{{ d }}</span>
+          </div>
+          <!-- Grade -->
+          <div class="cal-grid">
+            <div class="cal-empty" *ngFor="let e of calOffset; trackBy: trackByIdx"></div>
+            <div class="cal-cell"
+                 *ngFor="let d of dados?.diasMes; trackBy: trackByIdx"
+                 [class.cal-cell--today]="isToday(d.date)"
+                 [style.background]="calColor(d.total)"
+                 [matTooltip]="calTooltip(d)"
+                 matTooltipClass="cal-tip"
+                 matTooltipPosition="above">
+              <span class="cal-num">{{ d.dia }}</span>
             </div>
+          </div>
+          <!-- Legenda -->
+          <div class="cal-legend">
+            <span class="cal-legend-lbl">Menos</span>
+            <div class="cal-legend-scale">
+              <div style="background:#F7FAF8"></div>
+              <div style="background:#DDF7E6"></div>
+              <div style="background:#B8ECCB"></div>
+              <div style="background:#74D98E"></div>
+              <div style="background:#2DBE60"></div>
+            </div>
+            <span class="cal-legend-lbl">Mais</span>
           </div>
         </div>
       </ng-container>

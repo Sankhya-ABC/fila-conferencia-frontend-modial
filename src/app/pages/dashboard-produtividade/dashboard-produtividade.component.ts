@@ -203,15 +203,46 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     return Math.max(...(this.dados?.heatmap?.map(h => h.total) ?? [1]), 1);
   }
 
-  get maxDiaMes(): number {
-    return Math.max(...(this.dados?.diasMes?.map(d => d.total) ?? [1]), 1);
+  // ── Calendário heatmap (modo mês) ──────────────────────────────────────
+
+  cabecalhoSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+  get calOffset(): null[] {
+    const ref = this.dados?.mesReferencia;
+    if (!ref) return [];
+    const [year, month] = ref.split('-').map(Number);
+    const firstDay = new Date(year, month - 1, 1).getDay(); // 0=Dom
+    const offset = (firstDay + 6) % 7; // Mon=0 … Sun=6
+    return Array(offset).fill(null);
   }
 
-  getDiaMesTotal(dia: number): number {
-    return this.dados?.diasMes?.find(d => d.dia === dia)?.total ?? 0;
+  calColor(total: number): string {
+    if (total === 0) return '#F7FAF8';
+    if (total <= 5)  return '#DDF7E6';
+    if (total <= 15) return '#B8ECCB';
+    if (total <= 30) return '#74D98E';
+    return '#2DBE60';
   }
 
-  diasDoMes = Array.from({ length: 31 }, (_, i) => i + 1);
+  isToday(date: string): boolean {
+    const now = new Date();
+    const local = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    return date === local;
+  }
+
+  calTooltip(d: { date: string; total: number; cubagens: number; tempoMedioSegundos: number; operadores: number }): string {
+    const [y, m, day] = d.date.split('-');
+    const dateLabel = `${day}/${m}/${y}`;
+    const tempo = d.tempoMedioSegundos > 0 ? this.fmtTempo(d.tempoMedioSegundos) : '—';
+    const ops = d.operadores === 1 ? '1 operador' : `${d.operadores} operadores`;
+    return `${dateLabel}\n${d.total} Conferência${d.total !== 1 ? 's' : ''}\n${d.cubagens} Cubagem${d.cubagens !== 1 ? 's' : ''}\nTempo médio: ${tempo}\n${ops}`;
+  }
+
+  private fmtTempo(s: number): string {
+    const m = Math.floor(s / 60);
+    const sec = Math.round(s % 60);
+    return m > 0 ? `${m}m${String(sec).padStart(2,'0')}s` : `${sec}s`;
+  }
 
   // ── Picos do separador selecionado (derivados da timeline) ──
 
