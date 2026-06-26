@@ -1,4 +1,4 @@
-<div class="dash-shell" (click)="datePickerAberto && (datePickerAberto = false)">
+<div class="dash-shell" [class.dash-shell--mes]="periodo === 'mes' || periodo === 'custom'" (click)="datePickerAberto && (datePickerAberto = false)">
 
   <!-- ══ TOP BAR ══ -->
   <div class="dash-topbar">
@@ -142,7 +142,7 @@
     <!-- Ranking -->
     <div class="panel panel--flex panel--ranking">
       <div class="panel-hdr">
-        <h3>Ranking separadores</h3>
+        <h3>{{ (periodo === 'mes' || periodo === 'custom') ? 'Ranking do Mês' : 'Ranking separadores' }}</h3>
         <span class="badge">{{ periodo }}</span>
       </div>
       <div class="panel-scroll">
@@ -192,7 +192,7 @@
     <!-- Heatmap / Atividade por hora -->
     <div class="panel panel--flex panel--chart">
       <div class="panel-hdr">
-        <h3>Atividade por hora</h3>
+        <h3>{{ (periodo === 'mes' || periodo === 'custom') ? 'Calendário de Produtividade' : 'Atividade por hora' }}</h3>
         <span class="badge">{{ periodo }}</span>
         <span class="badge" *ngIf="periodo === 'hoje'">pico {{ getPicoHora() }}h</span>
       </div>
