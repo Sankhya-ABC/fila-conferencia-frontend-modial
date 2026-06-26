@@ -186,13 +186,13 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
   }
 
   heatmapCores(valor: number, max: number): string {
-    if (!valor || !max) return 'rgba(0,0,0,0.04)';
+    if (!valor || !max) return 'rgba(34,197,94,0.06)';
     const ratio = valor / max;
-    if (ratio < 0.2) return 'rgba(17,24,39,0.08)';
-    if (ratio < 0.4) return 'rgba(17,24,39,0.18)';
-    if (ratio < 0.6) return 'rgba(17,24,39,0.35)';
-    if (ratio < 0.8) return 'rgba(17,24,39,0.55)';
-    return '#111827';
+    if (ratio < 0.2) return 'rgba(34,197,94,0.15)';
+    if (ratio < 0.4) return 'rgba(34,197,94,0.30)';
+    if (ratio < 0.6) return 'rgba(34,197,94,0.50)';
+    if (ratio < 0.8) return 'rgba(34,197,94,0.72)';
+    return '#16a34a';
   }
 
   getHeatmapCell(dia: number, hora: number): number {
