@@ -38,6 +38,11 @@ export interface HeatmapCell {
   total: number;
 }
 
+export interface DiaMesCell {
+  dia: number;
+  total: number;
+}
+
 export interface DashboardProdutividadeDTO {
   usuariosAtivos: number;
   totalConferencias: number;
@@ -50,6 +55,7 @@ export interface DashboardProdutividadeDTO {
   picos: PicoDTO[];
   linhaDoTempo: LinhaDoTempoDTO[];
   heatmap?: HeatmapCell[];
+  diasMes?: DiaMesCell[];
 }
 
 export interface GetProdutividadeParams {

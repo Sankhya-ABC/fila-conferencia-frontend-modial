@@ -203,6 +203,16 @@ export class DashboardProdutividadeComponent implements OnInit, OnDestroy {
     return Math.max(...(this.dados?.heatmap?.map(h => h.total) ?? [1]), 1);
   }
 
+  get maxDiaMes(): number {
+    return Math.max(...(this.dados?.diasMes?.map(d => d.total) ?? [1]), 1);
+  }
+
+  getDiaMesTotal(dia: number): number {
+    return this.dados?.diasMes?.find(d => d.dia === dia)?.total ?? 0;
+  }
+
+  diasDoMes = Array.from({ length: 31 }, (_, i) => i + 1);
+
   // ── Picos do separador selecionado (derivados da timeline) ──
 
   get picosSeparador(): PicoDTO[] {

@@ -222,8 +222,8 @@
         </div>
       </ng-container>
 
-      <!-- Semana / Mês / Custom: heatmap dia×hora -->
-      <ng-container *ngIf="!carregando && periodo !== 'hoje'">
+      <!-- Semana: heatmap dia×hora -->
+      <ng-container *ngIf="!carregando && periodo === 'semana'">
         <div class="heatmap-body">
           <div class="hm-grid">
             <ng-container *ngFor="let dia of diasSemana; let d = index">
@@ -240,6 +240,20 @@
             <span class="hm-h" *ngFor="let h of horas; trackBy: trackByIdx">
               {{ h % 6 === 0 ? h + 'h' : '' }}
             </span>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Mês / Custom: grade de dias do mês -->
+      <ng-container *ngIf="!carregando && (periodo === 'mes' || periodo === 'custom')">
+        <div class="heatmap-body">
+          <div class="dias-mes-grid">
+            <div class="dias-mes-cell"
+                 *ngFor="let d of diasDoMes; trackBy: trackByIdx"
+                 [style.background]="heatmapCores(getDiaMesTotal(d), maxDiaMes)"
+                 [matTooltip]="'Dia ' + d + ': ' + getDiaMesTotal(d) + ' conf.'">
+              <span class="dias-mes-num">{{ d }}</span>
+            </div>
           </div>
         </div>
       </ng-container>
