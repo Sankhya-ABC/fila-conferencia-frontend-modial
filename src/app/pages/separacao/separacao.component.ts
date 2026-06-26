@@ -314,7 +314,6 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   private iniciarHeartbeat() {
-    this.sessaoService.registrarAbertura(this.numeroUnico!).subscribe();
     if (this.dadosGerais?.numeroConferencia) {
       this.heartbeatService.setSeparando(this.dadosGerais.numeroConferencia);
     }
@@ -498,6 +497,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           return;
         }
 
+        this.sessaoService.registrarAbertura(this.numeroUnico!).subscribe();
         this.carregarEstadoConferencia();
       },
       error: (err) => console.error(err),
@@ -521,6 +521,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           ).subscribe({
             next: () => {
               this.preparandoSessao = false;
+              this.sessaoService.registrarAbertura(this.numeroUnico!).subscribe();
               this.carregarEstadoConferencia();
             },
             error: () => {
