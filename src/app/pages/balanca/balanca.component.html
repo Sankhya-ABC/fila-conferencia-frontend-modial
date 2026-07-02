@@ -297,33 +297,46 @@
             {{ mensagemStatus }}
           </div>
 
-          <!-- Aviso: não serial -->
-          <div class="config-info" *ngIf="!isSerial">
-            <mat-icon>info_outline</mat-icon>
-            Painel de teste disponível apenas para comunicação serial. Use "Capturar peso" na tela de separação para HTTP/TCP.
-          </div>
-
           <!-- Botões de teste -->
           <div class="teste-btns">
-            <button mat-stroked-button (click)="testarConexao()"
-                    [disabled]="statusConexao === 'conectando' || !isSerial">
-              <mat-icon>cable</mat-icon>
-              Testar Comunicação
-            </button>
+            <!-- Serial -->
+            <ng-container *ngIf="isSerial">
+              <button mat-stroked-button (click)="testarConexao()"
+                      [disabled]="statusConexao === 'conectando'">
+                <mat-icon>cable</mat-icon>
+                Testar Comunicação
+              </button>
 
-            <button mat-flat-button color="primary"
-                    (click)="iniciarLeitura()"
-                    [disabled]="lendoPeso || !editandoId || !isSerial">
-              <mat-icon>play_arrow</mat-icon>
-              Iniciar Leitura
-            </button>
+              <button mat-flat-button color="primary"
+                      (click)="iniciarLeitura()"
+                      [disabled]="lendoPeso || !editandoId">
+                <mat-icon>play_arrow</mat-icon>
+                Iniciar Leitura
+              </button>
 
-            <button mat-stroked-button color="warn"
-                    (click)="pararLeitura()"
-                    [disabled]="!lendoPeso">
-              <mat-icon>stop</mat-icon>
-              Parar Leitura
-            </button>
+              <button mat-stroked-button color="warn"
+                      (click)="pararLeitura()"
+                      [disabled]="!lendoPeso">
+                <mat-icon>stop</mat-icon>
+                Parar Leitura
+              </button>
+            </ng-container>
+
+            <!-- HTTP / TCP -->
+            <ng-container *ngIf="isHTTP || isTCP">
+              <button mat-stroked-button (click)="testarHTTP()"
+                      [disabled]="statusConexao === 'conectando'">
+                <mat-icon>wifi_tethering</mat-icon>
+                Testar Conexão
+              </button>
+
+              <button mat-stroked-button color="warn"
+                      (click)="pararLeitura()"
+                      [disabled]="!lendoPeso">
+                <mat-icon>stop</mat-icon>
+                Parar Leitura
+              </button>
+            </ng-container>
 
             <button mat-stroked-button
                     *ngIf="isDevMode"

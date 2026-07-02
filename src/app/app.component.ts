@@ -5,6 +5,7 @@ import { map, Observable } from 'rxjs';
 import { RouteStateService } from './services/route-state/route-state.service';
 import { LoadingOverlayComponent } from './shared/components/loading-overlay/loading-overlay.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
+import { HeartbeatService } from './services/heartbeat/heartbeat.service';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +22,10 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
 export class AppComponent {
   hideContainer$: Observable<boolean>;
 
-  constructor(private routeState: RouteStateService) {
+  constructor(
+    private routeState: RouteStateService,
+    _heartbeat: HeartbeatService,
+  ) {
     this.hideContainer$ = this.routeState.hideContainer$.pipe(map(h => h));
   }
 }

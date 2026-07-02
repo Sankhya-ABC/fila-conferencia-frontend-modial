@@ -3,6 +3,7 @@ import {
   Component, Inject, isDevMode, OnDestroy, OnInit, PLATFORM_ID,
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BalancaDTO, CriarBalancaParams } from '../../services/balanca/balanca.model';
 import { BalancaService } from '../../services/balanca/balanca.service';
+import { LocalScaleService } from '../../services/balanca/local-scale.service';
 
 interface LogEntry { hora: string; msg: string; tipo: 'info' | 'ok' | 'erro'; }
 
@@ -38,6 +40,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private balancaService: BalancaService,
+    private localScale: LocalScaleService,
     @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
@@ -65,6 +68,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
   lendoPeso      = false;
   logs: LogEntry[] = [];
   private pollingInterval?: ReturnType<typeof setInterval>;
+  private serialSub?: Subscription;
 
   // ── Delete ───────────────────────────────────────────────────────────────────
   deleteInfo: { id: string; nome: string } | null = null;
@@ -108,7 +112,8 @@ export class BalancaComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.pararPolling();
-    if (this.editandoId && this.lendoPeso) {
+    this.pararStreamSerial();
+    if (this.editandoId && this.lendoPeso && !this.isSerial) {
       this.balancaService.pararLeitura(this.editandoId).subscribe();
     }
   }
@@ -177,7 +182,8 @@ export class BalancaComponent implements OnInit, OnDestroy {
 
   voltarLista() {
     this.pararPolling();
-    if (this.editandoId && this.lendoPeso) {
+    this.pararStreamSerial();
+    if (this.editandoId && this.lendoPeso && !this.isSerial) {
       this.balancaService.pararLeitura(this.editandoId).subscribe();
     }
     this.vista = 'lista';
@@ -215,17 +221,32 @@ export class BalancaComponent implements OnInit, OnDestroy {
 
   carregarPortas() {
     this.carregandoPortas = true;
-    this.balancaService.listarPortasCOM().subscribe({
-      next: (portas) => {
-        this.portasCOM       = portas;
-        this.carregandoPortas = false;
-        if (portas.length > 0 && !this.form.get('portaCom')?.value) {
-          this.form.get('portaCom')?.setValue(portas[0]);
+    // Portas COM físicas existem na máquina do operador, não no servidor —
+    // por isso tenta primeiro o agente local (ws://localhost:3099) e só cai
+    // para o endpoint do backend (útil apenas se o backend rodar on-premise).
+    this.localScale.listarPortasAgente().subscribe({
+      next: (portasAgente) => {
+        if (portasAgente.length > 0) {
+          this.portasCOM       = portasAgente;
+          this.carregandoPortas = false;
+          if (!this.form.get('portaCom')?.value) {
+            this.form.get('portaCom')?.setValue(portasAgente[0]);
+          }
+          return;
         }
-      },
-      error: () => {
-        this.portasCOM       = ['COM1', 'COM2', 'COM3', 'COM4', 'COM5'];
-        this.carregandoPortas = false;
+        this.balancaService.listarPortasCOM().subscribe({
+          next: (portas) => {
+            this.portasCOM       = portas;
+            this.carregandoPortas = false;
+            if (portas.length > 0 && !this.form.get('portaCom')?.value) {
+              this.form.get('portaCom')?.setValue(portas[0]);
+            }
+          },
+          error: () => {
+            this.portasCOM       = ['COM1', 'COM2', 'COM3', 'COM4', 'COM5'];
+            this.carregandoPortas = false;
+          },
+        });
       },
     });
   }
@@ -240,35 +261,114 @@ export class BalancaComponent implements OnInit, OnDestroy {
     }
 
     this.statusConexao = 'conectando';
-    this.mensagemStatus = 'Tentando conexão...';
-    this.adicionarLog(`Abrindo porta ${v.portaCom} — Baud ${v.baudRate} — Protocolo ${v.protocoloSerial}`, 'info');
+    this.mensagemStatus = 'Conectando ao agente local...';
+    this.adicionarLog(`Abrindo porta ${v.portaCom} — Baud ${v.baudRate} — Protocolo ${v.protocoloSerial} (via agente local)`, 'info');
 
-    this.balancaService.testarConexaoDireta({
-      portaCom:        v.portaCom,
-      baudRate:        v.baudRate,
-      dataBits:        v.dataBits,
-      paridade:        v.paridade,
-      stopBits:        v.stopBits,
-      protocoloSerial: v.protocoloSerial,
-    }).subscribe({
+    this.iniciarStreamSerial(this.buildBalancaTempSerial(v));
+  }
+
+  testarHTTP() {
+    const v = this.form.value;
+    if (!v.ip || !v.porta) {
+      this.adicionarLog('Preencha IP e Porta antes de testar.', 'erro');
+      return;
+    }
+    this.statusConexao  = 'conectando';
+    this.mensagemStatus = 'Conectando...';
+    const balancaTemp: BalancaDTO = {
+      id: '', nome: '', fabricante: '', modelo: null, ativo: true,
+      tipoComunicacao: v.tipoComunicacao,
+      portaCom: null, baudRate: 4800, dataBits: 8, paridade: 'NONE', stopBits: 1, protocoloSerial: 'P05',
+      protocolo: v.tipoComunicacao === 'TOLEDO_TCP' ? 'TOLEDO_TCP' : 'HTTP',
+      ip: v.ip, porta: v.porta, rota: v.rota ?? '/peso',
+    };
+    this.adicionarLog(`Testando ${v.tipoComunicacao} em http://${v.ip}:${v.porta}${v.rota ?? '/peso'}`, 'info');
+    this.localScale.lerStatus(balancaTemp).subscribe({
       next: (res) => {
-        if (res.sucesso) {
+        if (res.conectado) {
           this.statusConexao  = 'conectado';
-          this.mensagemStatus = res.mensagem;
-          if (res.peso != null) this.pesoAtual = res.peso;
-          this.adicionarLog(res.mensagem, 'ok');
+          this.mensagemStatus = `Peso atual: ${res.pesoAtual.toFixed(3).replace('.', ',')} kg`;
+          this.pesoAtual      = res.pesoAtual;
+          this.adicionarLog(`Conectado — peso: ${res.pesoAtual.toFixed(3)} kg`, 'ok');
+          this.iniciarPollingHTTP(balancaTemp);
         } else {
           this.statusConexao  = 'erro';
-          this.mensagemStatus = res.mensagem;
-          this.adicionarLog(res.mensagem, 'erro');
+          this.mensagemStatus = 'Sem resposta. Verifique IP, porta e CORS.';
+          this.adicionarLog('Sem resposta da balança.', 'erro');
         }
       },
-      error: (err) => {
+      error: () => {
         this.statusConexao  = 'erro';
-        this.mensagemStatus = err?.error?.message ?? 'Falha na comunicação.';
-        this.adicionarLog(this.mensagemStatus, 'erro');
+        this.mensagemStatus = 'Falha na conexão. Verifique IP, porta e CORS.';
+        this.adicionarLog('Erro de conexão.', 'erro');
       },
     });
+  }
+
+  private buildBalancaTempSerial(v: any): BalancaDTO {
+    return {
+      id: '', nome: v.nome ?? '', fabricante: v.fabricante ?? 'Toledo', modelo: v.modelo ?? null, ativo: true,
+      tipoComunicacao: v.tipoComunicacao,
+      portaCom: v.portaCom, baudRate: v.baudRate, dataBits: v.dataBits,
+      paridade: v.paridade, stopBits: v.stopBits, protocoloSerial: v.protocoloSerial,
+      protocolo: 'SERIAL',
+      ip: null, porta: null, rota: '/peso',
+    };
+  }
+
+  /** Assinatura contínua (push, via WebSocket do agente local) — sem polling. */
+  private iniciarStreamSerial(balancaTemp: BalancaDTO) {
+    this.pararStreamSerial();
+    this.lendoPeso = true;
+    let primeiraResposta = true;
+
+    this.serialSub = this.localScale.lerStatus(balancaTemp).subscribe({
+      next: (res) => {
+        if (res.conectado) {
+          if (primeiraResposta) {
+            this.adicionarLog(`Conectado via agente local — peso: ${res.pesoAtual.toFixed(3)} kg`, 'ok');
+          } else if (res.pesoAtual !== this.pesoAtual) {
+            this.adicionarLog(`Peso: ${res.pesoAtual.toFixed(3).replace('.', ',')} kg`, 'info');
+          }
+          this.statusConexao  = 'conectado';
+          this.mensagemStatus = `Peso atual: ${res.pesoAtual.toFixed(3).replace('.', ',')} kg`;
+          this.pesoAtual       = res.pesoAtual;
+        } else {
+          this.statusConexao  = 'erro';
+          this.mensagemStatus = 'Sem resposta do agente local. Verifique se ele está rodando na estação (ws://localhost:3099).';
+          if (primeiraResposta) {
+            this.adicionarLog('Agente local não respondeu. Confira se o agente está instalado e rodando nesta máquina.', 'erro');
+          }
+        }
+        primeiraResposta = false;
+      },
+    });
+  }
+
+  private pararStreamSerial() {
+    this.serialSub?.unsubscribe();
+    this.serialSub = undefined;
+  }
+
+  private iniciarPollingHTTP(balancaTemp: BalancaDTO) {
+    this.pararPolling();
+    this.lendoPeso = true;
+    this.pollingInterval = setInterval(() => {
+      this.localScale.lerStatus(balancaTemp).subscribe({
+        next: (res) => {
+          if (res.conectado) {
+            if (res.pesoAtual !== this.pesoAtual) {
+              this.adicionarLog(`Peso: ${res.pesoAtual.toFixed(3).replace('.', ',')} kg`, 'info');
+              this.pesoAtual = res.pesoAtual;
+            }
+            this.statusConexao = 'conectado';
+          } else {
+            this.statusConexao = 'erro';
+            this.mensagemStatus = 'Balança não respondeu.';
+          }
+        },
+      });
+    }, 600);
   }
 
   iniciarLeitura() {
@@ -278,36 +378,25 @@ export class BalancaComponent implements OnInit, OnDestroy {
     }
     if (this.lendoPeso) return;
 
-    this.adicionarLog(`Iniciando leitura contínua na porta ${this.form.get('portaCom')?.value}...`, 'info');
-
-    this.balancaService.iniciarLeitura(this.editandoId).subscribe({
-      next: () => {
-        this.lendoPeso      = true;
-        this.statusConexao  = 'conectado';
-        this.mensagemStatus = 'Leitura contínua ativa.';
-        this.adicionarLog('Leitura contínua iniciada.', 'ok');
-        this.iniciarPolling();
-      },
-      error: (err) => {
-        this.statusConexao  = 'erro';
-        this.mensagemStatus = err?.error?.message ?? 'Falha ao iniciar leitura.';
-        this.adicionarLog(this.mensagemStatus, 'erro');
-      },
-    });
+    const v = this.form.value;
+    this.adicionarLog(`Iniciando leitura contínua na porta ${v.portaCom} (via agente local)...`, 'info');
+    this.iniciarStreamSerial(this.buildBalancaTempSerial(v));
   }
 
   pararLeitura() {
-    if (!this.editandoId || !this.lendoPeso) return;
+    if (!this.lendoPeso) return;
     this.pararPolling();
+    this.pararStreamSerial();
+    this.lendoPeso      = false;
+    this.statusConexao  = 'desconectado';
+    this.mensagemStatus = '';
+    this.adicionarLog('Leitura encerrada.', 'info');
 
-    this.balancaService.pararLeitura(this.editandoId).subscribe({
-      next: () => {
-        this.lendoPeso      = false;
-        this.statusConexao  = 'desconectado';
-        this.mensagemStatus = '';
-        this.adicionarLog('Leitura encerrada.', 'info');
-      },
-    });
+    // Backend só é relevante para o driver serial on-premise (não usado quando o
+    // backend roda na nuvem, cenário em que a leitura acontece via agente local).
+    if (this.editandoId && !this.isSerial) {
+      this.balancaService.pararLeitura(this.editandoId).subscribe();
+    }
   }
 
   simularPeso() {
@@ -397,6 +486,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
 
   private resetTeste() {
     this.pararPolling();
+    this.pararStreamSerial();
     this.statusConexao  = 'desconectado';
     this.mensagemStatus = '';
     this.pesoAtual      = 0;

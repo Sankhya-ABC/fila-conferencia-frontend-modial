@@ -14,7 +14,9 @@ export function authInterceptor(
 
   const token = authService.getUser().token;
 
-  const authReq = token
+  // Não adiciona token em requests locais (balanças, agente local)
+  const isLocal = req.url.startsWith('http://localhost') || req.url.startsWith('https://localhost');
+  const authReq = token && !isLocal
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
