@@ -69,6 +69,15 @@
       <span>Balanças</span>
     </a>
 
+    <a class="sidebar-item"
+       *ngIf="isAdmin"
+       routerLink="/downloads"
+       routerLinkActive="sidebar-item--active"
+       (click)="toggle()">
+      <mat-icon>download</mat-icon>
+      <span>Downloads</span>
+    </a>
+
   </div>
 
   <div class="sidebar-spacer"></div>

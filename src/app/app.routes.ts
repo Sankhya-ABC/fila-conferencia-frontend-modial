@@ -13,6 +13,7 @@ import { RedefinirUsuarioComponent } from './pages/redefinir-usuario/redefinir-u
 import { DashboardProdutividadeComponent } from './pages/dashboard-produtividade/dashboard-produtividade.component';
 import { ImpressaoEtiquetasComponent } from './pages/impressao-etiquetas/impressao-etiquetas.component';
 import { BalancaComponent } from './pages/balanca/balanca.component';
+import { DownloadsComponent } from './pages/downloads/downloads.component';
 
 export const routes: Routes = [
   {
@@ -59,6 +60,11 @@ export const routes: Routes = [
     canActivate: [adminGuard],
     path: 'balancas',
     component: BalancaComponent,
+  },
+  {
+    canActivate: [adminGuard],
+    path: 'downloads',
+    component: DownloadsComponent,
   },
   {
     canActivate: [authGuard],

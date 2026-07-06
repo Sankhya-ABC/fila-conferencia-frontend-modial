@@ -1,0 +1,57 @@
+<div class="painel-header">
+  <div class="painel-icon"><mat-icon>download</mat-icon></div>
+  <div class="painel-info">
+    <p class="painel-titulo">Downloads</p>
+    <span class="painel-sub">Aplicativos e instaladores</span>
+  </div>
+  <div class="painel-direita">
+    <div class="painel-contagem">
+      <span class="contagem-valor">{{ downloads.length }}</span>
+      <span class="contagem-label">itens</span>
+    </div>
+  </div>
+</div>
+
+<div class="downloads-list-container">
+  <div class="downloads-list-header">
+    <span class="col-nome">Nome</span>
+    <span class="col-versao">Versão</span>
+    <span class="col-acao"></span>
+  </div>
+
+  <div class="downloads-rows-scroll">
+    <!-- Skeleton -->
+    <ng-container *ngIf="carregando">
+      <div class="download-row download-row--skeleton" *ngFor="let i of [1,2]">
+        <div class="sk sk--nome"></div>
+        <div class="sk sk--versao"></div>
+        <div class="sk sk--acao"></div>
+      </div>
+    </ng-container>
+
+    <!-- Rows -->
+    <div class="download-row" *ngFor="let d of downloads">
+      <div class="col-nome">
+        <div class="download-icon"><mat-icon>inventory_2</mat-icon></div>
+        <div class="download-textos">
+          <span class="download-nome">{{ d.nome }}</span>
+          <span class="download-descricao">{{ d.descricao }}</span>
+        </div>
+      </div>
+      <div class="col-versao">
+        <span class="versao-badge">v{{ d.versao }}</span>
+      </div>
+      <div class="col-acao">
+        <button mat-flat-button color="primary" (click)="baixar(d)">
+          <mat-icon>download</mat-icon> Download
+        </button>
+      </div>
+    </div>
+
+    <!-- Vazio -->
+    <div class="downloads-vazio" *ngIf="!carregando && downloads.length === 0">
+      <mat-icon>cloud_off</mat-icon>
+      <span>Nenhum download disponível no momento</span>
+    </div>
+  </div>
+</div>
