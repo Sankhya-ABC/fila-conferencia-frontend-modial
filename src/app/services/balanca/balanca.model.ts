@@ -19,6 +19,7 @@ export interface BalancaDTO {
   porta: number | null;
   rota: string;
   ativo: boolean;
+  idsUsuarios?: number[];
 }
 
 export interface CriarBalancaParams {
@@ -37,6 +38,7 @@ export interface CriarBalancaParams {
   porta?: number | null;
   rota?: string;
   ativo?: boolean;
+  idsUsuarios?: number[];
 }
 
 export interface CapturarPesoResponse { peso: number; }

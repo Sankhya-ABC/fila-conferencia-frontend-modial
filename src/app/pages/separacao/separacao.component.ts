@@ -286,7 +286,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.inicializarConferencia();
     this.iniciarHeartbeat();
 
-    this.balancaService.listar().subscribe({
+    this.balancaService.listarMinhas().subscribe({
       next: (b) => {
         this.balancas = b;
         if (b.length === 0) return;

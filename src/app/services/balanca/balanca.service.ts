@@ -21,6 +21,10 @@ export class BalancaService {
     return this.http.get<BalancaAtivaDTO[]>('/balancas/ativas', SKIP);
   }
 
+  listarMinhas(): Observable<BalancaDTO[]> {
+    return this.http.get<BalancaDTO[]>('/balancas/minhas', SKIP);
+  }
+
   verificarStatus(id: string): Observable<StatusBalancaResponse> {
     return this.http.get<StatusBalancaResponse>(`/balancas/${id}/status`, SKIP);
   }

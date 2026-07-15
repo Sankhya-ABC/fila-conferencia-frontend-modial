@@ -140,6 +140,14 @@
             </mat-select>
           </mat-form-field>
 
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Usuários vinculados (máquina/estação)</mat-label>
+            <mat-select formControlName="idsUsuarios" multiple>
+              <mat-option *ngFor="let u of usuarios" [value]="u.codigo">{{ u.nome }}</mat-option>
+            </mat-select>
+            <mat-hint>Na separação, só verão esta balança os usuários selecionados aqui. Se nenhum for selecionado, todos os usuários sem vínculo continuam vendo todas as balanças.</mat-hint>
+          </mat-form-field>
+
         </div>
       </div>
 

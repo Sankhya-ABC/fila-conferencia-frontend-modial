@@ -15,6 +15,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BalancaDTO, CriarBalancaParams } from '../../services/balanca/balanca.model';
 import { BalancaService } from '../../services/balanca/balanca.service';
 import { LocalScaleService } from '../../services/balanca/local-scale.service';
+import { UsuarioService } from '../../services/usuario/usuario.service';
+import { Usuario } from '../../services/usuario/usuario.model';
 
 interface LogEntry { hora: string; msg: string; tipo: 'info' | 'ok' | 'erro'; }
 
@@ -41,6 +43,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private balancaService: BalancaService,
     private localScale: LocalScaleService,
+    private usuarioService: UsuarioService,
     @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
@@ -51,6 +54,9 @@ export class BalancaComponent implements OnInit, OnDestroy {
   // ── Lista ────────────────────────────────────────────────────────────────────
   balancas: BalancaDTO[]  = [];
   carregando             = false;
+
+  // ── Usuários (para vínculo balança↔usuário) ─────────────────────────────────
+  usuarios: Usuario[] = [];
 
   // ── Form ─────────────────────────────────────────────────────────────────────
   form!: FormGroup;
@@ -108,7 +114,12 @@ export class BalancaComponent implements OnInit, OnDestroy {
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-  ngOnInit() { this.carregar(); }
+  ngOnInit() {
+    this.carregar();
+    this.usuarioService.getUsuarios({ perPage: 100, status: true }, { skipLoading: true }).subscribe({
+      next: (res) => { this.usuarios = res.data; },
+    });
+  }
 
   ngOnDestroy() {
     this.pararPolling();
@@ -149,6 +160,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
       ip:               [null],
       porta:            [null],
       rota:             ['/peso'],
+      idsUsuarios:      [[]],
     });
 
     this.vista = 'configurar';
@@ -174,6 +186,7 @@ export class BalancaComponent implements OnInit, OnDestroy {
       ip:               [b.ip],
       porta:            [b.porta],
       rota:             [b.rota ?? '/peso'],
+      idsUsuarios:      [b.idsUsuarios ?? []],
     });
 
     this.vista = 'configurar';
