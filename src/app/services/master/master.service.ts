@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 export type DbDialect = 'SQLSERVER' | 'ORACLE';
 
-export const SNK_MODULOS_TODOS = ['AD_NUMTALAO', 'AD_TIPOENTREGA', 'AD_CUBAGEM'] as const;
+export const SNK_MODULOS_TODOS = ['AD_NUMTALAO', 'AD_TIPOENTREGA', 'AD_CUBAGEM', 'CONFERENCIA_PARCIAL'] as const;
 export type SnkModulo = typeof SNK_MODULOS_TODOS[number];
 
 export interface TenantItem {

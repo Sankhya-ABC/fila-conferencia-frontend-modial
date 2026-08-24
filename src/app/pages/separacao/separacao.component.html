@@ -1,5 +1,28 @@
 <div class="conferencia-container">
 
+<!-- SELEÇÃO DE CATEGORIA (conferência parcial) -->
+<div class="cat-overlay" *ngIf="mostrarSelecaoCategoria"></div>
+<div class="cat-modal" *ngIf="mostrarSelecaoCategoria" role="dialog" aria-modal="true">
+  <h3>O que você vai conferir agora?</h3>
+  <p>Este pedido tem itens pesáveis e não pesáveis. Escolha sua parte.</p>
+  <div class="cat-opcoes">
+    <button type="button" class="cat-opcao"
+            *ngIf="categoriasDisponiveis.includes('NAO_PESAVEL')"
+            (click)="selecionarCategoria('NAO_PESAVEL')">
+      <mat-icon fontSet="material-symbols-outlined">inventory_2</mat-icon>
+      <strong>Não pesável</strong>
+      <span>{{ pendentesNaoPesavel }} item(ns)</span>
+    </button>
+    <button type="button" class="cat-opcao"
+            *ngIf="categoriasDisponiveis.includes('PESAVEL')"
+            (click)="selecionarCategoria('PESAVEL')">
+      <mat-icon fontSet="material-symbols-outlined">scale</mat-icon>
+      <strong>Pesável</strong>
+      <span>{{ pendentesPesavel }} item(ns)</span>
+    </button>
+  </div>
+</div>
+
 <!-- TELA DE PREPARAÇÃO -->
 <div class="preparando-sessao" *ngIf="preparandoSessao">
   <app-robo-loader></app-robo-loader>
@@ -68,6 +91,23 @@
   <span class="dados-conferencia" *ngIf="dadosGerais.numeroConferencia">
     Conferência #{{ dadosGerais.numeroConferencia }}
   </span>
+  <button mat-icon-button
+          class="btn-atalhos"
+          [matMenuTriggerFor]="menuImprimirGuia"
+          matTooltip="Imprimir mapa de separação"
+          aria-label="Imprimir mapa de separação">
+    <mat-icon>print</mat-icon>
+  </button>
+  <mat-menu #menuImprimirGuia="matMenu">
+    <button mat-menu-item [disabled]="pendentesNaoPesavel === 0" (click)="imprimirMapaSeparacao('NAO_PESAVEL')">
+      <mat-icon fontSet="material-symbols-outlined">inventory_2</mat-icon>
+      <span>Guia Não Pesável</span>
+    </button>
+    <button mat-menu-item [disabled]="pendentesPesavel === 0" (click)="imprimirMapaSeparacao('PESAVEL')">
+      <mat-icon fontSet="material-symbols-outlined">scale</mat-icon>
+      <span>Guia Pesável</span>
+    </button>
+  </mat-menu>
   <button mat-icon-button
           class="btn-atalhos"
           (click)="mostrarAtalhos = !mostrarAtalhos"
@@ -346,10 +386,11 @@
 <!-- WORKSPACE -->
 <div class="workspace" *ngIf="!carregando"
      [class.com-volumes]="isPainelVolumesVisivel()"
-     [class.volumes-colapsados]="volumesPainelColapsado">
+     [class.volumes-colapsados]="volumesPainelColapsado"
+     [class.sem-pendentes]="!exibirPendentes()">
 
   <!-- COLUNA ESQUERDA: PENDENTES (altura cheia) -->
-  <div class="painel painel-pendentes">
+  <div class="painel painel-pendentes" *ngIf="exibirPendentes()">
     <div class="painel-header">
       <mat-icon>pending_actions</mat-icon>
       <span class="painel-titulo">Pendentes</span>
@@ -389,8 +430,8 @@
     </div>
   </div>
 
-  <!-- COLUNA DIREITA: CONFERIDOS (topo) + IMAGEM (abaixo) -->
-  <div class="coluna-direita">
+  <!-- COLUNA DIREITA: CONFERIDOS + IMAGEM (empilhados; lado a lado quando Pendentes está oculto) -->
+  <div class="coluna-direita" [class.lado-a-lado]="!exibirPendentes()">
 
     <div class="painel painel-conferidos">
       <div class="painel-header">
@@ -803,8 +844,16 @@
           [disabled]="!podeConfirmarConferencia"
           (click)="finalizarConferencia()"
           *ngIf="!mostrarFormVolumesSimplificado">
-    <mat-icon>check_circle</mat-icon>
-    Confirmar Conferência
+    <ng-container *ngIf="temConferenciaParcial && categoriaAtiva && etapa(categoriaAtiva)?.status !== 'C' && !todasEtapasConcluidas; else confirmarLabel">
+      <mat-icon fontSet="material-symbols-outlined">
+        {{ categoriaAtiva === 'PESAVEL' ? 'scale' : 'inventory_2' }}
+      </mat-icon>
+      Concluir Conferência - {{ categoriaAtiva === 'PESAVEL' ? 'Pesável' : 'Não Pesável' }}
+    </ng-container>
+    <ng-template #confirmarLabel>
+      <mat-icon>check_circle</mat-icon>
+      Confirmar Conferência
+    </ng-template>
   </button>
 </section>
 

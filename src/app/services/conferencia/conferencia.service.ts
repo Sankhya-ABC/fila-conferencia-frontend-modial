@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { SKIP_LOADING } from '../../core/interceptors/skip-loading.token';
 import {
+  ConcluirEtapaParams,
   DadosBasicosPedidoDTO,
   FaturarNotaParams,
   FilaConferenciaDTO,
@@ -10,6 +11,7 @@ import {
   PostFinalizarConferenciaParams,
   PostIniciarConferenciaParams,
   PostIniciarConferenciaResponse,
+  SessaoEtapaDTO,
   TopFaturamento,
 } from './conferencia.model';
 
@@ -79,5 +81,15 @@ export class ConferenciaService {
 
   faturarNota(params: FaturarNotaParams): Observable<void> {
     return this.http.post<void>('/conferencias/faturar', params);
+  }
+
+  getEtapas(numeroUnico: number): Observable<SessaoEtapaDTO[]> {
+    return this.http.get<SessaoEtapaDTO[]>('/conferencias/etapas', {
+      params: { numeroUnico },
+    });
+  }
+
+  postConcluirEtapa(body: ConcluirEtapaParams): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>('/conferencias/concluir-etapa', body);
   }
 }

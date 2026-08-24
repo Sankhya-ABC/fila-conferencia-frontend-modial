@@ -81,6 +81,20 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
   get temNumtalao(): boolean {
     return this.authService.hasModulo('AD_NUMTALAO');
   }
+
+  get temConferenciaParcial(): boolean {
+    return this.authService.hasModulo('CONFERENCIA_PARCIAL');
+  }
+
+  // NAO_APLICAVEL = pedido não tem item desse tipo (etapa auto-concluída, sem idUsuarioConclusao)
+  // ou sessão ainda não iniciada. Continua exibindo um chip (neutro) no lugar, só pra não
+  // deixar buraco no card — mas visualmente apagado, sem sugerir pendência real.
+  etapaStatus(item: FilaConferenciaDTO, tipo: 'PESAVEL' | 'NAO_PESAVEL'): 'PENDENTE' | 'CONCLUIDA' | 'NAO_APLICAVEL' {
+    const e = item.etapas?.find((x) => x.tipo === tipo);
+    if (!e) return 'NAO_APLICAVEL';
+    if (e.status === 'C') return e.idUsuarioConclusao != null ? 'CONCLUIDA' : 'NAO_APLICAVEL';
+    return 'PENDENTE';
+  }
   filtroAberto = false;
   filtroAvancadoAberto = false;
   carregando = false;

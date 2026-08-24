@@ -441,6 +441,45 @@
   }
 }
 
+/* ─── Checklist da conferência parcial (pesável / não-pesável) ─── */
+.card-etapas {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 6px;
+  min-height: 22px; // reserva o espaço mesmo sem chips (sessão ainda não iniciada)
+}
+
+.card-etapa-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+
+  mat-icon { font-size: 12px; height: 12px; width: 12px; line-height: 12px; flex-shrink: 0; }
+
+  &--ok {
+    background: rgba(76, 175, 80, 0.15);
+    color: #2e7d32;
+  }
+
+  // Categoria não se aplica a este pedido (ou sessão ainda não iniciada) —
+  // mantém o espaço ocupado, mas sem sugerir pendência real.
+  &--na {
+    background: none;
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+}
+
 /* ─── Parceiro: peso médio, não domina ─── */
 .card-parceiro {
   display: flex;

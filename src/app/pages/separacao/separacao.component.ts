@@ -26,7 +26,7 @@ import { RoboLoaderComponent } from '../../shared/components/robo-loader/robo-lo
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArquivoService } from '../../services/arquivo/arquivo.service';
 import { AuthService } from '../../services/auth/auth.service';
-import { DadosBasicosPedidoDTO, TopFaturamento } from '../../services/conferencia/conferencia.model';
+import { DadosBasicosPedidoDTO, SessaoEtapaDTO, TipoEtapaConferencia, TopFaturamento } from '../../services/conferencia/conferencia.model';
 import { ConferenciaService } from '../../services/conferencia/conferencia.service';
 import { ItemPedidoDTO } from '../../services/separacao/separacao.model';
 import { SeparacaoService } from '../../services/separacao/separacao.service';
@@ -230,6 +230,117 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
   private itensDoProdutoAtual: ItemPedidoDTO[] = [];
+
+  // Conferência parcial (etapas pesável / não-pesável) — só ativo por tenant via módulo
+  etapas: SessaoEtapaDTO[] = [];
+  concluindoEtapa: TipoEtapaConferencia | null = null;
+
+  // Lista completa (sem filtro de categoria) — fonte para o filtro por categoria selecionada
+  private itensPedidoBrutos: ItemPedidoDTO[] = [];
+  private itensConferidosBrutos: ItemPedidoDTO[] = [];
+
+  categoriaAtiva: TipoEtapaConferencia | null = null;
+  categoriasDisponiveis: TipoEtapaConferencia[] = [];
+  mostrarSelecaoCategoria = false;
+
+  get temConferenciaParcial(): boolean {
+    return this.authService.hasModulo('CONFERENCIA_PARCIAL');
+  }
+
+  get pendentesPesavel(): number {
+    return this.itensPedidoBrutos.filter((i) => i.usaConfPeso).length;
+  }
+
+  get pendentesNaoPesavel(): number {
+    return this.itensPedidoBrutos.filter((i) => !i.usaConfPeso).length;
+  }
+
+  // Decide se precisa perguntar a categoria (nota com os dois tipos pendentes)
+  // ou selecionar automaticamente quando só há um tipo em aberto.
+  private definirCategoriaDisponivel() {
+    if (!this.temConferenciaParcial) return;
+
+    const presentes = new Set<TipoEtapaConferencia>(
+      this.itensPedidoBrutos.map((i) => (i.usaConfPeso ? 'PESAVEL' : 'NAO_PESAVEL')),
+    );
+    this.categoriasDisponiveis = (['NAO_PESAVEL', 'PESAVEL'] as TipoEtapaConferencia[])
+      .filter((t) => presentes.has(t));
+
+    if (this.categoriasDisponiveis.length > 1 && !this.categoriaAtiva) {
+      this.mostrarSelecaoCategoria = true;
+    } else if (this.categoriasDisponiveis.length === 1) {
+      this.categoriaAtiva = this.categoriasDisponiveis[0];
+    }
+  }
+
+  selecionarCategoria(tipo: TipoEtapaConferencia) {
+    this.categoriaAtiva = tipo;
+    this.mostrarSelecaoCategoria = false;
+    this.aplicarFiltroCategoria();
+  }
+
+  private aplicarFiltroCategoria() {
+    if (!this.temConferenciaParcial) {
+      this.dataSourcePedidos.data = this.itensPedidoBrutos;
+      this.dataSourceConferidos.data = this.itensConferidosBrutos;
+      return;
+    }
+    if (this.mostrarSelecaoCategoria || !this.categoriaAtiva) {
+      // Categoria ainda não escolhida — não expõe itens de nenhuma categoria
+      this.dataSourcePedidos.data = [];
+      this.dataSourceConferidos.data = [];
+      return;
+    }
+    const match = (i: ItemPedidoDTO) => (this.categoriaAtiva === 'PESAVEL') === !!i.usaConfPeso;
+    this.dataSourcePedidos.data = this.itensPedidoBrutos.filter(match);
+    this.dataSourceConferidos.data = this.itensConferidosBrutos.filter(match);
+  }
+
+  etapa(tipo: TipoEtapaConferencia): SessaoEtapaDTO | undefined {
+    return this.etapas.find((e) => e.tipo === tipo);
+  }
+
+  get todasEtapasConcluidas(): boolean {
+    if (!this.temConferenciaParcial) return true;
+    return this.etapas.every((e) => e.status === 'C');
+  }
+
+  carregarEtapas() {
+    if (!this.temConferenciaParcial || !this.numeroUnico) return;
+    this.conferenciaService.getEtapas(this.numeroUnico).subscribe({
+      next: (etapas) => (this.etapas = etapas),
+    });
+  }
+
+  // Conclui a etapa da categoria ativa e decide o que vem a seguir:
+  // se a outra categoria já estava concluída, segue direto pra finalização real
+  // (Sankhya); senão, avisa e volta pra fila — a outra pessoa continua depois.
+  private concluirEtapaEProsseguir(tipo: TipoEtapaConferencia) {
+    if (!this.dadosGerais?.numeroConferencia || !this.numeroUnico) return;
+    this.concluindoEtapa = tipo;
+    this.conferenciaService
+      .postConcluirEtapa({ numeroConferencia: this.dadosGerais.numeroConferencia, tipo })
+      .subscribe({
+        next: () => {
+          this.concluindoEtapa = null;
+          this.conferenciaService.getEtapas(this.numeroUnico!).subscribe({
+            next: (etapas) => {
+              this.etapas = etapas;
+              if (etapas.every((e) => e.status === 'C')) {
+                this.finalizarConferenciaReal();
+              } else {
+                this.mostrarToast(
+                  `Etapa ${tipo === 'PESAVEL' ? 'pesável' : 'não pesável'} concluída. Aguardando a outra categoria.`,
+                  'ok',
+                );
+                this.router.navigate(['/fila-conferencia']);
+              }
+            },
+          });
+        },
+        error: () => (this.concluindoEtapa = null),
+      });
+  }
 
   // toast inline
   toast: { mensagem: string; tipo: 'erro' | 'aviso' | 'ok' } | null = null;
@@ -589,8 +700,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           }
         });
 
-        this.dataSourcePedidos.data = pedidosAtualizados;
-        this.dataSourceConferidos.data = conferidos;
+        this.itensPedidoBrutos = pedidosAtualizados;
+        this.itensConferidosBrutos = conferidos;
+        this.definirCategoriaDisponivel();
+        this.aplicarFiltroCategoria();
 
         // Imagens carregadas em background após a lista renderizar
         this.separacaoService.getImagensItens(numeroUnico).subscribe({
@@ -630,6 +743,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
         this.garantirVolumeAtivo();
         this.carregando = false;
+        this.carregarEtapas();
       },
       error: () => {
         this.carregando = false;
@@ -639,7 +753,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   carregarItensPedido(numeroUnico: number) {
     this.separacaoService.getItensPedido(numeroUnico).subscribe({
-      next: (itens) => (this.dataSourcePedidos.data = itens),
+      next: (itens) => {
+        this.itensPedidoBrutos = itens;
+        this.aplicarFiltroCategoria();
+      },
     });
   }
 
@@ -829,7 +946,21 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   // acoes
+  // Ponto único de ação do botão "Confirmar Conferência". Em conferência parcial,
+  // a primeira pessoa a clicar apenas conclui a própria categoria (e volta pra fila);
+  // quem clicar por último (com as duas categorias completas) dispara a finalização real.
   finalizarConferencia() {
+    if (this.temConferenciaParcial && this.categoriaAtiva) {
+      const minhaEtapa = this.etapa(this.categoriaAtiva);
+      if (minhaEtapa?.status !== 'C') {
+        this.concluirEtapaEProsseguir(this.categoriaAtiva);
+        return;
+      }
+    }
+    this.finalizarConferenciaReal();
+  }
+
+  private finalizarConferenciaReal() {
     if (this.isVolumesSimplificadoFinal()) {
       this.abrirModalVolumesSimplificado();
       return;
@@ -1768,6 +1899,16 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     });
   }
 
+  imprimirMapaSeparacao(tipo: TipoEtapaConferencia) {
+    if (!this.numeroUnico) return;
+    // Aba aberta de forma síncrona no clique — a geração do PDF pode levar
+    // vários segundos e o navegador bloquearia um window.open() tardio.
+    const janela = window.open('', '_blank');
+    this.arquivoService.imprimirMapaSeparacao(this.numeroUnico, tipo, janela).subscribe({
+      error: (err) => console.error('Erro ao imprimir mapa de separação', err),
+    });
+  }
+
 getVolumeTooltip(v: VolumeFrontDTO): string {
     const base = `Vol. ${this.getDisplayNumeroVolume(v)}`;
     if (v.largura && v.comprimento && v.altura && v.peso) {
@@ -1882,6 +2023,10 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
   isVolumesNaoDetalhados(): boolean {
     return this.isVolumesSimplificadoTela() || this.isVolumesSimplificadoFinal();
+  }
+
+  exibirPendentes(): boolean {
+    return !this.dadosGerais?.exibirProd || this.dadosGerais!.exibirProd === 'S';
   }
 
   isPainelVolumesVisivel(): boolean {

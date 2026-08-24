@@ -42,6 +42,8 @@ export interface FilaConferenciaDTO {
 
   idUsuarioAlteracao: string;
   nomeUsuarioAlteracao: string;
+
+  etapas?: { tipo: TipoEtapaConferencia; status: 'P' | 'A' | 'C'; idUsuarioConclusao: number | null }[];
 }
 
 export interface PaginationFilter {
@@ -75,6 +77,7 @@ export interface DadosBasicosPedidoDTO {
   obterQtdBalanca?: 'B' | 'N' | 'S' | null;
   qtdAmaior?: 'C' | 'D' | null;
   fataoConcluir?: string | null;
+  exibirProd?: string | null;
   temCubagem?: boolean;
 
   idParceiro: number;
@@ -106,4 +109,20 @@ export interface FaturarNotaParams {
   nunota: number;
   codTipOper: number;
   serie?: string;
+}
+
+export type TipoEtapaConferencia = 'PESAVEL' | 'NAO_PESAVEL';
+
+export interface SessaoEtapaDTO {
+  tipo: TipoEtapaConferencia;
+  status: 'P' | 'A' | 'C';
+  idUsuarioInicio: number | null;
+  idUsuarioConclusao: number | null;
+  dtInicio: string | null;
+  dtConclusao: string | null;
+}
+
+export interface ConcluirEtapaParams {
+  numeroConferencia: number;
+  tipo: TipoEtapaConferencia;
 }
