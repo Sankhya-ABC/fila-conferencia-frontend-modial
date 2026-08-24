@@ -755,6 +755,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.separacaoService.getItensPedido(numeroUnico).subscribe({
       next: (itens) => {
         this.itensPedidoBrutos = itens;
+        this.definirCategoriaDisponivel();
         this.aplicarFiltroCategoria();
       },
     });
