@@ -685,7 +685,9 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
             conferidos.push({ ...item, quantidadePadrao: qtdConferida, quantidadeComercial: qtdComercialConferida });
             const restantePadrao = Number((item.quantidadePadrao - qtdConferida).toFixed(5));
             const restanteComercial = Number((item.quantidadeComercial - qtdComercialConferida).toFixed(5));
-            if (restantePadrao > 0) {
+            // Pesável: peso menor que o nominal é esperado (perda de água, aparas etc.)
+            // — uma vez pesado, não fica pendente mesmo que abaixo do nominal.
+            if (restantePadrao > 0 && !item.usaConfPeso) {
               pedidosAtualizados.push({ ...item, quantidadePadrao: restantePadrao, quantidadeComercial: restanteComercial });
             }
           } else {
