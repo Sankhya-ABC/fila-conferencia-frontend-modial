@@ -331,7 +331,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
             next: (etapas) => {
               this.etapas = etapas;
               if (etapas.every((e) => e.status === 'C')) {
-                this.finalizarConferenciaReal();
+                this.prosseguirParaFinalizacaoReal();
               } else {
                 this.mostrarToast(
                   `Etapa ${tipo === 'PESAVEL' ? 'pesável' : 'não pesável'} concluída. Aguardando a outra categoria.`,
@@ -902,6 +902,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.dataSourcePedidos.data.length === 0;
   }
 
+  // Total de itens pendentes no pedido inteiro (não filtrado por categoria) —
+  // usado no gate do envio real pro Sankhya e na mensagem do modal de corte.
+  get totalPendentesPedido(): number {
+    return this.itensPedidoBrutos.length;
+  }
+
   get todosItensNosVolumes(): boolean {
     const chave = (i: { idProduto: number; controle?: string }) =>
       `${i.idProduto}#${i.controle ?? ''}`;
@@ -947,20 +953,36 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   // Ponto único de ação do botão "Confirmar Conferência". Em conferência parcial,
   // a primeira pessoa a clicar apenas conclui a própria categoria (e volta pra fila);
   // quem clicar por último (com as duas categorias completas) dispara a finalização real.
+  // Alerta simples (não é o modal de corte) ao concluir a própria categoria
+  // com item faltando — avisa e deixa seguir, "dá baixa" mesmo incompleto.
+  mostrarAlertaCategoriaIncompleta = false;
+
   finalizarConferencia() {
     if (this.temConferenciaParcial && this.categoriaAtiva) {
       const minhaEtapa = this.etapa(this.categoriaAtiva);
       if (minhaEtapa?.status !== 'C') {
         const pendentesCategoria = this.categoriaAtiva === 'PESAVEL' ? this.pendentesPesavel : this.pendentesNaoPesavel;
         if (pendentesCategoria > 0) {
-          this.mostrarModalDivergencia = true;
+          this.mostrarAlertaCategoriaIncompleta = true;
           return;
         }
         this.concluirEtapaEProsseguir(this.categoriaAtiva);
         return;
       }
     }
-    if (!this.conferenciaFinalizada) {
+    this.prosseguirParaFinalizacaoReal();
+  }
+
+  // Confirma o alerta simples: conclui a categoria mesmo com item faltando.
+  confirmarCategoriaIncompleta() {
+    this.mostrarAlertaCategoriaIncompleta = false;
+    if (this.categoriaAtiva) this.concluirEtapaEProsseguir(this.categoriaAtiva, true);
+  }
+
+  // Ponto único do envio real pro Sankhya (não é conferência parcial, ou as
+  // duas categorias já foram concluídas): aqui sim cabe o modal de corte.
+  private prosseguirParaFinalizacaoReal() {
+    if (this.totalPendentesPedido > 0) {
       this.mostrarModalDivergencia = true;
       return;
     }
@@ -968,20 +990,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.finalizarConferenciaReal();
   }
 
-  // Chamado pelo modal de divergência: corta (finaliza só o conferido) ou
-  // finaliza mantendo os itens não conferidos pendentes no pedido. Em
-  // conferência parcial com categoria ainda não concluída, o mesmo choice
-  // vale pra concluir a etapa em aberto.
+  // Chamado pelo modal de divergência (só no envio final pro Sankhya): corta
+  // (finaliza só o conferido) ou finaliza mantendo os itens não conferidos
+  // pendentes no pedido.
   confirmarFinalizacaoDivergente(manterPendente: boolean) {
     this.mostrarModalDivergencia = false;
     this.manterPendenteFinalizacao = manterPendente;
-    if (this.temConferenciaParcial && this.categoriaAtiva) {
-      const minhaEtapa = this.etapa(this.categoriaAtiva);
-      if (minhaEtapa?.status !== 'C') {
-        this.concluirEtapaEProsseguir(this.categoriaAtiva, manterPendente);
-        return;
-      }
-    }
     this.finalizarConferenciaReal();
   }
 

@@ -23,12 +23,32 @@
   </div>
 </div>
 
-<!-- DIVERGÊNCIA NA FINALIZAÇÃO (itens não conferidos) -->
+<!-- ALERTA SIMPLES: categoria (pesável/não-pesável) incompleta ao concluir a própria parte -->
+<div class="cat-overlay" *ngIf="mostrarAlertaCategoriaIncompleta"></div>
+<div class="cat-modal" *ngIf="mostrarAlertaCategoriaIncompleta" role="dialog" aria-modal="true">
+  <h3>Ainda há item(ns) não conferido(s)</h3>
+  <p>
+    Esta categoria ({{ categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável' }}) tem
+    {{ categoriaAtiva === 'PESAVEL' ? pendentesPesavel : pendentesNaoPesavel }} item(ns) pendente(s).
+    Deseja concluir sua parte mesmo assim?
+  </p>
+  <div class="cat-opcoes">
+    <button type="button" class="cat-opcao" (click)="confirmarCategoriaIncompleta()">
+      <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
+      <strong>Concluir mesmo assim</strong>
+    </button>
+  </div>
+  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaCategoriaIncompleta = false">
+    Cancelar
+  </button>
+</div>
+
+<!-- DIVERGÊNCIA NO ENVIO REAL PRO SANKHYA (só depois das duas categorias concluídas) -->
 <div class="cat-overlay" *ngIf="mostrarModalDivergencia"></div>
 <div class="cat-modal" *ngIf="mostrarModalDivergencia" role="dialog" aria-modal="true">
   <h3>Conferência com divergência</h3>
   <p>
-    {{ dataSourcePedidos.data.length }} item(ns) do pedido não foram conferidos.
+    {{ totalPendentesPedido }} item(ns) do pedido não foram conferidos.
     Como deseja finalizar?
   </p>
   <div class="cat-opcoes">
