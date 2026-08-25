@@ -319,11 +319,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   // Conclui a etapa da categoria ativa e decide o que vem a seguir:
   // se a outra categoria já estava concluída, segue direto pra finalização real
   // (Sankhya); senão, avisa e volta pra fila — a outra pessoa continua depois.
-  private concluirEtapaEProsseguir(tipo: TipoEtapaConferencia) {
+  private concluirEtapaEProsseguir(tipo: TipoEtapaConferencia, manterPendente = false) {
     if (!this.dadosGerais?.numeroConferencia || !this.numeroUnico) return;
     this.concluindoEtapa = tipo;
     this.conferenciaService
-      .postConcluirEtapa({ numeroConferencia: this.dadosGerais.numeroConferencia, tipo })
+      .postConcluirEtapa({ numeroConferencia: this.dadosGerais.numeroConferencia, tipo, manterPendente })
       .subscribe({
         next: () => {
           this.concluindoEtapa = null;
@@ -951,6 +951,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     if (this.temConferenciaParcial && this.categoriaAtiva) {
       const minhaEtapa = this.etapa(this.categoriaAtiva);
       if (minhaEtapa?.status !== 'C') {
+        const pendentesCategoria = this.categoriaAtiva === 'PESAVEL' ? this.pendentesPesavel : this.pendentesNaoPesavel;
+        if (pendentesCategoria > 0) {
+          this.mostrarModalDivergencia = true;
+          return;
+        }
         this.concluirEtapaEProsseguir(this.categoriaAtiva);
         return;
       }
@@ -964,10 +969,19 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   // Chamado pelo modal de divergência: corta (finaliza só o conferido) ou
-  // finaliza mantendo os itens não conferidos pendentes no pedido.
+  // finaliza mantendo os itens não conferidos pendentes no pedido. Em
+  // conferência parcial com categoria ainda não concluída, o mesmo choice
+  // vale pra concluir a etapa em aberto.
   confirmarFinalizacaoDivergente(manterPendente: boolean) {
     this.mostrarModalDivergencia = false;
     this.manterPendenteFinalizacao = manterPendente;
+    if (this.temConferenciaParcial && this.categoriaAtiva) {
+      const minhaEtapa = this.etapa(this.categoriaAtiva);
+      if (minhaEtapa?.status !== 'C') {
+        this.concluirEtapaEProsseguir(this.categoriaAtiva, manterPendente);
+        return;
+      }
+    }
     this.finalizarConferenciaReal();
   }
 

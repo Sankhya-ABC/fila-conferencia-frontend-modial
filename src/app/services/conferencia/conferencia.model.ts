@@ -126,4 +126,5 @@ export interface SessaoEtapaDTO {
 export interface ConcluirEtapaParams {
   numeroConferencia: number;
   tipo: TipoEtapaConferencia;
+  manterPendente?: boolean;
 }
