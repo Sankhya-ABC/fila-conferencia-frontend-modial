@@ -267,13 +267,19 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const presentes = new Set<TipoEtapaConferencia>(
       this.itensPedidoBrutos.map((i) => (i.usaConfPeso ? 'PESAVEL' : 'NAO_PESAVEL')),
     );
+    // Categoria já concluída (dada baixa, mesmo com pendência) não volta a
+    // ser oferecida — os itens que sobraram lá são divergência resolvida no
+    // envio final, não trabalho a refazer.
     this.categoriasDisponiveis = (['NAO_PESAVEL', 'PESAVEL'] as TipoEtapaConferencia[])
-      .filter((t) => presentes.has(t));
+      .filter((t) => presentes.has(t) && this.etapa(t)?.status !== 'C');
 
     if (this.categoriasDisponiveis.length > 1 && !this.categoriaAtiva) {
       this.mostrarSelecaoCategoria = true;
+    } else if (this.categoriasDisponiveis.length === 0) {
+      this.mostrarSelecaoCategoria = false;
     } else if (this.categoriasDisponiveis.length === 1) {
       this.categoriaAtiva = this.categoriasDisponiveis[0];
+      this.mostrarSelecaoCategoria = false;
     }
   }
 
@@ -312,7 +318,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   carregarEtapas() {
     if (!this.temConferenciaParcial || !this.numeroUnico) return;
     this.conferenciaService.getEtapas(this.numeroUnico).subscribe({
-      next: (etapas) => (this.etapas = etapas),
+      next: (etapas) => {
+        this.etapas = etapas;
+        // Etapas chegam depois dos itens do pedido — recalcula a categoria
+        // disponível agora que dá pra saber quem já foi concluído.
+        this.definirCategoriaDisponivel();
+        this.aplicarFiltroCategoria();
+      },
     });
   }
 
