@@ -98,6 +98,7 @@ export interface PostIniciarConferenciaResponse {
 
 export interface PostFinalizarConferenciaParams {
   numeroConferencia: number;
+  manterPendente?: boolean;
 }
 
 export interface TopFaturamento {

@@ -243,6 +243,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   categoriasDisponiveis: TipoEtapaConferencia[] = [];
   mostrarSelecaoCategoria = false;
 
+  // Divergência na finalização (itens do pedido não conferidos)
+  mostrarModalDivergencia = false;
+  private manterPendenteFinalizacao = false;
+
   get temConferenciaParcial(): boolean {
     return this.authService.hasModulo('CONFERENCIA_PARCIAL');
   }
@@ -899,8 +903,6 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   get todosItensNosVolumes(): boolean {
-    if (!this.conferenciaFinalizada) return false;
-
     const chave = (i: { idProduto: number; controle?: string }) =>
       `${i.idProduto}#${i.controle ?? ''}`;
 
@@ -931,18 +933,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   }
 
   get podeConfirmarConferencia(): boolean {
-    if (!this.conferenciaFinalizada) return false;
-
+    // Botão nunca fica bloqueado por item não conferido — divergência é
+    // resolvida no modal (corte ou finalizar pendente). Modo detalhado ainda
+    // exige consistência entre o que foi conferido e o que está nos volumes.
     if (this.isVolumesDetalhados()) {
       return this.todosItensNosVolumes && this.todosVolumesComDimensoes;
-    }
-
-    if (this.isVolumesSimplificadoTela()) {
-      return true;
-    }
-
-    if (this.isVolumesSimplificadoFinal()) {
-      return true;
     }
 
     return true;
@@ -960,6 +955,19 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         return;
       }
     }
+    if (!this.conferenciaFinalizada) {
+      this.mostrarModalDivergencia = true;
+      return;
+    }
+    this.manterPendenteFinalizacao = false;
+    this.finalizarConferenciaReal();
+  }
+
+  // Chamado pelo modal de divergência: corta (finaliza só o conferido) ou
+  // finaliza mantendo os itens não conferidos pendentes no pedido.
+  confirmarFinalizacaoDivergente(manterPendente: boolean) {
+    this.mostrarModalDivergencia = false;
+    this.manterPendenteFinalizacao = manterPendente;
     this.finalizarConferenciaReal();
   }
 
@@ -972,6 +980,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.conferenciaService
       .postFinalizarConferencia({
         numeroConferencia: this.dadosGerais!.numeroConferencia!,
+        manterPendente: this.manterPendenteFinalizacao,
       })
       .subscribe({
         next: () => this.posFinalizarConferencia(),
@@ -982,6 +991,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.conferenciaService
       .postFinalizarConferencia({
         numeroConferencia: this.dadosGerais!.numeroConferencia!,
+        manterPendente: this.manterPendenteFinalizacao,
       })
       .subscribe({
         next: () => this.posFinalizarConferencia(),

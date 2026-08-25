@@ -23,6 +23,31 @@
   </div>
 </div>
 
+<!-- DIVERGÊNCIA NA FINALIZAÇÃO (itens não conferidos) -->
+<div class="cat-overlay" *ngIf="mostrarModalDivergencia"></div>
+<div class="cat-modal" *ngIf="mostrarModalDivergencia" role="dialog" aria-modal="true">
+  <h3>Conferência com divergência</h3>
+  <p>
+    {{ dataSourcePedidos.data.length }} item(ns) do pedido não foram conferidos.
+    Como deseja finalizar?
+  </p>
+  <div class="cat-opcoes">
+    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoDivergente(false)">
+      <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+      <strong>Executar corte</strong>
+      <span>Encerra o pedido só com o que foi conferido</span>
+    </button>
+    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoDivergente(true)">
+      <mat-icon fontSet="material-symbols-outlined">pending_actions</mat-icon>
+      <strong>Finalizar pendente</strong>
+      <span>Mantém os itens não conferidos em aberto no pedido</span>
+    </button>
+  </div>
+  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarModalDivergencia = false">
+    Cancelar
+  </button>
+</div>
+
 <!-- TELA DE PREPARAÇÃO -->
 <div class="preparando-sessao" *ngIf="preparandoSessao">
   <app-robo-loader></app-robo-loader>
