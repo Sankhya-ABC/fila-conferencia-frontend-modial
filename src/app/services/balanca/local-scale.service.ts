@@ -163,7 +163,12 @@ export class LocalScaleService {
     if (this.wsConectando) return;
     this.wsConectando = true;
 
-    const socket = new WebSocket(`ws://localhost:${LocalScaleService.AGENT_WS_PORT}`);
+    // Usa 127.0.0.1 (não "localhost") propositalmente: em algumas máquinas Windows
+    // "localhost" resolve para ::1 (IPv6) primeiro, e o WebSocket não faz fallback
+    // automático para IPv4 como o fetch faz — se o agente não conseguiu abrir o
+    // listener IPv6 (ver wsServer.js), a conexão falha mesmo com o agente rodando.
+    // IPv4 é o que o agente sempre garante — então conectamos direto nele.
+    const socket = new WebSocket(`ws://127.0.0.1:${LocalScaleService.AGENT_WS_PORT}`);
     this.ws = socket;
 
     socket.onopen = () => {
