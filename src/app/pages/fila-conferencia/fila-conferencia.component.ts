@@ -210,6 +210,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
       idEmpresa: [],
       codigoTipoOperacao: [],
       codigoTipoEntrega: [],
+      ordemCarga: [],
     });
   }
 
@@ -244,6 +245,7 @@ export class FilaConferenciaComponent implements OnInit, OnDestroy {
     if (v.codigoTipoMovimento?.length) count++;
     if (v.codigoTipoOperacao?.length) count++;
     if (v.codigoTipoEntrega?.length) count++;
+    if (v.ordemCarga) count++;
     return count;
   }
 

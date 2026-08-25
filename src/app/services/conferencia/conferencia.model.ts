@@ -8,6 +8,7 @@ export interface FilaConferenciaDTO {
   modial?: number | string;
   AD_TIPOENTREGA?: string;
   apelidoVendedor?: string;
+  ordemCarga?: number | null;
   numeroConferencia: number;
 
   valorNota: string;
@@ -62,6 +63,7 @@ export interface FilaConferenciaFilter extends PaginationFilter {
   codigoTipoMovimento?: string;
   codigoTipoOperacao?: string;
   codigoTipoEntrega?: string;
+  ordemCarga?: string;
 }
 
 export interface DadosBasicosPedidoDTO {

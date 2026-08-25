@@ -56,6 +56,10 @@
             <mat-label>Nº Único</mat-label>
             <input matInput formControlName="numeroUnico" />
           </mat-form-field>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Ordem de Carga</mat-label>
+            <input matInput formControlName="ordemCarga" />
+          </mat-form-field>
         </div>
 
         <div class="filtro-divider"></div>
@@ -305,6 +309,10 @@
       <div class="card-dado">
         <span class="card-dado-label">Vendedor</span>
         <span class="card-dado-valor">{{ item.apelidoVendedor || item.nomeVendedor || '—' }}</span>
+      </div>
+      <div class="card-dado" *ngIf="item.ordemCarga">
+        <span class="card-dado-label">Ordem de Carga</span>
+        <span class="card-dado-valor">{{ item.ordemCarga }}</span>
       </div>
     </div>
 
