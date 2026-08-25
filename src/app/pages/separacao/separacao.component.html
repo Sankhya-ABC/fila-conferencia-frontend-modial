@@ -43,6 +43,25 @@
   </button>
 </div>
 
+<!-- EXCESSO: item conferido a mais do que o pedido -->
+<div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
+<div class="cat-modal" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
+  <h3>Quantidade conferida a mais</h3>
+  <p>
+    Um ou mais itens foram conferidos com quantidade maior que a do pedido.
+    Ao confirmar, será feito o corte pra corrigir a quantidade no Sankhya.
+  </p>
+  <div class="cat-opcoes">
+    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoComExcesso()">
+      <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
+      <strong>Confirmar e finalizar</strong>
+    </button>
+  </div>
+  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaExcesso = false">
+    Cancelar
+  </button>
+</div>
+
 <!-- DIVERGÊNCIA NO ENVIO REAL PRO SANKHYA (só depois das duas categorias concluídas) -->
 <div class="cat-overlay" *ngIf="mostrarModalDivergencia"></div>
 <div class="cat-modal" *ngIf="mostrarModalDivergencia" role="dialog" aria-modal="true">

@@ -247,6 +247,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   mostrarModalDivergencia = false;
   private manterPendenteFinalizacao = false;
 
+  // Excesso: item conferido a mais do que o pedido pede — precisa de corte
+  // no Sankhya mesmo com tudo "completo" (sem faltar nada).
+  temItemExcedente = false;
+  mostrarAlertaExcesso = false;
+
   get temConferenciaParcial(): boolean {
     return this.authService.hasModulo('CONFERENCIA_PARCIAL');
   }
@@ -718,6 +723,17 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           }
         });
 
+        // Excesso: depois de distribuir o conferido entre todas as linhas do
+        // pedido pra essa chave, ainda sobrou quantidade lida — foi conferido
+        // a mais do que o pedido pede. Isso precisa de corte no Sankhya
+        // mesmo sem nenhum item faltando.
+        let temExcesso = false;
+        totalConferidos.forEach((total, k) => {
+          const usado = distribuido.get(k) || 0;
+          if (total - usado > 0.0001) temExcesso = true;
+        });
+        this.temItemExcedente = temExcesso;
+
         this.itensPedidoBrutos = pedidosAtualizados;
         this.itensConferidosBrutos = conferidos;
         this.definirCategoriaDisponivel();
@@ -998,6 +1014,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       this.mostrarModalDivergencia = true;
       return;
     }
+    // Nada faltando, mas tem item conferido a mais que o pedido — avisa que
+    // vai rodar o corte pra corrigir a quantidade no Sankhya.
+    if (this.temItemExcedente) {
+      this.mostrarAlertaExcesso = true;
+      return;
+    }
     this.manterPendenteFinalizacao = false;
     this.finalizarConferenciaReal();
   }
@@ -1008,6 +1030,14 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   confirmarFinalizacaoDivergente(manterPendente: boolean) {
     this.mostrarModalDivergencia = false;
     this.manterPendenteFinalizacao = manterPendente;
+    this.finalizarConferenciaReal();
+  }
+
+  // Confirma o alerta de excesso: sempre corta (manterPendente=false) — é o
+  // corte que corrige a quantidade pra cima no Sankhya.
+  confirmarFinalizacaoComExcesso() {
+    this.mostrarAlertaExcesso = false;
+    this.manterPendenteFinalizacao = false;
     this.finalizarConferenciaReal();
   }
 
