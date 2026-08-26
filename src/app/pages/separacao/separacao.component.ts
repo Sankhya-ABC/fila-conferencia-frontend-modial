@@ -679,8 +679,19 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       volumes: this.volumeService.getVolumes(numeroConferencia),
     }).subscribe({
       next: ({ itensPedido, itensConferidos, volumes }) => {
+        // Lote livre (tipControle='L'): o pedido não tem o lote (controle em
+        // branco), mas a leitura registra o lote real digitado — batendo só
+        // por idProduto+controle o conferido nunca casa com o pedido, e o
+        // item fica "pendente" pra sempre mesmo 100% conferido. Agrupa só por
+        // produto nesse caso.
+        const tipoControlePorProduto = new Map<number, string | null | undefined>();
+        itensPedido.forEach((item) => {
+          if (!tipoControlePorProduto.has(item.idProduto)) tipoControlePorProduto.set(item.idProduto, item.tipControle);
+        });
         const chave = (i: { idProduto: number; controle?: string }) =>
-          `${i.idProduto}#${i.controle ?? ''}`;
+          tipoControlePorProduto.get(i.idProduto) === 'L'
+            ? `${i.idProduto}#L`
+            : `${i.idProduto}#${i.controle ?? ''}`;
 
         // Total conferido por chave (idProduto+controle), vindo das leituras locais
         const totalConferidos = new Map<string, number>();
