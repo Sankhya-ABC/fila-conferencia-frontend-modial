@@ -765,6 +765,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           }
         });
 
+        // Pesável nunca é divergência: peso variar do nominal (pra cima ou
+        // pra baixo) é esperado, e o corte dele é automático/silencioso no
+        // backend — não entra no alerta de excesso nem no badge.
+        const chavesPesavel = new Set<string>(
+          itensPedido.filter((i) => i.usaConfPeso).map((i) => chave(i)),
+        );
+
         // Excesso: depois de distribuir o conferido entre todas as linhas do
         // pedido pra essa chave, ainda sobrou quantidade lida — foi conferido
         // a mais do que o pedido pede. Isso precisa de corte no Sankhya
@@ -772,6 +779,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         let temExcesso = false;
         const chavesComExcesso = new Map<string, number>();
         totalConferidos.forEach((total, k) => {
+          if (chavesPesavel.has(k)) return;
           const usado = distribuido.get(k) || 0;
           const excesso = Number((total - usado).toFixed(5));
           if (excesso > 0.0001) {
@@ -1869,7 +1877,9 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const restanteAntes = pendenteAtual?.quantidadePadrao ?? 0;
     const qtdCapada = Math.min(quantidadePadrao, restanteAntes);
     const qtdExcesso = Number((quantidadePadrao - qtdCapada).toFixed(5));
-    if (qtdExcesso > 0.0001) {
+    // Pesável nunca é divergência (peso variar do nominal é esperado) — o
+    // corte dele roda automático e silencioso no backend, sem alerta aqui.
+    if (qtdExcesso > 0.0001 && !item.usaConfPeso) {
       this.temItemExcedente = true;
       const acumulado = this.itensExcedentesChaves.get(k) ?? 0;
       this.itensExcedentesChaves.set(k, Number((acumulado + qtdExcesso).toFixed(5)));
