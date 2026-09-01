@@ -26,7 +26,7 @@
 <!-- ALERTA SIMPLES: categoria (pesável/não-pesável) incompleta ao concluir a própria parte -->
 <div class="cat-overlay" *ngIf="mostrarAlertaCategoriaIncompleta"></div>
 <div class="cat-modal" *ngIf="mostrarAlertaCategoriaIncompleta" role="dialog" aria-modal="true">
-  <h3>Ainda há item pendente</h3>
+  <h3>Ainda há item divergente</h3>
   <p>{{ textoCategoriaIncompleta }}</p>
   <div class="cat-acoes-linha">
     <button type="button" class="es-btn es-btn--ghost" (click)="mostrarAlertaCategoriaIncompleta = false">

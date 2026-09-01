@@ -270,10 +270,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   // Texto do alerta de categoria incompleta com plural correto — "1 item(ns)
   // pendente(s)" lia estranho pro caso mais comum (exatamente 1 item).
+  // "Divergente", não "pendente": concluir aqui não deixa o item em aberto
+  // pra depois — ele vira corte/divergência resolvida no envio final.
   get textoCategoriaIncompleta(): string {
     const nome = this.categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável';
     const n = this.categoriaAtiva === 'PESAVEL' ? this.pendentesPesavel : this.pendentesNaoPesavel;
-    const item = n === 1 ? 'item pendente' : 'itens pendentes';
+    const item = n === 1 ? 'item divergente' : 'itens divergentes';
     return `Esta categoria (${nome}) tem ${n} ${item}. Deseja concluir sua parte mesmo assim?`;
   }
 
