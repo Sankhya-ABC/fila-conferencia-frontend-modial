@@ -2068,8 +2068,12 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     return v.numeroVolume;
   }
 
-  trackByItem(_: number, i: ItemPedidoDTO): number {
-    return i.idProduto;
+  trackByItem(_: number, i: ItemPedidoDTO): string {
+    // idProduto sozinho não é único: o mesmo produto pode ter várias linhas
+    // (lotes/controles diferentes) na mesma lista. Com só idProduto, o
+    // Angular trata linhas de lotes distintos como "a mesma" e embaralha o
+    // DOM ao remover uma delas — parecia reverter todas ao desfazer uma só.
+    return this.chaveItem(i);
   }
 
   expandirVolume(volume: VolumeFrontDTO) {
