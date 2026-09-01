@@ -1011,11 +1011,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     this.finalizarConferenciaReal();
   }
 
-  // Confirma o alerta de excesso: sempre corta (manterPendente=false) — é o
-  // corte que corrige a quantidade pra cima no Sankhya.
-  confirmarFinalizacaoComExcesso() {
+  // Confirma o alerta de excesso: corta (ajusta a quantidade pra cima no
+  // Sankhya) ou finaliza divergente (mantém o registrado, sem corrigir —
+  // fica como "Finalizada divergente" no Sankhya). Mesma escolha do modal
+  // de item faltando, só que pro caso de sobra.
+  confirmarFinalizacaoComExcesso(manterPendente: boolean) {
     this.mostrarAlertaExcesso = false;
-    this.manterPendenteFinalizacao = false;
+    this.manterPendenteFinalizacao = manterPendente;
     this.finalizarConferenciaReal();
   }
 
