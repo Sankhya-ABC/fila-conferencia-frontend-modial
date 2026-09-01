@@ -282,8 +282,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   private definirCategoriaDisponivel() {
     if (!this.temConferenciaParcial) return;
 
+    // Precisa olhar pendentes E conferidos: um item 100% conferido (ou
+    // conferido a mais, cobrindo o pedido inteiro) some de itensPedidoBrutos.
+    // Se ele era o único item da categoria, ela ficava "ausente" aqui mesmo
+    // com a etapa ainda pendente — categoriaAtiva nunca era definida e
+    // aplicarFiltroCategoria() zerava as duas listas (Pendentes e Conferidos).
     const presentes = new Set<TipoEtapaConferencia>(
-      this.itensPedidoBrutos.map((i) => (i.usaConfPeso ? 'PESAVEL' : 'NAO_PESAVEL')),
+      [...this.itensPedidoBrutos, ...this.itensConferidosBrutos].map((i) => (i.usaConfPeso ? 'PESAVEL' : 'NAO_PESAVEL')),
     );
     // Categoria já concluída (dada baixa, mesmo com pendência) não volta a
     // ser oferecida — os itens que sobraram lá são divergência resolvida no
