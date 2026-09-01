@@ -2352,11 +2352,19 @@ kbd {
 }
 
 .cat-modal-icon {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto 8px;
   font-size: 32px;
+  line-height: 1;
   width: 32px;
   height: 32px;
+  overflow: hidden;
+  // Material Symbols é fonte variável — sem fixar os eixos, o glyph pode
+  // renderizar num "peso"/tamanho óptico diferente do previsto e vazar da
+  // caixa. Trava nos valores padrão (mesmos do Material Icons clássico).
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 32;
 
   &--excesso { color: #d97706; }
 }
@@ -2392,7 +2400,18 @@ kbd {
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 
-  mat-icon { font-size: 28px; width: 28px; height: 28px; line-height: 28px; flex-shrink: 0; }
+  mat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    overflow: hidden;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 28;
+  }
   strong { font-size: 14px; line-height: 1.3; max-width: 100%; }
   span {
     font-size: 12px;
