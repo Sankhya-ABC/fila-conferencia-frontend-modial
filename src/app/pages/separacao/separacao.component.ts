@@ -320,6 +320,17 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       this.dataSourceConferidos.data = this.itensConferidosBrutos;
       return;
     }
+    // Nenhuma categoria disponível pra trabalhar (todas já concluídas, ou a
+    // nota só tinha uma categoria e ela já fechou) — não há mais o que
+    // escolher, então mostra tudo sem filtro. Sem isso a tela zerava as
+    // duas listas (Pendentes e Conferidos) ao reabrir uma nota com as duas
+    // etapas 'C' mas a conferência ainda não finalizada de verdade (ex.:
+    // usuário cancelou o pop-up final de corte/divergência).
+    if (this.categoriasDisponiveis.length === 0) {
+      this.dataSourcePedidos.data = this.itensPedidoBrutos;
+      this.dataSourceConferidos.data = this.itensConferidosBrutos;
+      return;
+    }
     if (this.mostrarSelecaoCategoria || !this.categoriaAtiva) {
       // Categoria ainda não escolhida — não expõe itens de nenhuma categoria
       this.dataSourcePedidos.data = [];
