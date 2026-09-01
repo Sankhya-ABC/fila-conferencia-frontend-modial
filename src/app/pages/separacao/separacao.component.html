@@ -520,7 +520,7 @@
                 *ngIf="isItemExcedente(item)"
                 matTooltip="Conferido a mais do que o pedido pede">
             <mat-icon>error_outline</mat-icon>
-            Divergente
+            Divergente: +{{ qtdExcedente(item) | number:'1.0-3':'pt-BR' }} {{ item.unidadePadrao }}
           </span>
           <span class="item-volume-badge"
                 *ngIf="isVolumesDetalhados() && getVolumeDoItem(item)">

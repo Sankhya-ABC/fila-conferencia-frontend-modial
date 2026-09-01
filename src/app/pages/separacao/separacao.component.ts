@@ -230,8 +230,9 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
   // Chaves (idProduto#controle) com quantidade conferida acima do pedido —
-  // usado pra marcar visualmente a linha na lista de Conferidos.
-  itensExcedentesChaves = new Set<string>();
+  // usado pra marcar visualmente a linha na lista de Conferidos, com o
+  // quanto ficou acima (não só o booleano de que houve excesso).
+  itensExcedentesChaves = new Map<string, number>();
   private itensDoProdutoAtual: ItemPedidoDTO[] = [];
 
   // Conferência parcial (etapas pesável / não-pesável) — só ativo por tenant via módulo
@@ -742,20 +743,24 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         // a mais do que o pedido pede. Isso precisa de corte no Sankhya
         // mesmo sem nenhum item faltando.
         let temExcesso = false;
-        const chavesComExcesso = new Set<string>();
+        const chavesComExcesso = new Map<string, number>();
         totalConferidos.forEach((total, k) => {
           const usado = distribuido.get(k) || 0;
-          if (total - usado > 0.0001) {
+          const excesso = Number((total - usado).toFixed(5));
+          if (excesso > 0.0001) {
             temExcesso = true;
-            chavesComExcesso.add(k);
+            chavesComExcesso.set(k, excesso);
           }
         });
         this.temItemExcedente = temExcesso;
-        // Marca (pra exibir indicador na lista) todas as linhas de Conferidos
-        // que pertencem a uma chave com sobra — a leitura excedente não vira
-        // linha própria, então sinalizamos o grupo inteiro.
-        this.itensExcedentesChaves = new Set(
-          conferidos.filter((item) => chavesComExcesso.has(chave(item))).map((item) => this.chaveItem(item)),
+        // Marca (pra exibir indicador na lista, com a quantidade) todas as
+        // linhas de Conferidos que pertencem a uma chave com sobra — a
+        // leitura excedente não vira linha própria, então sinalizamos o
+        // grupo inteiro com o total que passou do pedido.
+        this.itensExcedentesChaves = new Map(
+          conferidos
+            .filter((item) => chavesComExcesso.has(chave(item)))
+            .map((item) => [this.chaveItem(item), chavesComExcesso.get(chave(item))!] as [string, number]),
         );
 
         this.itensPedidoBrutos = pedidosAtualizados;
@@ -1280,6 +1285,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
   isItemExcedente(item: ItemPedidoDTO): boolean {
     return this.itensExcedentesChaves.has(this.chaveItem(item));
+  }
+
+  qtdExcedente(item: ItemPedidoDTO): number {
+    return this.itensExcedentesChaves.get(this.chaveItem(item)) ?? 0;
   }
 
   private playSound(tipo: 'ok' | 'erro' | 'atencao' | 'invalido' | 'finalizado') {
@@ -1896,7 +1905,8 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const qtdExcesso = Number((quantidadePadrao - qtdCapada).toFixed(5));
     if (qtdExcesso > 0.0001) {
       this.temItemExcedente = true;
-      this.itensExcedentesChaves.add(k);
+      const acumulado = this.itensExcedentesChaves.get(k) ?? 0;
+      this.itensExcedentesChaves.set(k, Number((acumulado + qtdExcesso).toFixed(5)));
     }
 
     const qtdComercialConferida = Number((qtdCapada * fator).toFixed(5));
