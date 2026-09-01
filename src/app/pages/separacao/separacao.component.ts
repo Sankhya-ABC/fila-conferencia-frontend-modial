@@ -1908,6 +1908,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         if (chavePendente(i) !== kPendente) return i;
         if (pendenteTocado) return i; // reduz apenas o primeiro match (evita reduzir linhas duplicadas)
         pendenteTocado = true;
+        // Pesável: peso menor que o nominal é esperado (perda de água, aparas
+        // etc.) — uma vez pesado, não fica pendente mesmo que abaixo do
+        // nominal. Mesma exceção aplicada no recarregamento do servidor
+        // (carregarItensPedido); sem ela o item pesável "trava" como pendente
+        // aqui e o modal de divergência/corte dispara mesmo com tudo certo.
+        if (i.usaConfPeso) return null;
         const restante = Number((i.quantidadePadrao - quantidadePadrao).toFixed(5));
         const restanteComercial = Number((i.quantidadeComercial - qtdComercialConferida).toFixed(5));
         return restante > 0 ? { ...i, quantidadePadrao: restante, quantidadeComercial: restanteComercial } : null;
