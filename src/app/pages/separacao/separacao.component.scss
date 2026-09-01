@@ -2351,6 +2351,16 @@ kbd {
   p { color: var(--color-text-secondary); font-size: 13px; margin-bottom: 20px; }
 }
 
+.cat-modal-icon {
+  display: block;
+  margin: 0 auto 8px;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+
+  &--excesso { color: #d97706; }
+}
+
 .cat-opcoes {
   display: flex;
   gap: 12px;
@@ -2396,6 +2406,19 @@ kbd {
   &:hover {
     border-color: var(--color-primary, #1976d2);
     background: rgba(25, 118, 210, 0.06);
+  }
+
+  // Corte/positivo: ícone na cor primária. Divergente/atenção: ícone âmbar,
+  // hover com o mesmo acento — reforça visualmente a diferença entre as
+  // duas saídas antes mesmo de ler o texto do botão.
+  &--corte mat-icon { color: var(--color-primary, #1976d2); }
+
+  &--divergente {
+    mat-icon { color: #d97706; }
+    &:hover {
+      border-color: #d97706;
+      background: rgba(217, 119, 6, 0.06);
+    }
   }
 }
 

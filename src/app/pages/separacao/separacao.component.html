@@ -42,16 +42,17 @@
 <!-- EXCESSO: item conferido a mais do que o pedido -->
 <div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
 <div class="cat-modal" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
+  <mat-icon class="cat-modal-icon cat-modal-icon--excesso" fontSet="material-symbols-outlined">error_outline</mat-icon>
   <h3>Quantidade conferida a mais</h3>
   <p>Um ou mais itens foram conferidos com quantidade maior que a do pedido. Como deseja finalizar?</p>
   <div class="cat-opcoes">
-    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoComExcesso(false)">
+    <button type="button" class="cat-opcao cat-opcao--corte" (click)="confirmarFinalizacaoComExcesso(false)">
       <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
       <strong>Executar corte</strong>
       <span>Corrige a quantidade a mais no Sankhya</span>
     </button>
-    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoComExcesso(true)">
-      <mat-icon fontSet="material-symbols-outlined">report</mat-icon>
+    <button type="button" class="cat-opcao cat-opcao--divergente" (click)="confirmarFinalizacaoComExcesso(true)">
+      <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
       <strong>Finalizar divergente</strong>
       <span>Mantém a quantidade lida, sem corrigir no Sankhya</span>
     </button>
