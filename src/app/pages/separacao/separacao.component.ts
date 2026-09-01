@@ -1852,7 +1852,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     // pra maior): conta pro alerta de corte, mas não infla a linha do conferido
     // além do que o pedido pede (senão o estado local diverge do que o servidor
     // recalcula, e o "Desfazer" some sincronizado com um valor que nunca existiu ali).
-    const pendenteAtual = this.dataSourcePedidos.data.find((i) => chavePendente(i) === kPendente);
+    const pendenteAtual = this.itensPedidoBrutos.find((i) => chavePendente(i) === kPendente);
     const restanteAntes = pendenteAtual?.quantidadePadrao ?? 0;
     const qtdCapada = Math.min(quantidadePadrao, restanteAntes);
     const qtdExcesso = Number((quantidadePadrao - qtdCapada).toFixed(5));
@@ -1864,18 +1864,23 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
 
     const qtdComercialConferida = Number((qtdCapada * fator).toFixed(5));
 
-    // Remove ou reduz o item dos pendentes
+    // Remove ou reduz o item dos pendentes — atualiza itensPedidoBrutos (fonte
+    // completa, não filtrada por categoria), não dataSourcePedidos.data. Os
+    // getters pendentesPesavel/pendentesNaoPesavel (usados pelo alerta de
+    // categoria incompleta) leem de itensPedidoBrutos; atualizar só a lista
+    // filtrada deixava a tela parecendo 100% conferida enquanto o contador
+    // interno continuava com os itens antigos, disparando o alerta à toa.
     let pendenteTocado = false;
-    const pedidosAtualizados = this.dataSourcePedidos.data
+    const pedidosAtualizados = this.itensPedidoBrutos
       .map((i) => {
         if (chavePendente(i) !== kPendente) return i;
         if (pendenteTocado) return i; // reduz apenas o primeiro match (evita reduzir linhas duplicadas)
         pendenteTocado = true;
         // Pesável: peso menor que o nominal é esperado (perda de água, aparas
         // etc.) — uma vez pesado, não fica pendente mesmo que abaixo do
-        // nominal. Mesma exceção aplicada no recarregamento do servidor
-        // (carregarItensPedido); sem ela o item pesável "trava" como pendente
-        // aqui e o modal de divergência/corte dispara mesmo com tudo certo.
+        // nominal. Mesma exceção aplicada no recarregamento do servidor;
+        // sem ela o item pesável "trava" como pendente aqui e o modal de
+        // divergência/corte dispara mesmo com tudo certo.
         if (i.usaConfPeso) return null;
         const restante = Number((i.quantidadePadrao - quantidadePadrao).toFixed(5));
         const restanteComercial = Number((i.quantidadeComercial - qtdComercialConferida).toFixed(5));
@@ -1883,23 +1888,26 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       })
       .filter((i): i is ItemPedidoDTO => i !== null);
 
-    // Acumula no conferidos (sempre por idProduto+controle digitado)
-    const existente = this.dataSourceConferidos.data.find((i) => chave(i) === k);
+    // Acumula no conferidos (sempre por idProduto+controle digitado) — idem,
+    // em itensConferidosBrutos.
+    const existente = this.itensConferidosBrutos.find((i) => chave(i) === k);
     const conferidos = existente
-      ? this.dataSourceConferidos.data.map((i) =>
+      ? this.itensConferidosBrutos.map((i) =>
           chave(i) === k
             ? { ...i, quantidadePadrao: i.quantidadePadrao + qtdCapada, quantidadeComercial: i.quantidadeComercial + qtdComercialConferida }
             : i,
         )
-      : [...this.dataSourceConferidos.data, { ...item, quantidadePadrao: qtdCapada, quantidadeComercial: qtdComercialConferida }];
+      : [...this.itensConferidosBrutos, { ...item, quantidadePadrao: qtdCapada, quantidadeComercial: qtdComercialConferida }];
 
     // Rastrear parciais: se o item ainda restou, é conferido parcial
     if (pedidosAtualizados.some(i => chavePendente(i) === kPendente)) {
       this.itensParciaisChaves.add(k);
     }
 
-    this.dataSourcePedidos.data = pedidosAtualizados;
-    this.dataSourceConferidos.data = conferidos;
+    this.itensPedidoBrutos = pedidosAtualizados;
+    this.itensConferidosBrutos = conferidos;
+    this.definirCategoriaDisponivel();
+    this.aplicarFiltroCategoria();
 
     if (this.isVolumesDetalhados()) {
       this.adicionarItemAoVolume(item, quantidadePadrao);
