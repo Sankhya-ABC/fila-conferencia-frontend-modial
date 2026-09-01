@@ -450,7 +450,6 @@
 }
 
 .card-etapa-chip {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -468,15 +467,6 @@
   &--ok {
     background: rgba(76, 175, 80, 0.15);
     color: #2e7d32;
-  }
-
-  // Categoria não se aplica a este pedido (ou sessão ainda não iniciada) —
-  // mantém o espaço ocupado, mas sem sugerir pendência real.
-  &--na {
-    background: none;
-    border: 1px dashed var(--color-border);
-    color: var(--color-text-secondary);
-    opacity: 0.5;
   }
 }
 

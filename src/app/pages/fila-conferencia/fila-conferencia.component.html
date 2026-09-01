@@ -259,18 +259,18 @@
     </div>
 
     <!-- CHECKLIST DA CONFERÊNCIA PARCIAL (pesável / não-pesável) -->
-    <!-- Sempre mostra os dois chips (mesmo quando a categoria não se aplica a este
-         pedido) pra manter o card visualmente equilibrado — sem buraco na grade. -->
+    <!-- Só mostra o chip da categoria que existe de fato no pedido — nem toda
+         nota tem os dois tipos de item. -->
     <div class="card-etapas" *ngIf="temConferenciaParcial">
       <span class="card-etapa-chip"
-            [class.card-etapa-chip--ok]="etapaStatus(item, 'NAO_PESAVEL') === 'CONCLUIDA'"
-            [class.card-etapa-chip--na]="etapaStatus(item, 'NAO_PESAVEL') === 'NAO_APLICAVEL'">
+            *ngIf="etapaStatus(item, 'NAO_PESAVEL') !== 'NAO_APLICAVEL'"
+            [class.card-etapa-chip--ok]="etapaStatus(item, 'NAO_PESAVEL') === 'CONCLUIDA'">
         <mat-icon fontSet="material-symbols-outlined">{{ etapaStatus(item, 'NAO_PESAVEL') === 'CONCLUIDA' ? 'check_circle' : 'inventory_2' }}</mat-icon>
         Não pesável
       </span>
       <span class="card-etapa-chip"
-            [class.card-etapa-chip--ok]="etapaStatus(item, 'PESAVEL') === 'CONCLUIDA'"
-            [class.card-etapa-chip--na]="etapaStatus(item, 'PESAVEL') === 'NAO_APLICAVEL'">
+            *ngIf="etapaStatus(item, 'PESAVEL') !== 'NAO_APLICAVEL'"
+            [class.card-etapa-chip--ok]="etapaStatus(item, 'PESAVEL') === 'CONCLUIDA'">
         <mat-icon fontSet="material-symbols-outlined">{{ etapaStatus(item, 'PESAVEL') === 'CONCLUIDA' ? 'check_circle' : 'scale' }}</mat-icon>
         Pesável
       </span>
