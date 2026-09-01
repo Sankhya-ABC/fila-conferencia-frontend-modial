@@ -26,21 +26,17 @@
 <!-- ALERTA SIMPLES: categoria (pesável/não-pesável) incompleta ao concluir a própria parte -->
 <div class="cat-overlay" *ngIf="mostrarAlertaCategoriaIncompleta"></div>
 <div class="cat-modal" *ngIf="mostrarAlertaCategoriaIncompleta" role="dialog" aria-modal="true">
-  <h3>Ainda há item(ns) não conferido(s)</h3>
-  <p>
-    Esta categoria ({{ categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável' }}) tem
-    {{ categoriaAtiva === 'PESAVEL' ? pendentesPesavel : pendentesNaoPesavel }} item(ns) pendente(s).
-    Deseja concluir sua parte mesmo assim?
-  </p>
-  <div class="cat-opcoes">
-    <button type="button" class="cat-opcao" (click)="confirmarCategoriaIncompleta()">
+  <h3>Ainda há item pendente</h3>
+  <p>{{ textoCategoriaIncompleta }}</p>
+  <div class="cat-acoes-linha">
+    <button type="button" class="es-btn es-btn--ghost" (click)="mostrarAlertaCategoriaIncompleta = false">
+      Cancelar
+    </button>
+    <button type="button" class="es-btn es-btn--primary" (click)="confirmarCategoriaIncompleta()">
       <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
-      <strong>Concluir mesmo assim</strong>
+      Concluir mesmo assim
     </button>
   </div>
-  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaCategoriaIncompleta = false">
-    Cancelar
-  </button>
 </div>
 
 <!-- EXCESSO: item conferido a mais do que o pedido -->
@@ -51,15 +47,15 @@
     Um ou mais itens foram conferidos com quantidade maior que a do pedido.
     Ao confirmar, será feito o corte pra corrigir a quantidade no Sankhya.
   </p>
-  <div class="cat-opcoes">
-    <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoComExcesso()">
+  <div class="cat-acoes-linha">
+    <button type="button" class="es-btn es-btn--ghost" (click)="mostrarAlertaExcesso = false">
+      Cancelar
+    </button>
+    <button type="button" class="es-btn es-btn--primary" (click)="confirmarFinalizacaoComExcesso()">
       <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
-      <strong>Confirmar e finalizar</strong>
+      Confirmar e finalizar
     </button>
   </div>
-  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaExcesso = false">
-    Cancelar
-  </button>
 </div>
 
 <!-- DIVERGÊNCIA NO ENVIO REAL PRO SANKHYA (só depois das duas categorias concluídas) -->

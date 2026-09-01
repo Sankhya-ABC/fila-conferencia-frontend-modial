@@ -1347,6 +1347,12 @@
     color: #fff;
     &:not(:disabled):hover { background: #b91c1c; }
   }
+
+  &--primary {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    &:not(:disabled):hover { opacity: 0.9; }
+  }
 }
 
 .painel-atalhos {
@@ -2348,6 +2354,16 @@ kbd {
 .cat-opcoes {
   display: flex;
   gap: 12px;
+}
+
+// Rodapé com 2 botões normais (Cancelar + ação primária) — usado nos alertas
+// de confirmação de 1 ação só, onde o cartão grande de .cat-opcao (pensado
+// pra escolha entre 2+ opções lado a lado) ficava esticado e desalinhado.
+.cat-acoes-linha {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .cat-opcao {

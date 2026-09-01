@@ -268,6 +268,15 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensPedidoBrutos.filter((i) => !i.usaConfPeso).length;
   }
 
+  // Texto do alerta de categoria incompleta com plural correto — "1 item(ns)
+  // pendente(s)" lia estranho pro caso mais comum (exatamente 1 item).
+  get textoCategoriaIncompleta(): string {
+    const nome = this.categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável';
+    const n = this.categoriaAtiva === 'PESAVEL' ? this.pendentesPesavel : this.pendentesNaoPesavel;
+    const item = n === 1 ? 'item pendente' : 'itens pendentes';
+    return `Esta categoria (${nome}) tem ${n} ${item}. Deseja concluir sua parte mesmo assim?`;
+  }
+
   // Decide se precisa perguntar a categoria (nota com os dois tipos pendentes)
   // ou selecionar automaticamente quando só há um tipo em aberto.
   private definirCategoriaDisponivel() {
