@@ -49,12 +49,10 @@
     <button type="button" class="cat-opcao cat-opcao--corte" (click)="confirmarFinalizacaoComExcesso(false)">
       <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
       <strong>Executar corte</strong>
-      <span>Corrige no Sankhya</span>
     </button>
     <button type="button" class="cat-opcao cat-opcao--divergente" (click)="confirmarFinalizacaoComExcesso(true)">
       <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
       <strong>Finalizar divergente</strong>
-      <span>Mantém como está</span>
     </button>
   </div>
   <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaExcesso = false">
