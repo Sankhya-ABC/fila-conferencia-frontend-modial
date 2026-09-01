@@ -2078,13 +2078,18 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
     return v.numeroVolume;
   }
 
-  trackByItem(_: number, i: ItemPedidoDTO): string {
+  // Arrow function (não método comum): [ngForTrackBy] guarda só a referência
+  // e a chama sem contexto — um método normal perderia o "this" e quebraria
+  // qualquer chamada a this.xxx aqui dentro (foi exatamente esse o bug:
+  // "this.chaveItem is not a function", trackBy sem "this" travando o
+  // ngDoCheck do Angular e prendendo a tela no spinner pra sempre).
+  trackByItem = (_: number, i: ItemPedidoDTO): string => {
     // idProduto sozinho não é único: o mesmo produto pode ter várias linhas
     // (lotes/controles diferentes) na mesma lista. Com só idProduto, o
     // Angular trata linhas de lotes distintos como "a mesma" e embaralha o
     // DOM ao remover uma delas — parecia reverter todas ao desfazer uma só.
-    return this.chaveItem(i);
-  }
+    return `${i.idProduto}#${i.controle ?? ''}`;
+  };
 
   expandirVolume(volume: VolumeFrontDTO) {
     if (this.volumeExpandido === volume) {
