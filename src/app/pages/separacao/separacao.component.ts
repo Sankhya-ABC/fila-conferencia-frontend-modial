@@ -229,6 +229,9 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   private devolvendoEmAndamento = false;
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
+  // Chaves (idProduto#controle) com quantidade conferida acima do pedido —
+  // usado pra marcar visualmente a linha na lista de Conferidos.
+  itensExcedentesChaves = new Set<string>();
   private itensDoProdutoAtual: ItemPedidoDTO[] = [];
 
   // Conferência parcial (etapas pesável / não-pesável) — só ativo por tenant via módulo
@@ -739,11 +742,21 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         // a mais do que o pedido pede. Isso precisa de corte no Sankhya
         // mesmo sem nenhum item faltando.
         let temExcesso = false;
+        const chavesComExcesso = new Set<string>();
         totalConferidos.forEach((total, k) => {
           const usado = distribuido.get(k) || 0;
-          if (total - usado > 0.0001) temExcesso = true;
+          if (total - usado > 0.0001) {
+            temExcesso = true;
+            chavesComExcesso.add(k);
+          }
         });
         this.temItemExcedente = temExcesso;
+        // Marca (pra exibir indicador na lista) todas as linhas de Conferidos
+        // que pertencem a uma chave com sobra — a leitura excedente não vira
+        // linha própria, então sinalizamos o grupo inteiro.
+        this.itensExcedentesChaves = new Set(
+          conferidos.filter((item) => chavesComExcesso.has(chave(item))).map((item) => this.chaveItem(item)),
+        );
 
         this.itensPedidoBrutos = pedidosAtualizados;
         this.itensConferidosBrutos = conferidos;
@@ -1265,6 +1278,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensParciaisChaves.has(this.chaveItem(item));
   }
 
+  isItemExcedente(item: ItemPedidoDTO): boolean {
+    return this.itensExcedentesChaves.has(this.chaveItem(item));
+  }
+
   private playSound(tipo: 'ok' | 'erro' | 'atencao' | 'invalido' | 'finalizado') {
     try {
       const ctx = new AudioContext();
@@ -1496,7 +1513,12 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: () => this.devolverItemOtimista(item),
-        error: (err) => console.error(err),
+        error: (err) => {
+          console.error(err);
+          // Sem isso o flag fica travado em "true" pra sempre (RxJS não chama
+          // complete depois de error) — nenhum "Desfazer" na tela funciona mais.
+          this.devolvendoEmAndamento = false;
+        },
         complete: () => { this.devolvendoEmAndamento = false; },
       });
   }
@@ -1506,6 +1528,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       `${i.idProduto}#${i.controle ?? ''}`;
     const k = chave(item);
     this.itensParciaisChaves.delete(k);
+    this.itensExcedentesChaves.delete(k);
 
     // Remove dos conferidos (imediato)
     this.dataSourceConferidos.data = this.dataSourceConferidos.data.filter((i) => chave(i) !== k);
@@ -1861,7 +1884,22 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const kPendente = chavePendente(item);
 
     const fator = item.quantidadeComercial / item.quantidadePadrao;
-    const qtdComercialConferida = Number((quantidadePadrao * fator).toFixed(5));
+
+    // Quantidade ainda pendente pra esse item antes dessa leitura — usada pra
+    // capar o que entra em "Conferidos". Leitura acima disso é excesso (divergência
+    // pra maior): conta pro alerta de corte, mas não infla a linha do conferido
+    // além do que o pedido pede (senão o estado local diverge do que o servidor
+    // recalcula, e o "Desfazer" some sincronizado com um valor que nunca existiu ali).
+    const pendenteAtual = this.dataSourcePedidos.data.find((i) => chavePendente(i) === kPendente);
+    const restanteAntes = pendenteAtual?.quantidadePadrao ?? 0;
+    const qtdCapada = Math.min(quantidadePadrao, restanteAntes);
+    const qtdExcesso = Number((quantidadePadrao - qtdCapada).toFixed(5));
+    if (qtdExcesso > 0.0001) {
+      this.temItemExcedente = true;
+      this.itensExcedentesChaves.add(k);
+    }
+
+    const qtdComercialConferida = Number((qtdCapada * fator).toFixed(5));
 
     // Remove ou reduz o item dos pendentes
     let pendenteTocado = false;
@@ -1881,10 +1919,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const conferidos = existente
       ? this.dataSourceConferidos.data.map((i) =>
           chave(i) === k
-            ? { ...i, quantidadePadrao: i.quantidadePadrao + quantidadePadrao, quantidadeComercial: i.quantidadeComercial + qtdComercialConferida }
+            ? { ...i, quantidadePadrao: i.quantidadePadrao + qtdCapada, quantidadeComercial: i.quantidadeComercial + qtdComercialConferida }
             : i,
         )
-      : [...this.dataSourceConferidos.data, { ...item, quantidadePadrao, quantidadeComercial: qtdComercialConferida }];
+      : [...this.dataSourceConferidos.data, { ...item, quantidadePadrao: qtdCapada, quantidadeComercial: qtdComercialConferida }];
 
     // Rastrear parciais: se o item ainda restou, é conferido parcial
     if (pedidosAtualizados.some(i => chavePendente(i) === kPendente)) {

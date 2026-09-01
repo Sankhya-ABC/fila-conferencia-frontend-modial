@@ -514,8 +514,14 @@
             </div>
           </div>
         </div>
-        <div class="item-row item-row-ok" role="listitem" *ngFor="let item of dataSourceConferidos.data; trackBy: trackByItem">
+        <div class="item-row item-row-ok" [class.item-row--excedente]="isItemExcedente(item)" role="listitem" *ngFor="let item of dataSourceConferidos.data; trackBy: trackByItem">
           <mat-icon class="item-check-icon">check</mat-icon>
+          <span class="item-volume-badge item-volume-badge--excedente"
+                *ngIf="isItemExcedente(item)"
+                matTooltip="Conferido a mais do que o pedido pede">
+            <mat-icon>error_outline</mat-icon>
+            Divergente
+          </span>
           <span class="item-volume-badge"
                 *ngIf="isVolumesDetalhados() && getVolumeDoItem(item)">
             <mat-icon>inventory_2</mat-icon>
