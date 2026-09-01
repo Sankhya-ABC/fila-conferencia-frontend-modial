@@ -461,7 +461,9 @@
     <div class="painel-lista painel-lista-full" role="list">
       <div class="item-row" role="listitem" *ngFor="let item of dataSourcePedidos.data; let i = index; trackBy: trackByItem"
            [class.selecionado]="item === itemSelecionado"
-           [class.item-row--parcial]="isItemParcial(item)">
+           [class.item-row--parcial]="isItemParcial(item)"
+           (click)="onIniciarConferencia(item)"
+           matTooltip="Clique pra identificar este item sem bipar o código de barras">
         <span class="item-seq">{{ i + 1 }}</span>
         <div class="item-dados">
           <div class="item-linha">
