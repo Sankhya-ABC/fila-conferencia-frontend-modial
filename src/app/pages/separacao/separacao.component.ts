@@ -828,73 +828,6 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     });
   }
 
-  carregarItensPedido(numeroUnico: number) {
-    this.separacaoService.getItensPedido(numeroUnico).subscribe({
-      next: (itens) => {
-        this.itensPedidoBrutos = itens;
-        this.definirCategoriaDisponivel();
-        this.aplicarFiltroCategoria();
-      },
-    });
-  }
-
-  carregarItensConferidos(numeroConferencia: number) {
-    this.separacaoService.getItensConferidos(numeroConferencia).subscribe({
-      next: (itensConferidos) => {
-        const chave = (i: { idProduto: number; controle?: string }) =>
-          `${i.idProduto}#${i.controle ?? ''}`;
-
-        const mapConferidos = new Map<string, number>();
-
-        itensConferidos.forEach((i) => {
-          const k = chave(i);
-          const atual = mapConferidos.get(k) || 0;
-          mapConferidos.set(k, atual + Number(i.quantidadePadrao));
-        });
-
-        const pedidosAtualizados: ItemPedidoDTO[] = [];
-        const conferidos: ItemPedidoDTO[] = [];
-
-        this.dataSourcePedidos.data.forEach((item) => {
-          const qtdConferida = mapConferidos.get(chave(item)) || 0;
-
-          if (qtdConferida > 0) {
-            const fator = item.quantidadeComercial / item.quantidadePadrao;
-
-            const qtdComercialConferida = Number((qtdConferida * fator).toFixed(5));
-
-            conferidos.push({
-              ...item,
-              quantidadePadrao: qtdConferida,
-              quantidadeComercial: qtdComercialConferida,
-            });
-
-            const restantePadrao = Number(
-              (item.quantidadePadrao - qtdConferida).toFixed(5),
-            );
-
-            const restanteComercial = Number(
-              (item.quantidadeComercial - qtdComercialConferida).toFixed(5),
-            );
-
-            if (restantePadrao > 0) {
-              pedidosAtualizados.push({
-                ...item,
-                quantidadePadrao: restantePadrao,
-                quantidadeComercial: restanteComercial,
-              });
-            }
-          } else {
-            pedidosAtualizados.push(item);
-          }
-        });
-
-        this.dataSourcePedidos.data = pedidosAtualizados;
-        this.dataSourceConferidos.data = conferidos;
-      },
-    });
-  }
-
   carregarVolumes(numeroConferencia: number) {
     this.volumeService.getVolumes(numeroConferencia).subscribe({
       next: (volumes) => {
@@ -1563,10 +1496,14 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Recarrega pendentes do servidor para restaurar a quantidade original do pedido
-    if (this.numeroUnico) {
-      this.carregarItensPedido(this.numeroUnico);
-    }
+    // Recarrega do servidor pra restaurar a quantidade original do pedido.
+    // Precisa ser o reload completo (pedido + conferidos juntos, com o
+    // recálculo de excesso/categoria) — carregarItensPedido() sozinho só
+    // busca o pedido cru e depois aplicarFiltroCategoria() reescrevia
+    // dataSourceConferidos a partir do itensConferidosBrutos ainda velho,
+    // trazendo de volta o item que acabou de ser desfeito (via.: pedido
+    // aparecia com a quantidade cheia E o item continuava em Conferidos).
+    this.carregarEstadoConferencia();
   }
 
   salvarDimensoes(volume: VolumeFrontDTO) {
