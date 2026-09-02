@@ -349,8 +349,8 @@
 
 <span [matTooltip]="tooltipSeparar(item)" style="flex:1; display:flex;">
         <button class="card-btn-conferir"
-                [class.card-btn-conferir--ativo]="(item.codigoStatus === 'AC' || item.codigoStatus === 'A') && !item.emAndamentoNativo"
-                [disabled]="(item.codigoStatus !== 'AC' && item.codigoStatus !== 'A') || item.emAndamentoNativo"
+                [class.card-btn-conferir--ativo]="podeConferir(item) && !item.emAndamentoNativo"
+                [disabled]="!podeConferir(item) || item.emAndamentoNativo"
                 (click)="onSeparar(item)">
           <mat-icon>inventory_2</mat-icon>
           Conferir

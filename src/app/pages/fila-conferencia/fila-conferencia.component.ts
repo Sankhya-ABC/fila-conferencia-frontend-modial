@@ -442,6 +442,13 @@ displayDate(date: string | null | undefined): string {
     return map[(codigo || '').toLowerCase()] || 'status-z';
   }
 
+  // Recontagem (R/RA) também libera o botão "Conferir" — é uma etapa
+  // controlada pelo Sankhya sem sessão local prévia, mas o operador precisa
+  // conseguir entrar e realizar a recontagem igual a uma conferência normal.
+  podeConferir(item: { codigoStatus: string }): boolean {
+    return ['AC', 'A', 'R', 'RA'].includes(item.codigoStatus);
+  }
+
   statusBadgeClass(codigo: string): string {
     const map: Record<string, string> = {
       AC: 'badge--ac', A: 'badge--a', R: 'badge--rec',
