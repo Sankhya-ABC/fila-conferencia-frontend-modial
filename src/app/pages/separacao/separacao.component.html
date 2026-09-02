@@ -9,16 +9,20 @@
     <button type="button" class="cat-opcao"
             *ngIf="categoriasDisponiveis.includes('NAO_PESAVEL')"
             (click)="selecionarCategoria('NAO_PESAVEL')">
-      <mat-icon fontSet="material-symbols-outlined">inventory_2</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">inventory_2</mat-icon>
+      </span>
       <strong>Não pesável</strong>
-      <span>{{ pendentesNaoPesavel }} item(ns)</span>
+      <span class="cat-opcao-contagem">{{ pendentesNaoPesavel }} item(ns)</span>
     </button>
     <button type="button" class="cat-opcao"
             *ngIf="categoriasDisponiveis.includes('PESAVEL')"
             (click)="selecionarCategoria('PESAVEL')">
-      <mat-icon fontSet="material-symbols-outlined">scale</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">scale</mat-icon>
+      </span>
       <strong>Pesável</strong>
-      <span>{{ pendentesPesavel }} item(ns)</span>
+      <span class="cat-opcao-contagem">{{ pendentesPesavel }} item(ns)</span>
     </button>
   </div>
 </div>
@@ -42,16 +46,22 @@
 <!-- EXCESSO: item conferido a mais do que o pedido -->
 <div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
 <div class="cat-modal" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
-  <mat-icon class="cat-modal-icon cat-modal-icon--excesso" fontSet="material-symbols-outlined">error_outline</mat-icon>
+  <span class="cat-modal-icone cat-modal-icone--excesso">
+    <mat-icon fontSet="material-symbols-outlined">error_outline</mat-icon>
+  </span>
   <h3>Quantidade conferida a mais</h3>
   <p>Um ou mais itens foram conferidos com quantidade maior que a do pedido. Como deseja finalizar?</p>
   <div class="cat-opcoes">
     <button type="button" class="cat-opcao cat-opcao--corte" (click)="confirmarFinalizacaoComExcesso(false)">
-      <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+      </span>
       <strong>Executar corte</strong>
     </button>
     <button type="button" class="cat-opcao cat-opcao--divergente" (click)="confirmarFinalizacaoComExcesso(true)">
-      <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
+      </span>
       <strong>Finalizar divergente</strong>
     </button>
   </div>
@@ -70,14 +80,18 @@
   </p>
   <div class="cat-opcoes">
     <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoDivergente(false)">
-      <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+      </span>
       <strong>Executar corte</strong>
-      <span>Encerra o pedido só com o que foi conferido</span>
+      <span class="cat-opcao-contagem">Encerra o pedido só com o que foi conferido</span>
     </button>
     <button type="button" class="cat-opcao" (click)="confirmarFinalizacaoDivergente(true)">
-      <mat-icon fontSet="material-symbols-outlined">pending_actions</mat-icon>
+      <span class="cat-opcao-icone">
+        <mat-icon fontSet="material-symbols-outlined">pending_actions</mat-icon>
+      </span>
       <strong>Finalizar pendente</strong>
-      <span>Mantém os itens não conferidos em aberto no pedido</span>
+      <span class="cat-opcao-contagem">Mantém os itens não conferidos em aberto no pedido</span>
     </button>
   </div>
   <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarModalDivergencia = false">
