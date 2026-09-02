@@ -283,6 +283,29 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return `Esta categoria (${nome}) tem ${n} ${item}. Deseja concluir sua parte mesmo assim?`;
   }
 
+  // Itens da categoria (conferidos) que estão com quantidade a mais que o
+  // pedido — mesma fonte da Tarefa 2/isItemExcedente, sem duplicar cálculo.
+  private itensExcedentesDaCategoria(tipo: TipoEtapaConferencia): ItemPedidoDTO[] {
+    return this.itensConferidosBrutos.filter(
+      (i) => (tipo === 'PESAVEL') === !!i.usaConfPeso && this.isItemExcedente(i),
+    );
+  }
+
+  temExcedenteNaCategoria(tipo: TipoEtapaConferencia): boolean {
+    return this.itensExcedentesDaCategoria(tipo).length > 0;
+  }
+
+  // Texto do alerta de excesso ao concluir só a própria categoria (a outra
+  // ainda está pendente) — o corte/divergência de verdade só é decidido no
+  // envio real pro Sankhya (mostrarAlertaExcesso), quando a última categoria
+  // fechar; aqui é só um aviso pra não seguir sem saber que sobrou item.
+  get textoExcessoCategoria(): string {
+    const nome = this.categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável';
+    const n = this.categoriaAtiva ? this.itensExcedentesDaCategoria(this.categoriaAtiva).length : 0;
+    const item = n === 1 ? 'item conferido a mais' : 'itens conferidos a mais';
+    return `Esta categoria (${nome}) tem ${n} ${item} do que o pedido. Deseja concluir sua parte mesmo assim?`;
+  }
+
   // Decide se precisa perguntar a categoria (nota com os dois tipos pendentes)
   // ou selecionar automaticamente quando só há um tipo em aberto.
   private definirCategoriaDisponivel() {
@@ -991,6 +1014,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   // Alerta simples (não é o modal de corte) ao concluir a própria categoria
   // com item faltando — avisa e deixa seguir, "dá baixa" mesmo incompleto.
   mostrarAlertaCategoriaIncompleta = false;
+  // Mesma ideia do alerta acima, mas pro caso de item conferido A MAIS ao
+  // concluir só a própria categoria (a outra ainda está pendente) — antes só
+  // existia esse aviso pra falta, excesso na primeira categoria concluída
+  // passava direto sem avisar nada.
+  mostrarAlertaExcessoCategoria = false;
 
   finalizarConferencia() {
     if (this.temConferenciaParcial && this.categoriaAtiva) {
@@ -999,6 +1027,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         const pendentesCategoria = this.categoriaAtiva === 'PESAVEL' ? this.pendentesPesavel : this.pendentesNaoPesavel;
         if (pendentesCategoria > 0) {
           this.mostrarAlertaCategoriaIncompleta = true;
+          return;
+        }
+        if (this.temExcedenteNaCategoria(this.categoriaAtiva)) {
+          this.mostrarAlertaExcessoCategoria = true;
           return;
         }
         this.concluirEtapaEProsseguir(this.categoriaAtiva);
@@ -1012,6 +1044,14 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   confirmarCategoriaIncompleta() {
     this.mostrarAlertaCategoriaIncompleta = false;
     if (this.categoriaAtiva) this.concluirEtapaEProsseguir(this.categoriaAtiva, true);
+  }
+
+  // Confirma o alerta de excesso da própria categoria: conclui normalmente
+  // (sem itens faltando, não precisa de manterPendente) — o corte/divergência
+  // de verdade só é resolvido no modal completo, no envio real ao Sankhya.
+  confirmarExcessoCategoria() {
+    this.mostrarAlertaExcessoCategoria = false;
+    if (this.categoriaAtiva) this.concluirEtapaEProsseguir(this.categoriaAtiva);
   }
 
   // Ponto único do envio real pro Sankhya (não é conferência parcial, ou as

@@ -43,6 +43,22 @@
   </div>
 </div>
 
+<!-- ALERTA SIMPLES: categoria com item conferido A MAIS ao concluir a própria parte -->
+<div class="cat-overlay" *ngIf="mostrarAlertaExcessoCategoria"></div>
+<div class="cat-modal" *ngIf="mostrarAlertaExcessoCategoria" role="dialog" aria-modal="true">
+  <h3>Item conferido a mais</h3>
+  <p>{{ textoExcessoCategoria }}</p>
+  <div class="cat-acoes-linha">
+    <button type="button" class="es-btn es-btn--ghost" (click)="mostrarAlertaExcessoCategoria = false">
+      Cancelar
+    </button>
+    <button type="button" class="es-btn es-btn--primary" (click)="confirmarExcessoCategoria()">
+      <mat-icon fontSet="material-symbols-outlined">check_circle</mat-icon>
+      Concluir mesmo assim
+    </button>
+  </div>
+</div>
+
 <!-- EXCESSO: item conferido a mais do que o pedido -->
 <div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
 <div class="cat-modal cat-modal--excesso" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
