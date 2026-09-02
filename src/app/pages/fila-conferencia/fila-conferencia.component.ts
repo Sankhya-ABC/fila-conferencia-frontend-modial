@@ -452,7 +452,7 @@ displayDate(date: string | null | undefined): string {
   statusBadgeClass(codigo: string): string {
     const map: Record<string, string> = {
       AC: 'badge--ac', A: 'badge--a', R: 'badge--rec',
-      RA: 'badge--r', RD: 'badge--d', D: 'badge--d',
+      RA: 'badge--r', C: 'badge--r', RD: 'badge--d', D: 'badge--d',
       F: 'badge--f', Z: 'badge--z',
     };
     return map[(codigo || '').toUpperCase()] || 'badge--z';
@@ -461,7 +461,7 @@ displayDate(date: string | null | undefined): string {
   statusIcon(codigo: string): string {
     const map: Record<string, string> = {
       AC: 'schedule', A: 'play_circle', R: 'refresh',
-      RA: 'replay', RD: 'error_outline', D: 'error_outline',
+      RA: 'replay', C: 'lock_clock', RD: 'error_outline', D: 'error_outline',
       F: 'check_circle', Z: 'hourglass_empty',
     };
     return map[(codigo || '').toUpperCase()] || 'help_outline';
