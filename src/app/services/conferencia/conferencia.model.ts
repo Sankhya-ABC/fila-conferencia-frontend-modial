@@ -80,6 +80,7 @@ export interface DadosBasicosPedidoDTO {
   qtdAmaior?: 'C' | 'D' | null;
   fataoConcluir?: string | null;
   exibirProd?: string | null;
+  exibirImgProd?: string | null;
   temCubagem?: boolean;
 
   idParceiro: number;

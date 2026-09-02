@@ -597,6 +597,12 @@
     grid-template-rows: minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+
+  /* Sem painel de imagem (EXIBIRIMGPROD != 'S'): Conferidos ocupa o espaço inteiro */
+  &.sem-imagem {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ─── Painel base ─── */
@@ -714,8 +720,8 @@
   }
 
   &.item-row--excedente {
-    background: rgba(220, 38, 38, 0.05);
-    border-left: 3px solid #dc2626;
+    background: rgba(217, 119, 6, 0.08);
+    border-left: 3px solid #d97706;
     padding-left: 9px;
   }
 
@@ -974,11 +980,11 @@
   }
 
   &--excedente {
-    background: rgba(220, 38, 38, 0.10);
-    color: #991b1b;
-    border: 1px solid rgba(220, 38, 38, 0.35);
+    background: rgba(217, 119, 6, 0.10);
+    color: #92400e;
+    border: 1px solid rgba(217, 119, 6, 0.35);
 
-    mat-icon { color: #dc2626; }
+    mat-icon { color: #d97706; }
   }
 }
 
@@ -1465,6 +1471,14 @@ kbd {
 
   .painel-volumes,
   .painel-volumes--strip { display: none; }
+
+  .cat-modal { width: calc(100vw - 24px); padding: 20px 16px; }
+
+  .cat-opcoes {
+    flex-direction: column;
+  }
+
+  .cat-opcao { min-height: 96px; }
 }
 
 /* ─── Modal volumes simplificado ─── */
@@ -2382,8 +2396,11 @@ kbd {
 }
 
 .cat-opcao {
+  position: relative;
   flex: 1;
   min-width: 0;
+  min-height: 108px;
+  height: auto !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2419,9 +2436,33 @@ kbd {
     word-break: break-word;
   }
 
+  .cat-opcao-check {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #16a34a;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  }
+
   &:hover {
     border-color: var(--color-primary, #1976d2);
     background: rgba(25, 118, 210, 0.06);
+  }
+
+  &.selecionado {
+    border: 2px solid #16a34a;
+    background: rgba(22, 163, 74, 0.08);
+
+    .cat-opcao-check { display: flex; }
+
+    &:hover {
+      border-color: #16a34a;
+      background: rgba(22, 163, 74, 0.08);
+    }
   }
 
   &--corte mat-icon { color: var(--color-primary, #1976d2); }
@@ -2433,6 +2474,80 @@ kbd {
       background: rgba(217, 119, 6, 0.06);
     }
   }
+
+  &--cancelar mat-icon { color: var(--color-text-secondary); }
+}
+
+/* ─── Modal de excesso: tabela de divergentes + rodapé de ações ─── */
+.cat-modal--excesso {
+  width: 560px;
+  text-align: left;
+
+  h3, > p { text-align: center; }
+}
+
+.excesso-tabela-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.excesso-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border, #ddd);
+  }
+
+  tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--color-border, #eee);
+  }
+
+  .excesso-produto {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .excesso-diferenca {
+    color: #92400e;
+    font-weight: 700;
+    background: rgba(217, 119, 6, 0.10);
+  }
+}
+
+.cat-opcoes--rodape {
+  align-items: stretch;
+}
+
+.cat-opcao-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cat-opcao-legenda {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.3;
+  min-height: 2.6em;
 }
 
 .fat-overlay {

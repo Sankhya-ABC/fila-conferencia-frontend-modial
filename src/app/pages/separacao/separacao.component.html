@@ -7,18 +7,22 @@
   <p>Este pedido tem itens pesáveis e não pesáveis. Escolha sua parte.</p>
   <div class="cat-opcoes">
     <button type="button" class="cat-opcao"
+            [class.selecionado]="categoriaAtiva === 'NAO_PESAVEL'"
             *ngIf="categoriasDisponiveis.includes('NAO_PESAVEL')"
             (click)="selecionarCategoria('NAO_PESAVEL')">
+      <mat-icon class="cat-opcao-check" fontSet="material-symbols-outlined">check_circle</mat-icon>
       <mat-icon fontSet="material-symbols-outlined">inventory_2</mat-icon>
       <strong>Não pesável</strong>
-      <span>{{ pendentesNaoPesavel }} item(ns)</span>
+      <span>{{ textoContagemItens(pendentesNaoPesavel) }}</span>
     </button>
     <button type="button" class="cat-opcao"
+            [class.selecionado]="categoriaAtiva === 'PESAVEL'"
             *ngIf="categoriasDisponiveis.includes('PESAVEL')"
             (click)="selecionarCategoria('PESAVEL')">
+      <mat-icon class="cat-opcao-check" fontSet="material-symbols-outlined">check_circle</mat-icon>
       <mat-icon fontSet="material-symbols-outlined">scale</mat-icon>
       <strong>Pesável</strong>
-      <span>{{ pendentesPesavel }} item(ns)</span>
+      <span>{{ textoContagemItens(pendentesPesavel) }}</span>
     </button>
   </div>
 </div>
@@ -41,23 +45,55 @@
 
 <!-- EXCESSO: item conferido a mais do que o pedido -->
 <div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
-<div class="cat-modal" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
+<div class="cat-modal cat-modal--excesso" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
   <mat-icon class="cat-modal-icon cat-modal-icon--excesso" fontSet="material-symbols-outlined">error_outline</mat-icon>
   <h3>Quantidade conferida a mais</h3>
-  <p>Um ou mais itens foram conferidos com quantidade maior que a do pedido. Como deseja finalizar?</p>
-  <div class="cat-opcoes">
-    <button type="button" class="cat-opcao cat-opcao--corte" (click)="confirmarFinalizacaoComExcesso(false)">
-      <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
-      <strong>Executar corte</strong>
-    </button>
-    <button type="button" class="cat-opcao cat-opcao--divergente" (click)="confirmarFinalizacaoComExcesso(true)">
-      <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
-      <strong>Finalizar divergente</strong>
-    </button>
+  <p>{{ itensExcedentesDetalhados.length === 1 ? 'Este item foi' : 'Estes itens foram' }} conferido{{ itensExcedentesDetalhados.length === 1 ? '' : 's' }} com quantidade maior que a do pedido. Como deseja finalizar?</p>
+
+  <div class="excesso-tabela-wrap">
+    <table class="excesso-tabela">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd. pedido</th>
+          <th>Qtd. conferida</th>
+          <th>Diferença</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of itensExcedentesDetalhados">
+          <td class="excesso-produto">{{ item.idProduto }} - {{ item.nomeProduto }}</td>
+          <td>{{ qtdPedidoItem(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
+          <td>{{ qtdConferidaItem(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
+          <td class="excesso-diferenca">+{{ qtdExcedente(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  <button type="button" class="es-btn" style="margin-top:12px" (click)="mostrarAlertaExcesso = false">
-    Cancelar
-  </button>
+
+  <div class="cat-opcoes cat-opcoes--rodape">
+    <div class="cat-opcao-col">
+      <button type="button" class="cat-opcao cat-opcao--corte" (click)="confirmarFinalizacaoComExcesso(false)">
+        <mat-icon fontSet="material-symbols-outlined">content_cut</mat-icon>
+        <strong>Executar corte</strong>
+      </button>
+      <span class="cat-opcao-legenda">Ajusta a quantidade do pedido para a conferida</span>
+    </div>
+    <div class="cat-opcao-col">
+      <button type="button" class="cat-opcao cat-opcao--divergente" (click)="confirmarFinalizacaoComExcesso(true)">
+        <mat-icon fontSet="material-symbols-outlined">warning</mat-icon>
+        <strong>Finalizar divergente</strong>
+      </button>
+      <span class="cat-opcao-legenda">Finaliza mantendo a diferença registrada</span>
+    </div>
+    <div class="cat-opcao-col">
+      <button type="button" class="cat-opcao cat-opcao--cancelar" (click)="mostrarAlertaExcesso = false">
+        <mat-icon fontSet="material-symbols-outlined">close</mat-icon>
+        <strong>Cancelar</strong>
+      </button>
+      <span class="cat-opcao-legenda">Volta sem finalizar</span>
+    </div>
+  </div>
 </div>
 
 <!-- DIVERGÊNCIA NO ENVIO REAL PRO SANKHYA (só depois das duas categorias concluídas) -->
@@ -503,7 +539,7 @@
   </div>
 
   <!-- COLUNA DIREITA: CONFERIDOS + IMAGEM (empilhados; lado a lado quando Pendentes está oculto) -->
-  <div class="coluna-direita" [class.lado-a-lado]="!exibirPendentes()">
+  <div class="coluna-direita" [class.lado-a-lado]="!exibirPendentes()" [class.sem-imagem]="!exibirImagemProduto()">
 
     <div class="painel painel-conferidos">
       <div class="painel-header">
@@ -526,7 +562,7 @@
           <mat-icon class="item-check-icon">check</mat-icon>
           <span class="item-volume-badge item-volume-badge--excedente"
                 *ngIf="isItemExcedente(item)"
-                matTooltip="Conferido a mais do que o pedido pede">
+                [matTooltip]="'Pedido: ' + (qtdPedidoItem(item) | number:'1.0-3':'pt-BR') + ' | Conferido: ' + (qtdConferidaItem(item) | number:'1.0-3':'pt-BR') + ' ' + item.unidadePadrao">
             <mat-icon>error_outline</mat-icon>
             Divergente: +{{ qtdExcedente(item) | number:'1.0-3':'pt-BR' }} {{ item.unidadePadrao }}
           </span>
@@ -571,7 +607,7 @@
       </div>
     </div>
 
-    <div class="painel painel-produto-atual">
+    <div class="painel painel-produto-atual" *ngIf="exibirImagemProduto()">
       <div class="painel-header">
         <mat-icon>qr_code_scanner</mat-icon>
         <span class="painel-titulo">

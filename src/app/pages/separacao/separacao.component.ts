@@ -268,6 +268,10 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensPedidoBrutos.filter((i) => !i.usaConfPeso).length;
   }
 
+  textoContagemItens(n: number): string {
+    return n === 1 ? '1 item' : `${n} itens`;
+  }
+
   // Texto do alerta de categoria incompleta com plural correto — "1 item(ns)
   // pendente(s)" lia estranho pro caso mais comum (exatamente 1 item).
   // "Divergente", não "pendente": concluir aqui não deixa o item em aberto
@@ -317,7 +321,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   private aplicarFiltroCategoria() {
     if (!this.temConferenciaParcial) {
       this.dataSourcePedidos.data = this.itensPedidoBrutos;
-      this.dataSourceConferidos.data = this.itensConferidosBrutos;
+      this.dataSourceConferidos.data = this.ordenarConferidos(this.itensConferidosBrutos);
       return;
     }
     // Nenhuma categoria disponível pra trabalhar (todas já concluídas, ou a
@@ -328,7 +332,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     // usuário cancelou o pop-up final de corte/divergência).
     if (this.categoriasDisponiveis.length === 0) {
       this.dataSourcePedidos.data = this.itensPedidoBrutos;
-      this.dataSourceConferidos.data = this.itensConferidosBrutos;
+      this.dataSourceConferidos.data = this.ordenarConferidos(this.itensConferidosBrutos);
       return;
     }
     if (this.mostrarSelecaoCategoria || !this.categoriaAtiva) {
@@ -339,7 +343,13 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     }
     const match = (i: ItemPedidoDTO) => (this.categoriaAtiva === 'PESAVEL') === !!i.usaConfPeso;
     this.dataSourcePedidos.data = this.itensPedidoBrutos.filter(match);
-    this.dataSourceConferidos.data = this.itensConferidosBrutos.filter(match);
+    this.dataSourceConferidos.data = this.ordenarConferidos(this.itensConferidosBrutos.filter(match));
+  }
+
+  // Divergentes (conferido a mais que o pedido) sobem pro topo; entre itens
+  // com o mesmo status, mantém a ordem original (sort é estável).
+  private ordenarConferidos(itens: ItemPedidoDTO[]): ItemPedidoDTO[] {
+    return [...itens].sort((a, b) => Number(this.isItemExcedente(b)) - Number(this.isItemExcedente(a)));
   }
 
   etapa(tipo: TipoEtapaConferencia): SessaoEtapaDTO | undefined {
@@ -1253,12 +1263,35 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensParciaisChaves.has(this.chaveItem(item));
   }
 
+  // Conferido a menos que o pedido não aparece aqui: o restante fica em
+  // Pendentes até bipar tudo (ou sobrar pro modal de divergência no fim).
+  // Não existe corte manual por item nesta tela — só o corte de pedido
+  // inteiro na finalização (confirmarFinalizacaoDivergente/ComExcesso).
   isItemExcedente(item: ItemPedidoDTO): boolean {
     return this.itensExcedentesChaves.has(this.chaveItem(item));
   }
 
   qtdExcedente(item: ItemPedidoDTO): number {
     return this.itensExcedentesChaves.get(this.chaveItem(item)) ?? 0;
+  }
+
+  // "Pedido" aqui é o que a linha de Conferidos guarda (já capada no que foi
+  // pedido) — o excesso lido a mais não infla essa quantidade, só o Map de
+  // itensExcedentesChaves (ver aplicarConferenciaOtimista). Por isso pedido =
+  // quantidadePadrao da própria linha, e conferido = pedido + excesso.
+  qtdPedidoItem(item: ItemPedidoDTO): number {
+    return item.quantidadePadrao;
+  }
+
+  qtdConferidaItem(item: ItemPedidoDTO): number {
+    return item.quantidadePadrao + this.qtdExcedente(item);
+  }
+
+  // Itens de Conferidos com divergência (conferido a mais), na mesma ordem
+  // já usada em "Conferidos" — fonte única reaproveitada pelo modal da
+  // Tarefa 4, pra não duplicar o cálculo de excesso.
+  get itensExcedentesDetalhados(): ItemPedidoDTO[] {
+    return this.itensConferidosBrutos.filter((item) => this.isItemExcedente(item));
   }
 
   private playSound(tipo: 'ok' | 'erro' | 'atencao' | 'invalido' | 'finalizado') {
@@ -2168,6 +2201,10 @@ getVolumeTooltip(v: VolumeFrontDTO): string {
 
   exibirPendentes(): boolean {
     return !this.dadosGerais?.exibirProd || this.dadosGerais!.exibirProd === 'S';
+  }
+
+  exibirImagemProduto(): boolean {
+    return this.dadosGerais?.exibirImgProd === 'S';
   }
 
   isPainelVolumesVisivel(): boolean {
