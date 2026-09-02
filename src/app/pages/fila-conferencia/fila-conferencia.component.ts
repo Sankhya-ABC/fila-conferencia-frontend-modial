@@ -444,7 +444,7 @@ displayDate(date: string | null | undefined): string {
 
   statusBadgeClass(codigo: string): string {
     const map: Record<string, string> = {
-      AC: 'badge--ac', A: 'badge--a', R: 'badge--r',
+      AC: 'badge--ac', A: 'badge--a', R: 'badge--rec',
       RA: 'badge--r', RD: 'badge--d', D: 'badge--d',
       F: 'badge--f', Z: 'badge--z',
     };
