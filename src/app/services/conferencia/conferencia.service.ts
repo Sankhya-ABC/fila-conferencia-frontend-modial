@@ -11,6 +11,8 @@ import {
   PostFinalizarConferenciaParams,
   PostIniciarConferenciaParams,
   PostIniciarConferenciaResponse,
+  LiberacaoPendenteDTO,
+  LiberarCorteParams,
   SessaoEtapaDTO,
   TopFaturamento,
 } from './conferencia.model';
@@ -91,5 +93,15 @@ export class ConferenciaService {
 
   postConcluirEtapa(body: ConcluirEtapaParams): Observable<{ ok: boolean }> {
     return this.http.post<{ ok: boolean }>('/conferencias/concluir-etapa', body);
+  }
+
+  getLiberacoesPendentes(numeroConferencia: number): Observable<LiberacaoPendenteDTO[]> {
+    return this.http.get<LiberacaoPendenteDTO[]>('/conferencias/liberacoes-pendentes', {
+      params: { numeroConferencia },
+    });
+  }
+
+  postLiberarCorte(body: LiberarCorteParams): Observable<{ ok: boolean; itensProcessados: number }> {
+    return this.http.post<{ ok: boolean; itensProcessados: number }>('/conferencias/liberar-corte', body);
   }
 }

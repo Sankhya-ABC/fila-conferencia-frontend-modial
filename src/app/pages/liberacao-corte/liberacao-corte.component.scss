@@ -568,6 +568,75 @@
   .card-dado { border-bottom: none; }
 }
 
+/* ─── Liberação de corte ─── */
+.lib-corte-secao {
+  padding: 10px 14px 14px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.lib-corte-titulo {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.lib-corte-loading,
+.lib-corte-vazio {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.lib-corte-lista {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+
+  li { margin-bottom: 4px; }
+}
+
+.lib-corte-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.lib-corte-field {
+  flex: 1;
+  font-size: 13px;
+}
+
+.lib-corte-field--full {
+  width: 100%;
+}
+
+.lib-corte-erro {
+  font-size: 12px;
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.lib-corte-sucesso {
+  font-size: 12px;
+  color: #166534;
+  background: rgba(22, 101, 52, 0.08);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.lib-corte-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 /* ─── Rodapé ─── */
 .card-footer {
   display: flex;

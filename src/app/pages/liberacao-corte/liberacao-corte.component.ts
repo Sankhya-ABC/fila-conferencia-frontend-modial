@@ -26,6 +26,7 @@ import { EmpresaDTO } from '../../services/empresa/empresa.model';
 import { EmpresaService } from '../../services/empresa/empresa.service';
 import {
   FilaConferenciaDTO,
+  LiberacaoPendenteDTO,
 } from '../../services/conferencia/conferencia.model';
 import { ConferenciaService } from '../../services/conferencia/conferencia.service';
 import { ParceiroDTO } from '../../services/parceiro/parceiro.model';
@@ -391,10 +392,65 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     this.criarForm();
   }
 
-  // Só consulta — a liberação em si acontece no Sankhya (manual ou
-  // automática, pra corte 100% de peso).
   onConsultar(fila: FilaConferenciaDTO): void {
     this.router.navigate([`/separacao/${fila?.numeroUnico}`]);
+  }
+
+  // ─── Liberação de corte, direto pela tela ──────────────────────────────
+  // A senha do liberador é pedida a cada ação (não fica guardada) — mesma
+  // exigência que a própria SP do Sankhya tem na tela nativa.
+  liberacoesPendentes: LiberacaoPendenteDTO[] = [];
+  carregandoLiberacoes = false;
+  usuarioLiberador = '';
+  senhaLiberador = '';
+  obsLiberacao = '';
+  processandoLiberacao = false;
+  erroLiberacao: string | null = null;
+  sucessoLiberacao: string | null = null;
+
+  private carregarLiberacoesPendentes(item: FilaConferenciaDTO): void {
+    this.liberacoesPendentes = [];
+    this.erroLiberacao = null;
+    this.sucessoLiberacao = null;
+    if (!item.numeroConferencia) return;
+    this.carregandoLiberacoes = true;
+    this.conferenciaService.getLiberacoesPendentes(item.numeroConferencia)
+      .pipe(finalize(() => (this.carregandoLiberacoes = false)))
+      .subscribe({
+        next: (lista) => (this.liberacoesPendentes = lista ?? []),
+        error: () => (this.liberacoesPendentes = []),
+      });
+  }
+
+  onLiberarOuNegar(item: FilaConferenciaDTO, decisao: 'S' | 'N'): void {
+    if (!item.numeroConferencia) return;
+    if (!this.usuarioLiberador || !this.senhaLiberador) {
+      this.erroLiberacao = 'Informe usuário e senha do liberador.';
+      return;
+    }
+    this.erroLiberacao = null;
+    this.sucessoLiberacao = null;
+    this.processandoLiberacao = true;
+
+    this.conferenciaService.postLiberarCorte({
+      numeroConferencia: item.numeroConferencia,
+      usuario: this.usuarioLiberador,
+      senha: this.senhaLiberador,
+      liberar: decisao,
+      obs: this.obsLiberacao || undefined,
+    }).pipe(finalize(() => (this.processandoLiberacao = false)))
+      .subscribe({
+        next: () => {
+          this.sucessoLiberacao = decisao === 'S' ? 'Corte liberado com sucesso.' : 'Corte negado.';
+          this.senhaLiberador = '';
+          this.obsLiberacao = '';
+          this.liberacoesPendentes = [];
+          this.applyFilter(true);
+        },
+        error: (err) => {
+          this.erroLiberacao = err?.error?.message || 'Falha ao processar a liberação.';
+        },
+      });
   }
 
   displayDate(date: string | null | undefined): string {
@@ -423,7 +479,18 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
   }
 
   toggleCard(item: FilaConferenciaDTO): void {
-    this.cardExpandido = this.cardExpandido === item.numeroUnico ? null : item.numeroUnico;
+    const abrindo = this.cardExpandido !== item.numeroUnico;
+    this.cardExpandido = abrindo ? item.numeroUnico : null;
+    this.usuarioLiberador = '';
+    this.senhaLiberador = '';
+    this.obsLiberacao = '';
+    this.erroLiberacao = null;
+    this.sucessoLiberacao = null;
+    if (abrindo) {
+      this.carregarLiberacoesPendentes(item);
+    } else {
+      this.liberacoesPendentes = [];
+    }
   }
 
   trackByItem(index: number, item: FilaConferenciaDTO): number {

@@ -131,3 +131,17 @@ export interface ConcluirEtapaParams {
   tipo: TipoEtapaConferencia;
   manterPendente?: boolean;
 }
+
+export interface LiberacaoPendenteDTO {
+  observacao: string | null;
+  vlrAtual: number | null;
+  vlrLimite: number | null;
+}
+
+export interface LiberarCorteParams {
+  numeroConferencia: number;
+  usuario: string;
+  senha: string;
+  liberar: 'S' | 'N';
+  obs?: string;
+}
