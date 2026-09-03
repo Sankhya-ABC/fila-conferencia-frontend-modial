@@ -18,7 +18,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CodigoDescricao } from '../../services/dominio/dominio.model';
@@ -69,7 +68,6 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     private dominioService: DominioService,
     private parceiroService: ParceiroService,
     private empresaService: EmpresaService,
-    private router: Router,
     private authService: AuthService,
   ) {}
 
@@ -392,14 +390,13 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     this.criarForm();
   }
 
-  onConsultar(fila: FilaConferenciaDTO): void {
-    this.router.navigate([`/separacao/${fila?.numeroUnico}`]);
-  }
-
   // ─── Liberação de corte, direto pela tela ──────────────────────────────
   // A senha do liberador é pedida a cada ação (não fica guardada) — mesma
-  // exigência que a própria SP do Sankhya tem na tela nativa.
+  // exigência que a própria SP do Sankhya tem na tela nativa. O operador
+  // seleciona quais itens divergentes quer aprovar/negar e a ação roda em
+  // lote só pra esses (não precisa ser tudo de uma vez).
   liberacoesPendentes: LiberacaoPendenteDTO[] = [];
+  sequenciasSelecionadas = new Set<number>();
   carregandoLiberacoes = false;
   usuarioLiberador = '';
   senhaLiberador = '';
@@ -410,6 +407,7 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
 
   private carregarLiberacoesPendentes(item: FilaConferenciaDTO): void {
     this.liberacoesPendentes = [];
+    this.sequenciasSelecionadas.clear();
     this.erroLiberacao = null;
     this.sucessoLiberacao = null;
     if (!item.numeroConferencia) return;
@@ -422,8 +420,32 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
       });
   }
 
+  isSelecionado(sequencia: number): boolean {
+    return this.sequenciasSelecionadas.has(sequencia);
+  }
+
+  toggleSelecao(sequencia: number): void {
+    if (this.sequenciasSelecionadas.has(sequencia)) {
+      this.sequenciasSelecionadas.delete(sequencia);
+    } else {
+      this.sequenciasSelecionadas.add(sequencia);
+    }
+  }
+
+  selecionarTodos(): void {
+    this.sequenciasSelecionadas = new Set(this.liberacoesPendentes.map((l) => l.sequencia));
+  }
+
+  limparSelecao(): void {
+    this.sequenciasSelecionadas.clear();
+  }
+
   onLiberarOuNegar(item: FilaConferenciaDTO, decisao: 'S' | 'N'): void {
     if (!item.numeroConferencia) return;
+    if (this.sequenciasSelecionadas.size === 0) {
+      this.erroLiberacao = 'Selecione pelo menos um item.';
+      return;
+    }
     if (!this.usuarioLiberador || !this.senhaLiberador) {
       this.erroLiberacao = 'Informe usuário e senha do liberador.';
       return;
@@ -432,19 +454,26 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     this.sucessoLiberacao = null;
     this.processandoLiberacao = true;
 
+    const sequencias = [...this.sequenciasSelecionadas];
+
     this.conferenciaService.postLiberarCorte({
       numeroConferencia: item.numeroConferencia,
       usuario: this.usuarioLiberador,
       senha: this.senhaLiberador,
       liberar: decisao,
       obs: this.obsLiberacao || undefined,
+      sequencias,
     }).pipe(finalize(() => (this.processandoLiberacao = false)))
       .subscribe({
-        next: () => {
-          this.sucessoLiberacao = decisao === 'S' ? 'Corte liberado com sucesso.' : 'Corte negado.';
+        next: (res) => {
+          this.sucessoLiberacao = decisao === 'S'
+            ? `${res.itensProcessados} item(ns) liberado(s).`
+            : `${res.itensProcessados} item(ns) negado(s).`;
           this.senhaLiberador = '';
           this.obsLiberacao = '';
-          this.liberacoesPendentes = [];
+          const processados = new Set(sequencias);
+          this.liberacoesPendentes = this.liberacoesPendentes.filter((l) => !processados.has(l.sequencia));
+          this.sequenciasSelecionadas.clear();
           this.applyFilter(true);
         },
         error: (err) => {

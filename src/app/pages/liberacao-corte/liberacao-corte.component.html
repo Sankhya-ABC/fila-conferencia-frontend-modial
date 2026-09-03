@@ -209,7 +209,7 @@
        [attr.data-uid]="item.numeroUnico"
        [class.item-card--expandido]="cardExpandido === item.numeroUnico"
        tabindex="0"
-       (keydown.enter)="onConsultar(item)"
+       (keydown.enter)="toggleCard(item)"
        (click)="toggleCard(item)">
 
     <!-- CABEÇALHO: status badge + tipo operação -->
@@ -309,8 +309,20 @@
 
         <div class="lib-corte-loading" *ngIf="carregandoLiberacoes">Carregando…</div>
 
+        <div class="lib-corte-selecionar-todos" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 1">
+          <button type="button" class="lib-corte-link-btn" (click)="selecionarTodos()">Selecionar todos</button>
+          <button type="button" class="lib-corte-link-btn" (click)="limparSelecao()">Limpar seleção</button>
+        </div>
+
         <ul class="lib-corte-lista" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 0">
-          <li *ngFor="let lib of liberacoesPendentes">{{ lib.observacao || '—' }}</li>
+          <li *ngFor="let lib of liberacoesPendentes">
+            <label class="lib-corte-item">
+              <input type="checkbox"
+                     [checked]="isSelecionado(lib.sequencia)"
+                     (change)="toggleSelecao(lib.sequencia)" />
+              <span>{{ lib.observacao || '—' }}</span>
+            </label>
+          </li>
         </ul>
 
         <div class="lib-corte-vazio" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length === 0">
@@ -338,14 +350,15 @@
           <div class="lib-corte-sucesso" *ngIf="sucessoLiberacao">{{ sucessoLiberacao }}</div>
 
           <div class="lib-corte-acoes">
+            <span class="lib-corte-selecionados">{{ sequenciasSelecionadas.size }} selecionado(s)</span>
             <button mat-stroked-button color="warn"
-                    [disabled]="processandoLiberacao"
+                    [disabled]="processandoLiberacao || sequenciasSelecionadas.size === 0"
                     (click)="onLiberarOuNegar(item, 'N')">
               <mat-icon>cancel</mat-icon>
               Negar
             </button>
             <button mat-flat-button color="primary"
-                    [disabled]="processandoLiberacao"
+                    [disabled]="processandoLiberacao || sequenciasSelecionadas.size === 0"
                     (click)="onLiberarOuNegar(item, 'S')">
               <mat-icon>check_circle</mat-icon>
               Liberar corte
@@ -364,11 +377,11 @@
         {{ cardExpandido === item.numeroUnico ? 'Menos' : 'Detalhes' }}
       </button>
 
-      <span matTooltip="Ver detalhes da conferência" style="flex:1; display:flex;">
+      <span matTooltip="Liberar ou negar o corte pendente" style="flex:1; display:flex;">
         <button class="card-btn-conferir card-btn-conferir--ativo"
-                (click)="onConsultar(item)">
-          <mat-icon>visibility</mat-icon>
-          Consultar
+                (click)="toggleCard(item)">
+          <mat-icon>lock_open</mat-icon>
+          Liberar Corte
         </button>
       </span>
     </div>
