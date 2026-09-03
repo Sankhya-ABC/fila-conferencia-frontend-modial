@@ -1,0 +1,377 @@
+<!-- BACKDROP filtro -->
+<div class="filtro-backdrop" *ngIf="filtroAberto" (click)="filtroAberto = false"></div>
+
+<!-- BANNER BOAS-VINDAS -->
+<div class="painel-boas-vindas">
+  <div class="usuario-avatar">{{ initials$ | async }}</div>
+  <div class="usuario-info">
+    <p class="usuario-saudacao">{{ nome$ | async }}</p>
+    <span class="usuario-perfil">Liberação de Corte</span>
+  </div>
+
+  <div class="painel-direita">
+    <div class="painel-contagem">
+      <span class="contagem-valor">{{ carregando ? '...' : totalLabel }}</span>
+      <span class="contagem-label">aguardando corte</span>
+    </div>
+
+    <div class="filtro-btn-wrapper">
+      <button
+        mat-flat-button
+        color="primary"
+        class="filtro-btn"
+        (click)="filtroAberto = !filtroAberto"
+        [matBadge]="activeFilterCount > 0 ? activeFilterCount : null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+      >
+        <mat-icon>tune</mat-icon>
+        Filtros
+      </button>
+
+      <!-- PAINEL DE FILTROS -->
+      <div class="filtro-panel" *ngIf="filtroAberto" [formGroup]="filters" (click)="$event.stopPropagation()">
+        <div class="filtro-panel-header">
+          <span class="filtro-panel-titulo">Filtros</span>
+          <button mat-icon-button (click)="filtroAberto = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- BLOCO 1 — Identificadores -->
+        <div class="filtro-destaque-wrapper">
+          <span class="filtro-secao-label">Identificadores</span>
+          <div [class]="temNumtalao ? 'filtro-row-duplo' : ''">
+            <mat-form-field appearance="outline" class="filtro-field"
+                            *ngIf="temNumtalao">
+              <mat-label>Nº Modial</mat-label>
+              <input matInput formControlName="numeroModial" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="filtro-field">
+              <mat-label>Nº Nota</mat-label>
+              <input matInput formControlName="numeroNota" />
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Nº Único</mat-label>
+            <input matInput formControlName="numeroUnico" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Ordem de Carga</mat-label>
+            <input matInput formControlName="ordemCarga" />
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO 2 — Entidade -->
+        <span class="filtro-secao-label">Entidade</span>
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Empresa</mat-label>
+          <input matInput formControlName="idEmpresa" [matAutocomplete]="autoEmpresa" />
+          <mat-autocomplete #autoEmpresa="matAutocomplete" [displayWith]="displayEmpresa">
+            <mat-option *ngFor="let e of listEmpresa" [value]="e">{{ displayEmpresa(e) }}</mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Parceiro</mat-label>
+          <input matInput formControlName="idParceiro" [matAutocomplete]="autoParceiro" />
+          <mat-autocomplete #autoParceiro="matAutocomplete" [displayWith]="displayParceiro">
+            <mat-option *ngFor="let p of listParceiro" [value]="p">{{ displayParceiro(p) }}</mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO — Tipo de Negócio -->
+        <span class="filtro-secao-label">Tipo de Negócio</span>
+        <div class="filtro-negocio-chips">
+          <button type="button"
+                  class="negocio-chip"
+                  [class.negocio-chip--ativo]="isTipoNegocioSelecionado('VENDAS')"
+                  (click)="toggleTipoNegocio('VENDAS')">
+            <mat-icon>trending_up</mat-icon>
+            Vendas
+          </button>
+          <button type="button"
+                  class="negocio-chip"
+                  [class.negocio-chip--ativo]="isTipoNegocioSelecionado('COMPRAS')"
+                  (click)="toggleTipoNegocio('COMPRAS')">
+            <mat-icon>shopping_cart</mat-icon>
+            Compras
+          </button>
+        </div>
+
+        <div class="filtro-avancado-toggle" (click)="filtroAvancadoAberto = !filtroAvancadoAberto">
+          <span>Filtros avançados</span>
+          <mat-icon>{{ filtroAvancadoAberto ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        <div class="filtro-avancado-body" *ngIf="filtroAvancadoAberto">
+
+        <!-- BLOCO 3 — Classificação -->
+        <span class="filtro-secao-label">Classificação</span>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Tipo Operação</mat-label>
+          <mat-select formControlName="codigoTipoOperacao" multiple>
+            <mat-select-trigger>
+              <ng-container *ngIf="filters.get('codigoTipoOperacao')?.value?.length > 0; else placeholderOp">
+                <div class="select-chips-trigger">
+                  <span class="select-chip select-chip--neutro"
+                        *ngFor="let cod of filters.get('codigoTipoOperacao')?.value | slice:0:2">
+                    {{ getLabelTipoOperacao(cod) }}
+                  </span>
+                  <span class="select-chip-mais"
+                        *ngIf="filters.get('codigoTipoOperacao')?.value?.length > 2">
+                    +{{ filters.get('codigoTipoOperacao')?.value?.length - 2 }}
+                  </span>
+                </div>
+              </ng-container>
+              <ng-template #placeholderOp>Tipo Operação</ng-template>
+            </mat-select-trigger>
+            <mat-option *ngFor="let t of listTipoOperacao" [value]="t.codigo">{{ t.descricao }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Tipo Transporte</mat-label>
+          <mat-select formControlName="codigoTipoEntrega">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option *ngFor="let t of listTipoEntrega" [value]="t.codigo">{{ t.descricao }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="filtro-divider"></div>
+
+        <!-- BLOCO 4 — Período -->
+        <span class="filtro-secao-label">Período</span>
+        <div class="filtro-row-duplo">
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Data Início</mat-label>
+            <input matInput [matDatepicker]="pickerInicio" formControlName="dataInicio" />
+            <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-label>Data Fim</mat-label>
+            <input matInput [matDatepicker]="pickerFim" formControlName="dataFim" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFim"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFim></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        </div><!-- /filtro-avancado-body -->
+
+        <div class="filtro-panel-actions">
+          <button mat-stroked-button (click)="onLimparCampos()">Limpar</button>
+          <button mat-flat-button color="primary" (click)="onPesquisar()">Pesquisar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA DE AUTO-REFRESH -->
+<div class="refresh-bar-wrapper">
+  <div class="refresh-bar-track">
+    <div class="refresh-bar-fill"
+         [style.width.%]="autoRefreshAtivo ? autoRefreshProgresso : 0"
+         [class.refresh-bar-fill--pausado]="!autoRefreshAtivo">
+    </div>
+  </div>
+  <div class="refresh-controles">
+    <span class="refresh-ultima" *ngIf="ultimaAtualizacao">
+      Atualizado {{ ultimaAtualizacaoLabel }}
+    </span>
+    <span class="refresh-countdown" *ngIf="autoRefreshAtivo">
+      próx. em {{ autoRefreshSegRestantes }}s
+    </span>
+    <button class="refresh-btn-icone" (click)="refreshAgora()" title="Atualizar agora">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button class="refresh-btn-toggle"
+            (click)="toggleAutoRefresh()"
+            [class.refresh-btn-toggle--pausado]="!autoRefreshAtivo"
+            [title]="autoRefreshAtivo ? 'Pausar atualização automática' : 'Retomar atualização automática'">
+      <mat-icon>{{ autoRefreshAtivo ? 'pause' : 'play_arrow' }}</mat-icon>
+      {{ autoRefreshAtivo ? 'Auto' : 'Pausado' }}
+    </button>
+  </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="fila-container" [class.fila-desfocada]="filtroAberto">
+
+<!-- GRID DE CARDS -->
+<div class="cards-grid" *ngIf="!carregando && dataSource.data.length > 0">
+  <div class="item-card"
+       *ngFor="let item of dataSource.data; trackBy: trackByItem"
+       [attr.data-uid]="item.numeroUnico"
+       [class.item-card--expandido]="cardExpandido === item.numeroUnico"
+       tabindex="0"
+       (keydown.enter)="onConsultar(item)"
+       (click)="toggleCard(item)">
+
+    <!-- CABEÇALHO: status badge + tipo operação -->
+    <div class="card-head">
+      <span class="card-status-badge" [ngClass]="statusBadgeClass(item.codigoStatus)">
+        <mat-icon>{{ statusIcon(item.codigoStatus) }}</mat-icon>
+        <span class="card-status-badge__text">{{ descricaoStatus(item.codigoStatus) }}</span>
+      </span>
+      <div class="card-head-right">
+        <span class="card-tipo-tag"
+              [class.card-tipo-tag--cubagem]="item.descricaoTipoOperacao.includes('CUBAGEM')"
+              [class.card-tipo-tag--nota]="item.descricaoTipoOperacao.includes('NOTA')">
+          {{ item.descricaoTipoOperacao || '—' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- CHECKLIST DA CONFERÊNCIA PARCIAL (pesável / não-pesável) -->
+    <div class="card-etapas" *ngIf="temConferenciaParcial">
+      <span class="card-etapa-chip"
+            [class.card-etapa-chip--ok]="etapaStatus(item, 'NAO_PESAVEL') === 'CONCLUIDA'">
+        <mat-icon fontSet="material-symbols-outlined">{{ etapaStatus(item, 'NAO_PESAVEL') === 'CONCLUIDA' ? 'check_circle' : 'inventory_2' }}</mat-icon>
+        Não pesável
+      </span>
+      <span class="card-etapa-chip"
+            [class.card-etapa-chip--ok]="etapaStatus(item, 'PESAVEL') === 'CONCLUIDA'">
+        <mat-icon fontSet="material-symbols-outlined">{{ etapaStatus(item, 'PESAVEL') === 'CONCLUIDA' ? 'check_circle' : 'scale' }}</mat-icon>
+        Pesável
+      </span>
+    </div>
+
+    <!-- PARCEIRO -->
+    <div class="card-parceiro">
+      <mat-icon class="card-parceiro-icon">handshake</mat-icon>
+      <span class="card-parceiro-nome">{{ item.nomeParceiro }}</span>
+    </div>
+
+    <!-- GRID DE DADOS -->
+    <div class="card-dados">
+      <div class="card-dado" *ngIf="temNumtalao">
+        <span class="card-dado-label">Nº Modial</span>
+        <span class="card-dado-valor card-dado-valor--destaque">
+          {{ item.AD_NUMTALAO || item.numeroModial || item.numTalao || '—' }}
+        </span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Nº Único</span>
+        <span class="card-dado-valor">{{ item.numeroUnico || '—' }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">NF</span>
+        <span class="card-dado-valor">{{ item.numeroNota || '—' }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Data</span>
+        <span class="card-dado-valor">{{ displayDate(item.dataMovimento) }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Transporte</span>
+        <span class="card-dado-valor">{{ getTipoEntregaLabel(item.AD_TIPOENTREGA) }}</span>
+      </div>
+      <div class="card-dado">
+        <span class="card-dado-label">Vendedor</span>
+        <span class="card-dado-valor">{{ item.apelidoVendedor || item.nomeVendedor || '—' }}</span>
+      </div>
+      <div class="card-dado" *ngIf="item.ordemCarga">
+        <span class="card-dado-label">Ordem de Carga</span>
+        <span class="card-dado-valor">{{ item.ordemCarga }}</span>
+      </div>
+    </div>
+
+    <!-- DETALHES EXPANSÍVEIS -->
+    <div class="card-detalhes" *ngIf="cardExpandido === item.numeroUnico"
+         (click)="$event.stopPropagation()">
+      <div class="card-detalhe-row">
+        <div class="card-dado">
+          <span class="card-dado-label">Nº Conferência</span>
+          <span class="card-dado-valor">{{ item.numeroConferencia || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Valor Nota</span>
+          <span class="card-dado-valor">{{ item.valorNota || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Empresa</span>
+          <span class="card-dado-valor">{{ item.nomeEmpresa || '—' }}</span>
+        </div>
+        <div class="card-dado">
+          <span class="card-dado-label">Incluído por</span>
+          <span class="card-dado-valor">{{ item.nomeUsuarioInclusao || '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="card-footer" (click)="$event.stopPropagation()">
+      <button class="card-btn-expand"
+              (click)="toggleCard(item)"
+              [attr.aria-label]="cardExpandido === item.numeroUnico ? 'Menos detalhes' : 'Mais detalhes'">
+        <mat-icon>{{ cardExpandido === item.numeroUnico ? 'expand_less' : 'expand_more' }}</mat-icon>
+        {{ cardExpandido === item.numeroUnico ? 'Menos' : 'Detalhes' }}
+      </button>
+
+      <span matTooltip="Ver detalhes da conferência" style="flex:1; display:flex;">
+        <button class="card-btn-conferir card-btn-conferir--ativo"
+                (click)="onConsultar(item)">
+          <mat-icon>visibility</mat-icon>
+          Consultar
+        </button>
+      </span>
+    </div>
+
+  </div>
+</div>
+
+<!-- SKELETON grid -->
+<div class="cards-grid" *ngIf="carregando">
+  <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6,7,8]">
+    <div class="sk-head">
+      <div class="sk sk--status"></div>
+      <div class="sk sk--tipo"></div>
+    </div>
+    <div class="sk sk--parceiro"></div>
+    <div class="sk-dados">
+      <div class="sk sk--dado" *ngFor="let j of [1,2,3,4]"></div>
+    </div>
+    <div class="sk-footer">
+      <div class="sk sk--btn-sec"></div>
+      <div class="sk sk--btn-pri"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ESTADO VAZIO -->
+<div class="fila-vazia" *ngIf="dataSource.data.length === 0 && !carregando">
+  <mat-icon>lock_clock</mat-icon>
+  <span>Nenhuma conferência aguardando liberação de corte</span>
+  <p>Tente ajustar os filtros ou aguarde novas conferências chegarem a esse status.</p>
+</div>
+
+
+</div><!-- /fila-container -->
+
+<!-- PAGINAÇÃO FIXA -->
+<div class="paginacao">
+  <span class="paginacao-info">
+    {{ dataSource.data.length === 0 ? 'Sem resultados' : pageStart + '–' + pageEnd + (hasNextPage ? '+' : '') }}
+  </span>
+  <div class="paginacao-controles">
+    <span class="paginacao-por-label">Por página:</span>
+    <select class="paginacao-select" [ngModel]="perPage" (ngModelChange)="onPerPageChange($event)">
+      <option [value]="5">5</option>
+      <option [value]="10">10</option>
+      <option [value]="25">25</option>
+      <option [value]="50">50</option>
+    </select>
+    <span class="paginacao-pagina">{{ page + 1 }} / {{ totalPages }}</span>
+    <button mat-icon-button [disabled]="!hasPrevPage" (click)="prevPage()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!hasNextPage" (click)="nextPage()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

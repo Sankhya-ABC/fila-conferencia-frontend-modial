@@ -35,6 +35,14 @@
     </a>
 
     <a class="sidebar-item"
+       routerLink="/liberacao-corte"
+       routerLinkActive="sidebar-item--active"
+       (click)="toggle()">
+      <mat-icon>lock_clock</mat-icon>
+      <span>Liberação de Corte</span>
+    </a>
+
+    <a class="sidebar-item"
        routerLink="/impressao-etiquetas"
        routerLinkActive="sidebar-item--active"
        (click)="toggle()">

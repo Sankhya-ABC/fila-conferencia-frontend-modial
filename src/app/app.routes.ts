@@ -14,6 +14,7 @@ import { DashboardProdutividadeComponent } from './pages/dashboard-produtividade
 import { ImpressaoEtiquetasComponent } from './pages/impressao-etiquetas/impressao-etiquetas.component';
 import { BalancaComponent } from './pages/balanca/balanca.component';
 import { DownloadsComponent } from './pages/downloads/downloads.component';
+import { LiberacaoCorteComponent } from './pages/liberacao-corte/liberacao-corte.component';
 
 export const routes: Routes = [
   {
@@ -50,6 +51,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     path: 'separacao/:numeroUnico',
     component: SeparacaoComponent,
+  },
+  {
+    canActivate: [authGuard],
+    path: 'liberacao-corte',
+    component: LiberacaoCorteComponent,
   },
   {
     canActivate: [adminGuard],
