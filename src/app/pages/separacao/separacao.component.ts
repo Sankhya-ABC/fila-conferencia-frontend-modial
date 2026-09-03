@@ -229,10 +229,22 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   private devolvendoEmAndamento = false;
   itemConferindoGhost: ItemPedidoDTO | null = null;
   itensParciaisChaves = new Set<string>();
-  // Chaves (idProduto#controle) com quantidade conferida acima do pedido —
-  // usado pra marcar visualmente a linha na lista de Conferidos, com o
-  // quanto ficou acima (não só o booleano de que houve excesso).
+  // Chaves (idProduto#controle) com divergência relevante — pra não pesável,
+  // só conta pra mais (valor sempre positivo); pra pesável, conta pra mais OU
+  // pra menos acima de TOLERANCIA_PESO_PCT (valor pode ser negativo). Usado
+  // pra marcar visualmente a linha na lista de Conferidos e alimentar o modal
+  // de divergência, com o quanto ficou fora do pedido (não só o booleano).
   itensExcedentesChaves = new Map<string, number>();
+  // Qtd. pedido original por chave — só precisa ser preenchido quando o valor
+  // conferido na própria linha (item.quantidadePadrao) não representa o
+  // pedido de verdade, caso do pesável abaixo do nominal (fica menor que o
+  // pedido, não igual). Sem entrada aqui, os getters caem no fallback antigo.
+  private pedidoOriginalPorChave = new Map<string, number>();
+  // Peso pode variar do nominal (perda de água, aparas etc.) sem ser
+  // divergência — só acima desse percentual (pra mais ou pra menos) é que
+  // passa a contar como divergência de verdade (mesmo limite usado no
+  // backend pra decidir liberação automática x manual do corte).
+  private readonly TOLERANCIA_PESO_PCT = 0.05;
   private itensDoProdutoAtual: ItemPedidoDTO[] = [];
 
   // Conferência parcial (etapas pesável / não-pesável) — só ativo por tenant via módulo
@@ -302,7 +314,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
   get textoExcessoCategoria(): string {
     const nome = this.categoriaAtiva === 'PESAVEL' ? 'pesável' : 'não pesável';
     const n = this.categoriaAtiva ? this.itensExcedentesDaCategoria(this.categoriaAtiva).length : 0;
-    const item = n === 1 ? 'item conferido a mais' : 'itens conferidos a mais';
+    const item = n === 1 ? 'item com quantidade divergente' : 'itens com quantidade divergente';
     return `Esta categoria (${nome}) tem ${n} ${item} do que o pedido. Deseja concluir sua parte mesmo assim?`;
   }
 
@@ -798,21 +810,37 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
           }
         });
 
-        // Pesável nunca é divergência: peso variar do nominal (pra cima ou
-        // pra baixo) é esperado, e o corte dele é automático/silencioso no
-        // backend — não entra no alerta de excesso nem no badge.
+        // Pesável: variação de peso dentro de TOLERANCIA_PESO_PCT do pedido é
+        // esperada e continua silenciosa; acima disso (pra mais ou pra
+        // menos) já conta como divergência de verdade — mesmo limite usado
+        // no backend pra decidir liberação automática x manual do corte.
         const chavesPesavel = new Set<string>(
           itensPedido.filter((i) => i.usaConfPeso).map((i) => chave(i)),
         );
+        const totalPedidoOriginalPorChave = new Map<string, number>();
+        itensPedido.forEach((item) => {
+          const k = chave(item);
+          totalPedidoOriginalPorChave.set(k, (totalPedidoOriginalPorChave.get(k) || 0) + Number(item.quantidadePadrao));
+        });
 
-        // Excesso: depois de distribuir o conferido entre todas as linhas do
-        // pedido pra essa chave, ainda sobrou quantidade lida — foi conferido
-        // a mais do que o pedido pede. Isso precisa de corte no Sankhya
-        // mesmo sem nenhum item faltando.
+        // Excesso (não pesável): depois de distribuir o conferido entre todas
+        // as linhas do pedido pra essa chave, ainda sobrou quantidade lida —
+        // foi conferido a mais do que o pedido pede. Isso precisa de corte no
+        // Sankhya mesmo sem nenhum item faltando.
         let temExcesso = false;
         const chavesComExcesso = new Map<string, number>();
         totalConferidos.forEach((total, k) => {
-          if (chavesPesavel.has(k)) return;
+          if (chavesPesavel.has(k)) {
+            const totalPedidoOriginal = totalPedidoOriginalPorChave.get(k) || 0;
+            if (!totalPedidoOriginal) return;
+            const diferenca = Number((total - totalPedidoOriginal).toFixed(5));
+            const percentual = Math.abs(diferenca) / totalPedidoOriginal;
+            if (percentual > this.TOLERANCIA_PESO_PCT) {
+              temExcesso = true;
+              chavesComExcesso.set(k, diferenca);
+            }
+            return;
+          }
           const usado = distribuido.get(k) || 0;
           const excesso = Number((total - usado).toFixed(5));
           if (excesso > 0.0001) {
@@ -825,10 +853,18 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
         // linhas de Conferidos que pertencem a uma chave com sobra — a
         // leitura excedente não vira linha própria, então sinalizamos o
         // grupo inteiro com o total que passou do pedido.
+        const conferidosComDivergencia = conferidos.filter((item) => chavesComExcesso.has(chave(item)));
         this.itensExcedentesChaves = new Map(
-          conferidos
-            .filter((item) => chavesComExcesso.has(chave(item)))
+          conferidosComDivergencia
             .map((item) => [this.chaveItem(item), chavesComExcesso.get(chave(item))!] as [string, number]),
+        );
+        // Só precisa mesmo pro pesável (ver comentário em qtdPedidoItem) —
+        // populamos pra qualquer divergente sem problema, é só o pedido
+        // original da chave, sempre correto independente da direção.
+        this.pedidoOriginalPorChave = new Map(
+          conferidosComDivergencia
+            .filter((item) => chavesPesavel.has(chave(item)))
+            .map((item) => [this.chaveItem(item), totalPedidoOriginalPorChave.get(chave(item)) ?? 0] as [string, number]),
         );
 
         this.itensPedidoBrutos = pedidosAtualizados;
@@ -1303,8 +1339,11 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensParciaisChaves.has(this.chaveItem(item));
   }
 
-  // Conferido a menos que o pedido não aparece aqui: o restante fica em
-  // Pendentes até bipar tudo (ou sobrar pro modal de divergência no fim).
+  // Não pesável conferido a menos que o pedido não aparece aqui: o restante
+  // fica em Pendentes até bipar tudo (ou sobrar pro modal de divergência no
+  // fim). Pesável é diferente — uma vez pesado, sai de Pendentes na hora
+  // (pra mais ou pra menos), então divergência de peso fora de
+  // TOLERANCIA_PESO_PCT só tem como aparecer aqui mesmo, pra mais ou menos.
   // Não existe corte manual por item nesta tela — só o corte de pedido
   // inteiro na finalização (confirmarFinalizacaoDivergente/ComExcesso).
   isItemExcedente(item: ItemPedidoDTO): boolean {
@@ -1315,16 +1354,18 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     return this.itensExcedentesChaves.get(this.chaveItem(item)) ?? 0;
   }
 
-  // "Pedido" aqui é o que a linha de Conferidos guarda (já capada no que foi
-  // pedido) — o excesso lido a mais não infla essa quantidade, só o Map de
-  // itensExcedentesChaves (ver aplicarConferenciaOtimista). Por isso pedido =
-  // quantidadePadrao da própria linha, e conferido = pedido + excesso.
+  // "Pedido" normalmente é o que a linha de Conferidos guarda (já capada no
+  // que foi pedido) — o excesso lido a mais não infla essa quantidade, só o
+  // Map de itensExcedentesChaves (ver aplicarConferenciaOtimista). Isso já
+  // não vale pro pesável conferido A MENOS que o pedido (a linha não é
+  // capada nesse caso, ela É o valor real pesado, menor que o pedido) — por
+  // isso o fallback pra pedidoOriginalPorChave, preenchido só quando precisa.
   qtdPedidoItem(item: ItemPedidoDTO): number {
-    return item.quantidadePadrao;
+    return this.pedidoOriginalPorChave.get(this.chaveItem(item)) ?? item.quantidadePadrao;
   }
 
   qtdConferidaItem(item: ItemPedidoDTO): number {
-    return item.quantidadePadrao + this.qtdExcedente(item);
+    return this.qtdPedidoItem(item) + this.qtdExcedente(item);
   }
 
   // Itens de Conferidos com divergência (conferido a mais), na mesma ordem
@@ -1581,6 +1622,7 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const k = chave(item);
     this.itensParciaisChaves.delete(k);
     this.itensExcedentesChaves.delete(k);
+    this.pedidoOriginalPorChave.delete(k);
 
     // Remove dos conferidos (imediato)
     this.dataSourceConferidos.data = this.dataSourceConferidos.data.filter((i) => chave(i) !== k);
@@ -1950,9 +1992,32 @@ export class SeparacaoComponent implements OnInit, OnDestroy {
     const restanteAntes = pendenteAtual?.quantidadePadrao ?? 0;
     const qtdCapada = Math.min(quantidadePadrao, restanteAntes);
     const qtdExcesso = Number((quantidadePadrao - qtdCapada).toFixed(5));
-    // Pesável nunca é divergência (peso variar do nominal é esperado) — o
-    // corte dele roda automático e silencioso no backend, sem alerta aqui.
-    if (qtdExcesso > 0.0001 && !item.usaConfPeso) {
+
+    if (item.usaConfPeso) {
+      // Pesável: variação dentro de TOLERANCIA_PESO_PCT do peso pedido é
+      // esperada (perda de água, aparas etc.) e continua silenciosa — só
+      // acima disso (pra mais OU pra menos) vira divergência de verdade,
+      // mesmo limite usado no backend pra decidir liberação automática x
+      // manual do corte.
+      const pertenceAoGrupo = (i: ItemPedidoDTO) => chavePendente(i) === kPendente;
+      const totalConferidoAntes = this.itensConferidosBrutos
+        .filter(pertenceAoGrupo)
+        .reduce((soma, i) => soma + i.quantidadePadrao, 0);
+      const totalPedidoOriginal = Number((restanteAntes + totalConferidoAntes).toFixed(5));
+      const totalConferidoDepois = Number((totalConferidoAntes + quantidadePadrao).toFixed(5));
+      if (totalPedidoOriginal > 0) {
+        const diferenca = Number((totalConferidoDepois - totalPedidoOriginal).toFixed(5));
+        const percentual = Math.abs(diferenca) / totalPedidoOriginal;
+        if (percentual > this.TOLERANCIA_PESO_PCT) {
+          this.temItemExcedente = true;
+          this.itensExcedentesChaves.set(k, diferenca);
+          this.pedidoOriginalPorChave.set(k, totalPedidoOriginal);
+        } else {
+          this.itensExcedentesChaves.delete(k);
+          this.pedidoOriginalPorChave.delete(k);
+        }
+      }
+    } else if (qtdExcesso > 0.0001) {
       this.temItemExcedente = true;
       const acumulado = this.itensExcedentesChaves.get(k) ?? 0;
       this.itensExcedentesChaves.set(k, Number((acumulado + qtdExcesso).toFixed(5)));

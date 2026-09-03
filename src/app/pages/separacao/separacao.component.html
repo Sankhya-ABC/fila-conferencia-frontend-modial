@@ -46,7 +46,7 @@
 <!-- ALERTA SIMPLES: categoria com item conferido A MAIS ao concluir a própria parte -->
 <div class="cat-overlay" *ngIf="mostrarAlertaExcessoCategoria"></div>
 <div class="cat-modal" *ngIf="mostrarAlertaExcessoCategoria" role="dialog" aria-modal="true">
-  <h3>Item conferido a mais</h3>
+  <h3>Item com quantidade divergente</h3>
   <p>{{ textoExcessoCategoria }}</p>
   <div class="cat-acoes-linha">
     <button type="button" class="es-btn es-btn--ghost" (click)="mostrarAlertaExcessoCategoria = false">
@@ -63,8 +63,8 @@
 <div class="cat-overlay" *ngIf="mostrarAlertaExcesso"></div>
 <div class="cat-modal cat-modal--excesso" *ngIf="mostrarAlertaExcesso" role="dialog" aria-modal="true">
   <mat-icon class="cat-modal-icon cat-modal-icon--excesso" fontSet="material-symbols-outlined">error_outline</mat-icon>
-  <h3>Quantidade conferida a mais</h3>
-  <p>{{ itensExcedentesDetalhados.length === 1 ? 'Este item foi' : 'Estes itens foram' }} conferido{{ itensExcedentesDetalhados.length === 1 ? '' : 's' }} com quantidade maior que a do pedido. Como deseja finalizar?</p>
+  <h3>Quantidade divergente</h3>
+  <p>{{ itensExcedentesDetalhados.length === 1 ? 'Este item foi' : 'Estes itens foram' }} conferido{{ itensExcedentesDetalhados.length === 1 ? '' : 's' }} com quantidade diferente da pedida (produto a mais, ou pesável fora da tolerância de 5%). Como deseja finalizar?</p>
 
   <div class="excesso-tabela-wrap">
     <table class="excesso-tabela">
@@ -81,7 +81,7 @@
           <td class="excesso-produto">{{ item.idProduto }} - {{ item.nomeProduto }}</td>
           <td>{{ qtdPedidoItem(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
           <td>{{ qtdConferidaItem(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
-          <td class="excesso-diferenca">+{{ qtdExcedente(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
+          <td class="excesso-diferenca">{{ qtdExcedente(item) > 0 ? '+' : '' }}{{ qtdExcedente(item) | number:'1.3-3':'pt-BR' }} {{ item.unidadePadrao }}</td>
         </tr>
       </tbody>
     </table>
@@ -580,7 +580,7 @@
                 *ngIf="isItemExcedente(item)"
                 [matTooltip]="'Pedido: ' + (qtdPedidoItem(item) | number:'1.0-3':'pt-BR') + ' | Conferido: ' + (qtdConferidaItem(item) | number:'1.0-3':'pt-BR') + ' ' + item.unidadePadrao">
             <mat-icon>error_outline</mat-icon>
-            Divergente: +{{ qtdExcedente(item) | number:'1.0-3':'pt-BR' }} {{ item.unidadePadrao }}
+            Divergente: {{ qtdExcedente(item) > 0 ? '+' : '' }}{{ qtdExcedente(item) | number:'1.0-3':'pt-BR' }} {{ item.unidadePadrao }}
           </span>
           <span class="item-volume-badge"
                 *ngIf="isVolumesDetalhados() && getVolumeDoItem(item)">
