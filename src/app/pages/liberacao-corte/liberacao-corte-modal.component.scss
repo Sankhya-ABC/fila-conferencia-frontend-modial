@@ -1,0 +1,256 @@
+.lib-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+}
+
+.lib-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 12px 4px 24px;
+  flex-shrink: 0;
+
+  .lib-modal-fechar {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+  }
+
+  mat-icon {
+    color: var(--color-primary);
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+}
+
+.lib-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 24px 20px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.lib-modal-subtitulo {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.lib-modal-field {
+  width: 100%;
+}
+
+.lib-modal-field--full {
+  width: 100%;
+}
+
+.lib-modal-erro {
+  font-size: 12px;
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.lib-modal-sucesso {
+  font-size: 12px;
+  color: #166534;
+  background: rgba(22, 101, 52, 0.08);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+/* ─── Rodapé (ambas etapas) ─── */
+.lib-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lib-modal-footer--revisao {
+  align-items: center;
+}
+
+.lib-modal-contador {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-right: auto;
+}
+
+.lib-modal-btn-ghost {
+  color: var(--color-text-secondary);
+}
+
+.lib-modal-btn-liberar {
+  background: #16a34a !important;
+  color: #fff !important;
+}
+
+/* ─── Etapa 2: resumo ─── */
+.lib-modal-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.lib-modal-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lib-modal-resumo-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+}
+
+.lib-modal-resumo-valor {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-modal-tabela-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lib-modal-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.lib-modal-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lib-modal-loading,
+.lib-modal-vazio {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Acima de 5 linhas, o scroll interno assume — cada linha tem ~37px, então
+   ~5.5 linhas de altura mantém a tabela compacta sem cortar a última linha
+   visível pela metade. */
+.lib-modal-tabela-wrap {
+  max-height: 205px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.lib-modal-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  tbody tr {
+    cursor: pointer;
+
+    &:not(:last-child) td {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    &:hover {
+      background: var(--color-hover, rgba(0, 0, 0, 0.03));
+    }
+  }
+}
+
+.lib-modal-th-check {
+  width: 32px;
+  padding-right: 0 !important;
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
+
+.lib-modal-produto {
+  white-space: normal;
+  word-break: break-word;
+  max-width: 220px;
+}
+
+.lib-modal-dif--corte {
+  color: #92400e;
+  font-weight: 700;
+  background: rgba(217, 119, 6, 0.10);
+}
+
+.lib-modal-dif--excesso {
+  color: #991b1b;
+  font-weight: 700;
+  background: rgba(220, 38, 38, 0.10);
+}
+
+/* ─── Responsivo (tablet/coletor) ─── */
+@media (max-width: 640px) {
+  .lib-modal {
+    max-width: 100%;
+  }
+
+  .lib-modal-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .lib-modal-footer--revisao {
+    flex-wrap: wrap;
+  }
+
+  .lib-modal-contador {
+    width: 100%;
+    margin-right: 0;
+    order: -1;
+  }
+}

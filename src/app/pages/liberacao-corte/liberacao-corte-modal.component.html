@@ -1,0 +1,132 @@
+<div class="lib-modal">
+
+  <div class="lib-modal-header">
+    <mat-icon>lock_clock</mat-icon>
+    <h2>Liberação de Corte</h2>
+    <button type="button" mat-icon-button class="lib-modal-fechar" (click)="fechar()" aria-label="Fechar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ETAPA 1 — AUTENTICAÇÃO -->
+  <div class="lib-modal-body" *ngIf="etapa === 'AUTENTICACAO'">
+    <p class="lib-modal-subtitulo">Informe usuário e senha do liberador no Sankhya para continuar.</p>
+
+    <mat-form-field appearance="outline" class="lib-modal-field">
+      <mat-label>Usuário Sankhya</mat-label>
+      <input matInput [(ngModel)]="usuario" [ngModelOptions]="{standalone: true}" autocomplete="off" (keydown.enter)="onAvancar()" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="lib-modal-field">
+      <mat-label>Senha</mat-label>
+      <input matInput [type]="senhaVisivel ? 'text' : 'password'" [(ngModel)]="senha" [ngModelOptions]="{standalone: true}" autocomplete="new-password" (keydown.enter)="onAvancar()" />
+      <button type="button" mat-icon-button matSuffix (click)="toggleSenhaVisivel()" [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'">
+        <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <div class="lib-modal-erro" *ngIf="erroAutenticacao">{{ erroAutenticacao }}</div>
+
+    <div class="lib-modal-footer">
+      <button mat-stroked-button (click)="fechar()">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="!podeAvancar" (click)="onAvancar()">
+        {{ autenticando ? 'Validando…' : 'Avançar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ETAPA 2 — REVISÃO E CONFIRMAÇÃO -->
+  <div class="lib-modal-body" *ngIf="etapa === 'REVISAO'">
+
+    <div class="lib-modal-resumo">
+      <div class="lib-modal-resumo-item">
+        <span class="lib-modal-resumo-label">Nº do pedido</span>
+        <span class="lib-modal-resumo-valor">{{ item.numeroUnico || '—' }}</span>
+      </div>
+      <div class="lib-modal-resumo-item">
+        <span class="lib-modal-resumo-label">Empresa</span>
+        <span class="lib-modal-resumo-valor">{{ item.nomeEmpresa || '—' }}</span>
+      </div>
+      <div class="lib-modal-resumo-item">
+        <span class="lib-modal-resumo-label">Incluído por</span>
+        <span class="lib-modal-resumo-valor">{{ item.nomeUsuarioInclusao || '—' }}</span>
+      </div>
+    </div>
+
+    <div class="lib-modal-tabela-header">
+      <span class="lib-modal-titulo">Itens pendentes de liberação</span>
+      <button type="button" class="lib-modal-link-btn"
+              *ngIf="liberacoesPendentes.length > 1"
+              (click)="toggleSelecionarTodos()">
+        {{ todosSelecionados ? 'Limpar seleção' : 'Selecionar todos' }}
+      </button>
+    </div>
+
+    <div class="lib-modal-loading" *ngIf="carregandoLiberacoes">Carregando itens…</div>
+
+    <div class="lib-modal-tabela-wrap" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 0">
+      <table class="lib-modal-tabela">
+        <thead>
+          <tr>
+            <th class="lib-modal-th-check"></th>
+            <th>Produto</th>
+            <th>Qtd. pedido</th>
+            <th>Qtd. conferida</th>
+            <th>Diferença</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lib of liberacoesPendentes" (click)="toggleSelecao(lib.sequencia)">
+            <td class="lib-modal-th-check">
+              <input type="checkbox"
+                     [checked]="isSelecionado(lib.sequencia)"
+                     (click)="$event.stopPropagation()"
+                     (change)="toggleSelecao(lib.sequencia)" />
+            </td>
+            <td class="lib-modal-produto">{{ lib.produto || '—' }}</td>
+            <td>{{ lib.qtdPedido != null ? (lib.qtdPedido | number:'1.0-3':'pt-BR') + ' ' + (lib.unidadePedido || '') : '—' }}</td>
+            <td>{{ lib.qtdConferida != null ? (lib.qtdConferida | number:'1.0-3':'pt-BR') + ' ' + (lib.unidadeConferida || '') : '—' }}</td>
+            <td [class]="'lib-modal-dif ' + diferencaClass(lib.diferenca)">
+              {{ lib.diferenca != null ? (lib.diferenca > 0 ? '+' : '') + (lib.diferenca | number:'1.0-3':'pt-BR') : '—' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="lib-modal-vazio" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length === 0">
+      Nenhum item pendente encontrado — pode já ter sido liberado. Feche e atualize a lista.
+    </div>
+
+    <mat-form-field appearance="outline" class="lib-modal-field lib-modal-field--full" *ngIf="liberacoesPendentes.length > 0">
+      <mat-label>Observação (opcional)</mat-label>
+      <input matInput [(ngModel)]="obs" [ngModelOptions]="{standalone: true}" />
+    </mat-form-field>
+
+    <div class="lib-modal-erro" *ngIf="erroAcao">{{ erroAcao }}</div>
+    <div class="lib-modal-sucesso" *ngIf="sucessoAcao">{{ sucessoAcao }}</div>
+
+    <div class="lib-modal-footer lib-modal-footer--revisao">
+      <button mat-button class="lib-modal-btn-ghost" [disabled]="processando" (click)="onVoltar()">
+        <mat-icon>arrow_back</mat-icon>
+        Voltar
+      </button>
+
+      <span class="lib-modal-contador">{{ sequenciasSelecionadas.size }} selecionado(s)</span>
+
+      <button mat-stroked-button color="warn"
+              [disabled]="processando || sequenciasSelecionadas.size === 0"
+              (click)="onLiberarOuNegar('N')">
+        <mat-icon>cancel</mat-icon>
+        Negar
+      </button>
+      <button mat-flat-button class="lib-modal-btn-liberar"
+              [disabled]="processando || sequenciasSelecionadas.size === 0"
+              (click)="onLiberarOuNegar('S')">
+        <mat-icon>lock_open</mat-icon>
+        Liberar Corte
+      </button>
+    </div>
+  </div>
+
+</div>

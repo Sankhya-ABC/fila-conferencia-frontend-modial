@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatNativeDateModule, MatOptionModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -25,13 +26,13 @@ import { EmpresaDTO } from '../../services/empresa/empresa.model';
 import { EmpresaService } from '../../services/empresa/empresa.service';
 import {
   FilaConferenciaDTO,
-  LiberacaoPendenteDTO,
 } from '../../services/conferencia/conferencia.model';
 import { ConferenciaService } from '../../services/conferencia/conferencia.service';
 import { ParceiroDTO } from '../../services/parceiro/parceiro.model';
 import { ParceiroService } from '../../services/parceiro/parceiro.service';
 import { DominioService } from '../../services/dominio/dominio.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { LiberacaoCorteModalComponent } from './liberacao-corte-modal.component';
 
 // Cópia simplificada de FilaConferenciaComponent: mesma UI de grid de
 // cards, mas sempre filtrada em codigoStatus='C' (Aguardando liberação
@@ -57,6 +58,7 @@ import { AuthService } from '../../services/auth/auth.service';
     MatButtonModule,
     MatBadgeModule,
     MatCardModule,
+    MatDialogModule,
   ],
   templateUrl: './liberacao-corte.component.html',
   styleUrls: ['./liberacao-corte.component.scss'],
@@ -69,6 +71,7 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     private parceiroService: ParceiroService,
     private empresaService: EmpresaService,
     private authService: AuthService,
+    private dialog: MatDialog,
   ) {}
 
   dataSource = new MatTableDataSource<FilaConferenciaDTO>([]);
@@ -390,96 +393,20 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
     this.criarForm();
   }
 
-  // ─── Liberação de corte, direto pela tela ──────────────────────────────
-  // A senha do liberador é pedida a cada ação (não fica guardada) — mesma
-  // exigência que a própria SP do Sankhya tem na tela nativa. O operador
-  // seleciona quais itens divergentes quer aprovar/negar e a ação roda em
-  // lote só pra esses (não precisa ser tudo de uma vez).
-  liberacoesPendentes: LiberacaoPendenteDTO[] = [];
-  sequenciasSelecionadas = new Set<number>();
-  carregandoLiberacoes = false;
-  usuarioLiberador = '';
-  senhaLiberador = '';
-  obsLiberacao = '';
-  processandoLiberacao = false;
-  erroLiberacao: string | null = null;
-  sucessoLiberacao: string | null = null;
-
-  private carregarLiberacoesPendentes(item: FilaConferenciaDTO): void {
-    this.liberacoesPendentes = [];
-    this.sequenciasSelecionadas.clear();
-    this.erroLiberacao = null;
-    this.sucessoLiberacao = null;
-    if (!item.numeroConferencia) return;
-    this.carregandoLiberacoes = true;
-    this.conferenciaService.getLiberacoesPendentes(item.numeroConferencia)
-      .pipe(finalize(() => (this.carregandoLiberacoes = false)))
-      .subscribe({
-        next: (lista) => (this.liberacoesPendentes = lista ?? []),
-        error: () => (this.liberacoesPendentes = []),
-      });
-  }
-
-  isSelecionado(sequencia: number): boolean {
-    return this.sequenciasSelecionadas.has(sequencia);
-  }
-
-  toggleSelecao(sequencia: number): void {
-    if (this.sequenciasSelecionadas.has(sequencia)) {
-      this.sequenciasSelecionadas.delete(sequencia);
-    } else {
-      this.sequenciasSelecionadas.add(sequencia);
-    }
-  }
-
-  selecionarTodos(): void {
-    this.sequenciasSelecionadas = new Set(this.liberacoesPendentes.map((l) => l.sequencia));
-  }
-
-  limparSelecao(): void {
-    this.sequenciasSelecionadas.clear();
-  }
-
-  onLiberarOuNegar(item: FilaConferenciaDTO, decisao: 'S' | 'N'): void {
-    if (!item.numeroConferencia) return;
-    if (this.sequenciasSelecionadas.size === 0) {
-      this.erroLiberacao = 'Selecione pelo menos um item.';
-      return;
-    }
-    if (!this.usuarioLiberador || !this.senhaLiberador) {
-      this.erroLiberacao = 'Informe usuário e senha do liberador.';
-      return;
-    }
-    this.erroLiberacao = null;
-    this.sucessoLiberacao = null;
-    this.processandoLiberacao = true;
-
-    const sequencias = [...this.sequenciasSelecionadas];
-
-    this.conferenciaService.postLiberarCorte({
-      numeroConferencia: item.numeroConferencia,
-      usuario: this.usuarioLiberador,
-      senha: this.senhaLiberador,
-      liberar: decisao,
-      obs: this.obsLiberacao || undefined,
-      sequencias,
-    }).pipe(finalize(() => (this.processandoLiberacao = false)))
-      .subscribe({
-        next: (res) => {
-          this.sucessoLiberacao = decisao === 'S'
-            ? `${res.itensProcessados} item(ns) liberado(s).`
-            : `${res.itensProcessados} item(ns) negado(s).`;
-          this.senhaLiberador = '';
-          this.obsLiberacao = '';
-          const processados = new Set(sequencias);
-          this.liberacoesPendentes = this.liberacoesPendentes.filter((l) => !processados.has(l.sequencia));
-          this.sequenciasSelecionadas.clear();
-          this.applyFilter(true);
-        },
-        error: (err) => {
-          this.erroLiberacao = err?.error?.message || 'Falha ao processar a liberação.';
-        },
-      });
+  // Abre o modal de liberação de corte (autenticação + revisão/seleção em
+  // duas etapas) pra essa conferência. Recarrega a lista se algo foi
+  // liberado/negado, já que o item pode sair do status 'C'.
+  abrirModalLiberacao(item: FilaConferenciaDTO): void {
+    const ref = this.dialog.open(LiberacaoCorteModalComponent, {
+      data: item,
+      width: '600px',
+      maxWidth: '95vw',
+      disableClose: true,
+      autoFocus: false,
+    });
+    ref.afterClosed().subscribe((recarregar) => {
+      if (recarregar) this.applyFilter(true);
+    });
   }
 
   displayDate(date: string | null | undefined): string {
@@ -508,18 +435,7 @@ export class LiberacaoCorteComponent implements OnInit, OnDestroy {
   }
 
   toggleCard(item: FilaConferenciaDTO): void {
-    const abrindo = this.cardExpandido !== item.numeroUnico;
-    this.cardExpandido = abrindo ? item.numeroUnico : null;
-    this.usuarioLiberador = '';
-    this.senhaLiberador = '';
-    this.obsLiberacao = '';
-    this.erroLiberacao = null;
-    this.sucessoLiberacao = null;
-    if (abrindo) {
-      this.carregarLiberacoesPendentes(item);
-    } else {
-      this.liberacoesPendentes = [];
-    }
+    this.cardExpandido = this.cardExpandido === item.numeroUnico ? null : item.numeroUnico;
   }
 
   trackByItem(index: number, item: FilaConferenciaDTO): number {

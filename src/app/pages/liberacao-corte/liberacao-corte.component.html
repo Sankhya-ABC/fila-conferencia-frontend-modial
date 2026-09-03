@@ -302,70 +302,6 @@
           <span class="card-dado-valor">{{ item.nomeUsuarioInclusao || '—' }}</span>
         </div>
       </div>
-
-      <!-- ITENS PENDENTES DE LIBERAÇÃO -->
-      <div class="lib-corte-secao">
-        <span class="lib-corte-titulo">Itens pendentes de liberação</span>
-
-        <div class="lib-corte-loading" *ngIf="carregandoLiberacoes">Carregando…</div>
-
-        <div class="lib-corte-selecionar-todos" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 1">
-          <button type="button" class="lib-corte-link-btn" (click)="selecionarTodos()">Selecionar todos</button>
-          <button type="button" class="lib-corte-link-btn" (click)="limparSelecao()">Limpar seleção</button>
-        </div>
-
-        <ul class="lib-corte-lista" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 0">
-          <li *ngFor="let lib of liberacoesPendentes">
-            <label class="lib-corte-item">
-              <input type="checkbox"
-                     [checked]="isSelecionado(lib.sequencia)"
-                     (change)="toggleSelecao(lib.sequencia)" />
-              <span>{{ lib.observacao || '—' }}</span>
-            </label>
-          </li>
-        </ul>
-
-        <div class="lib-corte-vazio" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length === 0">
-          Nenhum item pendente encontrado (pode já ter sido liberado, ou a busca falhou — tente atualizar).
-        </div>
-
-        <!-- FORMULÁRIO DE LIBERAÇÃO -->
-        <div class="lib-corte-form" *ngIf="!carregandoLiberacoes && liberacoesPendentes.length > 0">
-          <div class="lib-corte-form-row">
-            <mat-form-field appearance="outline" class="lib-corte-field">
-              <mat-label>Usuário Sankhya</mat-label>
-              <input matInput [(ngModel)]="usuarioLiberador" [ngModelOptions]="{standalone: true}" autocomplete="off" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="lib-corte-field">
-              <mat-label>Senha</mat-label>
-              <input matInput type="password" [(ngModel)]="senhaLiberador" [ngModelOptions]="{standalone: true}" autocomplete="new-password" />
-            </mat-form-field>
-          </div>
-          <mat-form-field appearance="outline" class="lib-corte-field lib-corte-field--full">
-            <mat-label>Observação (opcional)</mat-label>
-            <input matInput [(ngModel)]="obsLiberacao" [ngModelOptions]="{standalone: true}" />
-          </mat-form-field>
-
-          <div class="lib-corte-erro" *ngIf="erroLiberacao">{{ erroLiberacao }}</div>
-          <div class="lib-corte-sucesso" *ngIf="sucessoLiberacao">{{ sucessoLiberacao }}</div>
-
-          <div class="lib-corte-acoes">
-            <span class="lib-corte-selecionados">{{ sequenciasSelecionadas.size }} selecionado(s)</span>
-            <button mat-stroked-button color="warn"
-                    [disabled]="processandoLiberacao || sequenciasSelecionadas.size === 0"
-                    (click)="onLiberarOuNegar(item, 'N')">
-              <mat-icon>cancel</mat-icon>
-              Negar
-            </button>
-            <button mat-flat-button color="primary"
-                    [disabled]="processandoLiberacao || sequenciasSelecionadas.size === 0"
-                    (click)="onLiberarOuNegar(item, 'S')">
-              <mat-icon>check_circle</mat-icon>
-              Liberar corte
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- RODAPÉ -->
@@ -379,7 +315,7 @@
 
       <span matTooltip="Liberar ou negar o corte pendente" style="flex:1; display:flex;">
         <button class="card-btn-conferir card-btn-conferir--ativo"
-                (click)="toggleCard(item)">
+                (click)="abrirModalLiberacao(item)">
           <mat-icon>lock_open</mat-icon>
           Liberar Corte
         </button>

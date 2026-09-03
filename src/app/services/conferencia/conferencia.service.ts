@@ -15,6 +15,7 @@ import {
   LiberarCorteParams,
   SessaoEtapaDTO,
   TopFaturamento,
+  ValidarLiberadorParams,
 } from './conferencia.model';
 
 @Injectable({
@@ -103,5 +104,9 @@ export class ConferenciaService {
 
   postLiberarCorte(body: LiberarCorteParams): Observable<{ ok: boolean; itensProcessados: number }> {
     return this.http.post<{ ok: boolean; itensProcessados: number }>('/conferencias/liberar-corte', body);
+  }
+
+  postValidarLiberador(body: ValidarLiberadorParams): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>('/conferencias/validar-liberador', body);
   }
 }

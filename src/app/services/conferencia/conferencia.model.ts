@@ -134,9 +134,12 @@ export interface ConcluirEtapaParams {
 
 export interface LiberacaoPendenteDTO {
   sequencia: number;
-  observacao: string | null;
-  vlrAtual: number | null;
-  vlrLimite: number | null;
+  produto: string | null;
+  qtdPedido: number | null;
+  unidadePedido: string | null;
+  qtdConferida: number | null;
+  unidadeConferida: string | null;
+  diferenca: number | null;
 }
 
 export interface LiberarCorteParams {
@@ -146,4 +149,9 @@ export interface LiberarCorteParams {
   liberar: 'S' | 'N';
   sequencias: number[];
   obs?: string;
+}
+
+export interface ValidarLiberadorParams {
+  usuario: string;
+  senha: string;
 }
